@@ -10,6 +10,7 @@ Viewer e editor de **3D Gaussian Splatting** no navegador + pipeline gratuito pa
 |---|---|
 | `index.html` | Viewer/editor 3DGS completo (roda no GitHub Pages) |
 | `Bruxos_VFX_3DGS.ipynb` | Notebook Colab: vídeo → Gaussian Splatting grátis |
+| `Bruxos_VFX_SHARP.ipynb` | Notebook Colab: **uma foto** → Gaussian Splatting em <1s ([Apple SHARP](https://github.com/apple/ml-sharp)) |
 | `Bruxos.png` | Logo |
 
 ## ✨ Recursos do viewer

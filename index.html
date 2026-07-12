@@ -293,6 +293,24 @@ function mountLogo(el) {
 }
 mountLogo(document.getElementById("splash-logo"));
 mountLogo(document.getElementById("corner-logo"));
+
+// ===== Vigia de inicialização =====
+// Se o módulo principal não rodar (CDN bloqueado, sem internet, erro de script),
+// mostra um aviso claro em vez de falhar em silêncio.
+window.__bxReady = false;
+window.addEventListener('error', function (e) {
+  if (!window.__bxReady) window.__bxBootMsg = (e.message || e.type || 'erro desconhecido');
+}, true);
+setTimeout(function () {
+  if (window.__bxReady) return;
+  var d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99;background:#5c1a1a;color:#fdd;' +
+    'padding:12px 18px;font-size:14px;text-align:center;font-family:sans-serif;';
+  d.innerHTML = '⚠️ O viewer não iniciou. Provável falha ao baixar as bibliotecas do CDN (cdn.jsdelivr.net).<br>' +
+    'Verifique a internet, desative adblock/antivírus para este site e recarregue com Ctrl+F5.' +
+    (window.__bxBootMsg ? '<br><small>Detalhe: ' + window.__bxBootMsg + '</small>' : '');
+  document.body.appendChild(d);
+}, 6000);
 </script>
 
 <script type="importmap">
@@ -959,4 +977,35 @@ function record(durationMs, withOrbit) {
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     recorder = null;
     $('btn-rec').classList.remove('recording');
-    $
+    $('btn-rec').textContent = '⏺ Gravar MP4';
+    if (withOrbit && !anim.orbit && viewer?.controls) viewer.controls.autoRotate = false;
+  };
+
+  if (withOrbit && viewer?.controls) {
+    viewer.controls.autoRotate = true;
+    viewer.controls.autoRotateSpeed = parseFloat($('a-orbitspeed').value);
+  }
+  recorder.start();
+  $('btn-rec').classList.add('recording');
+  $('btn-rec').textContent = '⏹ Parar gravação';
+  if (durationMs) setTimeout(() => { if (recorder) recorder.stop(); }, durationMs);
+}
+
+$('btn-rec').addEventListener('click', () => record(null, false));            // manual start/stop
+$('rec-orbit').addEventListener('click', () => record(parseFloat($('rec-dur').value) * 1000, true)); // órbita automática
+
+// sinaliza ao vigia que o módulo carregou com sucesso
+window.__bxReady = true;
+
+// ===== ?url= =====
+const params = new URLSearchParams(location.search);
+if (params.has('url')) {
+  const u = params.get('url');
+  fetch(u).then(r => r.arrayBuffer()).then(buf => {
+    const fakeName = u.split('/').pop() || 'scene.splat';
+    return loadFile(new File([buf], fakeName));
+  }).catch(e => showError('Erro ao carregar URL: ' + e));
+}
+</script>
+</body>
+</html>

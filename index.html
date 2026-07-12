@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bruxos do VFX — 3DGS Viewer</title>
 <!-- habilita SharedArrayBuffer no GitHub Pages (sort mais rápido); inofensivo se o arquivo faltar -->
-<script src="coi-serviceworker.js"></script>
+<!-- DIAGNOSTICO: coi-serviceworker.js temporariamente desativado -->
 <style>
   :root {
     --roxo: #7b2d8e;
@@ -708,8 +708,8 @@ function makeViewer(extra = {}) {
     initialCameraLookAt: [0, 0, 0],
     // com o coi-serviceworker ativo (crossOriginIsolated), o sort usa memória
     // compartilhada + GPU: bem mais rápido e com menos popping ao girar
-    sharedMemoryForWorkers: !!window.crossOriginIsolated,
-    gpuAcceleratedSort: !!window.crossOriginIsolated,
+    sharedMemoryForWorkers: false,
+    gpuAcceleratedSort: false,
     antialiased: true,
     integerBasedSort: false,         // sort em float: menos "estalos" ao girar
     splatSortDistMapPrecision: 32    // máxima precisão na ordenação por distância

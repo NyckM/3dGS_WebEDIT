@@ -51,12 +51,17 @@
     transition: transform .15s, box-shadow .15s;
   }
   .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 30px rgba(150, 201, 61, .35); }
+  #dropzone .cta {
+    display: flex; flex-direction: column; align-items: stretch; gap: 10px;
+    width: min(420px, 88vw); margin-top: 22px;
+  }
+  #dropzone .cta .btn { margin-top: 0; width: 100%; text-align: center; }
   .btn.ghost {
     background: transparent; border: 2px solid var(--verde); box-shadow: none;
-    color: var(--verde); text-decoration: none; display: inline-block;
-    padding: 11px 28px; font-size: .95rem; margin-top: 6px;
+    color: var(--verde); text-decoration: none; display: block;
+    padding: 12px 20px; font-size: .95rem;
   }
-  .btn.ghost:hover { background: rgba(150,201,61,.15); box-shadow: none; }
+  .btn.ghost:hover { background: rgba(150,201,61,.15); box-shadow: none; transform: translateY(-1px); }
 
   /* ================= TOPBAR ================= */
   #topbar {
@@ -153,10 +158,12 @@
   <div class="logo-wrap" id="splash-logo"></div>
   <div class="brand"><span class="b">Bruxos</span> <span style="color:#fff">do</span> <span class="v">VFX</span></div>
   <div class="sub">3DGS</div>
-  <button class="btn" id="btn-import">Importar Gaussians</button>
-  <a class="btn ghost" id="btn-colab" href="#" target="_blank" rel="noopener">🎬 Criar splat a partir de um vídeo</a>
-  <a class="btn ghost" id="btn-sharp" href="#" target="_blank" rel="noopener">🖼️ Criar splat a partir de uma foto (Apple SHARP)</a>
-  <a class="btn ghost" id="btn-4dgs" href="#" target="_blank" rel="noopener">🎞️ Criar sequência 4D a partir de um vídeo (SHARP)</a>
+  <div class="cta">
+    <button class="btn" id="btn-import">Importar Gaussians</button>
+    <a class="btn ghost" id="btn-colab" href="#" target="_blank" rel="noopener">🎬 Criar splat a partir de um vídeo</a>
+    <a class="btn ghost" id="btn-sharp" href="#" target="_blank" rel="noopener">🖼️ Criar splat a partir de uma foto</a>
+    <a class="btn ghost" id="btn-4dgs" href="#" target="_blank" rel="noopener">🎞️ Criar sequência 4D a partir de um vídeo</a>
+  </div>
   <p class="formats">Arraste para cá ou importe — <b>.ply</b> · <b>.splat</b> · <b>.ksplat</b></p>
   <input type="file" id="file-input" accept=".ply,.splat,.ksplat" multiple hidden>
   <p class="formats">Selecione <b>vários .ply</b> de uma vez para importar uma sequência 4D ▶</p>
@@ -232,6 +239,30 @@
   <div class="row"><label>Frequência</label><input type="range" id="w-freq" min="0.5" max="10" step="0.1" value="3"><span class="val" id="v-wfreq2">3.0</span></div>
   <div class="row"><label>Velocidade</label><input type="range" id="w-speed" min="0" max="5" step="0.1" value="1.5"><span class="val" id="v-wspeed">1.5</span></div>
 
+  <h3>Twist FX (animado)</h3>
+  <button class="panel-btn" id="tw-toggle">▶ Twist</button>
+  <div class="row"><label>Intensidade</label><input type="range" id="tw-amt" min="-3" max="3" step="0.05" value="0.5"><span class="val" id="v-twamt">0.50</span></div>
+  <div class="row"><label>Velocidade</label><input type="range" id="tw-speed" min="0" max="6" step="0.1" value="1.5"><span class="val" id="v-twspeed">1.5</span></div>
+  <p class="note">Velocidade 0 = twist fixo; maior que 0 = oscila como o wave.</p>
+
+  <h3>Bend / Taper</h3>
+  <button class="panel-btn" id="bd-toggle">▶ Bend</button>
+  <div class="row"><label>Curvatura</label><input type="range" id="bd-amt" min="-2" max="2" step="0.05" value="0.3"><span class="val" id="v-bdamt">0.30</span></div>
+  <button class="panel-btn" id="tp-toggle">▶ Taper</button>
+  <div class="row"><label>Afunilar</label><input type="range" id="tp-amt" min="0" max="2" step="0.05" value="0.5"><span class="val" id="v-tpamt">0.50</span></div>
+
+  <h3>Área do efeito</h3>
+  <button class="panel-btn" id="fa-toggle">▶ Limitar efeitos à esfera do pivô</button>
+  <div class="row"><label>Raio</label><input type="range" id="fa-r" min="0.05" max="1" step="0.01" value="0.5"><span class="val" id="v-far">50%</span></div>
+  <p class="note">Waves, Twist, Bend e Taper só atuam dentro da esfera centrada no pivô (borda suave).</p>
+
+  <h3>Time Slice (4D)</h3>
+  <button class="panel-btn" id="ts-toggle">▶ Time Slice</button>
+  <div class="row"><label>Eixo</label><input type="range" id="ts-axis" min="0" max="2" step="1" value="0"><span class="val" id="v-tsaxis">X</span></div>
+  <div class="row"><label>Deslocar</label><input type="range" id="ts-shift" min="0" max="1" step="0.01" value="0"><span class="val" id="v-tsshift">0%</span></div>
+  <button class="panel-btn" id="ts-invert">Inverter direção</button>
+  <p class="note">Só em sequências 4D: cada fatia do espaço mostra um frame do tempo (slit-scan). Com play ligado, a fatia varre a cena.</p>
+
   <h3>Fumaça (difusão)</h3>
   <div class="btn-pair">
     <button class="panel-btn" id="s-out">▶ Dissipar</button>
@@ -280,6 +311,7 @@
 
   <h3>Gravação</h3>
   <div class="row"><label>Duração</label><input type="range" id="rec-dur" min="2" max="30" step="1" value="8"><span class="val" id="v-recdur">8s</span></div>
+  <div class="row"><label>Bitrate</label><input type="range" id="rec-bps" min="10" max="120" step="5" value="50"><span class="val" id="v-recbps">50M</span></div>
   <button class="panel-btn" id="rec-orbit">⏺ Gravar órbita (MP4)</button>
   <p class="note">Grava o canvas com a câmera orbitando. Chrome/Edge salvam MP4; outros navegadores salvam WebM.</p>
 </div>
@@ -371,7 +403,29 @@ setTimeout(function () {
 
 <script type="module">
 import * as THREE from 'three';
-import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
+
+// ============================================================
+// Patch da lib: eleva o limite de cenas (frames 4D) de 32 → 64.
+// Baixa o código da lib, troca a constante e importa via blob.
+// Se qualquer coisa falhar, cai na lib original (limite 32).
+// ============================================================
+const MAX_FRAMES = 64;
+const GS_CDN = 'https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.js';
+let GaussianSplats3D;
+let maxFramesReal = 32;
+try {
+  const src = await (await fetch(GS_CDN)).text();
+  const patched = src.replace(/MaxScenes\s*=\s*32/g, 'MaxScenes = ' + MAX_FRAMES);
+  if (patched === src) throw new Error('constante MaxScenes não encontrada');
+  const blobUrl = URL.createObjectURL(new Blob([patched], { type: 'text/javascript' }));
+  GaussianSplats3D = await import(blobUrl);
+  URL.revokeObjectURL(blobUrl);
+  maxFramesReal = MAX_FRAMES;
+  console.log('Bruxos: lib com MaxScenes =', MAX_FRAMES);
+} catch (e) {
+  console.warn('Bruxos: patch de MaxScenes falhou, usando lib padrão (32 frames):', e);
+  GaussianSplats3D = await import('@mkkellogg/gaussian-splats-3d');
+}
 
 // ============================================================
 // Efeitos Bruxos (injetados no vertex shader da lib, rodam na GPU)
@@ -404,14 +458,58 @@ uniform float uBxRevealMax;
 uniform float uBxMono;
 uniform vec3 uBxAnchor;
 uniform float uBxCropR;
+uniform float uBxFxAreaOn;
+uniform float uBxFxAreaR;
+uniform float uBxTwistOn;
+uniform float uBxTwistAmt;
+uniform float uBxTwistSpeed;
+uniform float uBxBendOn;
+uniform float uBxBendAmt;
+uniform float uBxTaperOn;
+uniform float uBxTaperAmt;
+uniform vec3 uBxBBMin;
+uniform vec3 uBxBBMax;
+uniform float uBxTimeSliceOn;
+uniform float uBxSliceAxis;
+uniform float uBxSliceInvert;
+uniform float uBxSliceShift;
 float bxFade = 1.0;
 float bxHash(vec3 p){ return fract(sin(dot(p, vec3(127.1,311.7,74.7)))*43758.5453); }
+// máscara da área do efeito: 1 dentro da esfera no pivô, 0 fora (borda suave)
+float bxMask(vec3 p){
+  if (uBxFxAreaOn < 0.5) return 1.0;
+  float d = length(p - uBxAnchor);
+  return 1.0 - smoothstep(uBxFxAreaR * 0.75, uBxFxAreaR, d);
+}
 vec3 bruxosPos(vec3 p){
+  float m = bxMask(p);
   if (uBxWaveOn > 0.5) {
-    p += uBxWaveAmp * vec3(
+    p += m * uBxWaveAmp * vec3(
       sin(p.y*uBxWaveFreq + uBxTime*uBxWaveSpeed),
       sin(p.z*uBxWaveFreq*0.8 + uBxTime*uBxWaveSpeed*1.13),
       sin(p.x*uBxWaveFreq*1.31 + uBxTime*uBxWaveSpeed*0.87));
+  }
+  if (uBxTwistOn > 0.5) {
+    float osc = uBxTwistSpeed > 0.001 ? sin(uBxTime * uBxTwistSpeed) : 1.0;
+    float ang = uBxTwistAmt * (p.y - uBxAnchor.y) * osc * m;
+    float c = cos(ang), s = sin(ang);
+    vec2 q = p.xz - uBxAnchor.xz;
+    p.xz = uBxAnchor.xz + vec2(c*q.x - s*q.y, s*q.x + c*q.y);
+  }
+  if (uBxBendOn > 0.5) {
+    float t = p.y - uBxAnchor.y;
+    float ang = uBxBendAmt * t * m;
+    float c = cos(ang), s = sin(ang);
+    float qx = p.x - uBxAnchor.x;
+    p.x = uBxAnchor.x + c*qx - s*t;
+    p.y = uBxAnchor.y + s*qx + c*t;
+  }
+  if (uBxTaperOn > 0.5) {
+    vec3 span = max(uBxBBMax - uBxBBMin, vec3(0.0001));
+    float t = clamp((p.y - uBxBBMin.y) / span.y, 0.0, 1.0);
+    float f = mix(1.0, uBxTaperAmt, t * m);
+    p.x = uBxAnchor.x + (p.x - uBxAnchor.x) * f;
+    p.z = uBxAnchor.z + (p.z - uBxAnchor.z) * f;
   }
   if (uBxSmoke > 0.001) {
     vec3 d = p - sceneCenter;
@@ -455,7 +553,18 @@ if (uBxDofOn > 0.5) {
   vColor.a /= (1.0 + bxCoc * bxCoc);
 }
 `;
-const BX_REVEAL_GLSL = `splatCenter = bruxosPos(splatCenter);
+const BX_REVEAL_GLSL = `
+// Time Slice (4D): cada fatia do espaço mostra um frame diferente da sequência
+if (uBxTimeSliceOn > 0.5 && sceneCount > 1) {
+  vec3 bxSpan = max(uBxBBMax - uBxBBMin, vec3(0.0001));
+  vec3 bxT3 = (splatCenter - uBxBBMin) / bxSpan;
+  float bxTs = uBxSliceAxis < 0.5 ? bxT3.x : (uBxSliceAxis < 1.5 ? bxT3.y : bxT3.z);
+  if (uBxSliceInvert > 0.5) bxTs = 1.0 - bxTs;
+  float bxFIdx = fract(bxTs + uBxSliceShift) * float(sceneCount);
+  int bxFrame = int(clamp(bxFIdx, 0.0, float(sceneCount) - 1.0));
+  if (int(sceneIndex) != bxFrame) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; }
+}
+splatCenter = bruxosPos(splatCenter);
 if (uBxCropR > 0.0 && length(splatCenter - uBxAnchor) > uBxCropR) {
   gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return;
 }
@@ -513,7 +622,22 @@ function bxPatchShader(mesh) {
     uBxRevealMax:     { value: 10.0 },
     uBxMono:          { value: 0 },
     uBxAnchor:        { value: new THREE.Vector3(0, 0, 0) },
-    uBxCropR:         { value: 0 }
+    uBxCropR:         { value: 0 },
+    uBxFxAreaOn:      { value: 0 },
+    uBxFxAreaR:       { value: 1.0 },
+    uBxTwistOn:       { value: 0 },
+    uBxTwistAmt:      { value: 0.5 },
+    uBxTwistSpeed:    { value: 0 },
+    uBxBendOn:        { value: 0 },
+    uBxBendAmt:       { value: 0.3 },
+    uBxTaperOn:       { value: 0 },
+    uBxTaperAmt:      { value: 0.5 },
+    uBxBBMin:         { value: new THREE.Vector3(-1, -1, -1) },
+    uBxBBMax:         { value: new THREE.Vector3(1, 1, 1) },
+    uBxTimeSliceOn:   { value: 0 },
+    uBxSliceAxis:     { value: 0 },
+    uBxSliceInvert:   { value: 0 },
+    uBxSliceShift:    { value: 0 }
   });
   mat.needsUpdate = true;
   return true;
@@ -538,7 +662,9 @@ let seq = null;             // sequência 4DGS: {count, current, playing, fps, t
 // estado de animação
 const anim = { orbit: false, wobble: false, wobbleT: 0, dissolve: null, splatScale: 1, userScale: {x:1,y:1,z:1}, rotY: 0,
                waves: false, relight: false, smoke: null, smokeVal: 0, fxTime: 0,
-               light2: false, dof: false, reveal: null, revealVal: 1, pb: false, anchorCrop: false };
+               light2: false, dof: false, reveal: null, revealVal: 1, pb: false, anchorCrop: false,
+               twistFx: false, bendFx: false, taperFx: false, fxArea: false,
+               timeSlice: false, sliceInvert: false, sliceAnim: 0 };
 let lastTime = performance.now();
 
 function showError(msg) {
@@ -559,20 +685,71 @@ function formatFromName(name) {
 }
 
 function disposeViewer() {
-  if (viewer) { try { viewer.dispose(); } catch(e){} viewer = null; }
+  if (viewer) {
+    try { viewer.renderer?.dispose(); } catch(e){}
+    try { viewer.dispose(); } catch(e){}
+    viewer = null;
+  }
   $('viewer-container').innerHTML = '';
 }
 
-async function loadScene(buffer, format, name) {
-  disposeViewer();
-  viewer = new GaussianSplats3D.Viewer({
-    rootElement: $('viewer-container'),
+// cria o viewer com renderer próprio: preserveDrawingBuffer permite gravação sem flicker
+function makeViewer(extra = {}) {
+  const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  $('viewer-container').appendChild(renderer.domElement);
+  const v = new GaussianSplats3D.Viewer(Object.assign({
+    renderer,
     cameraUp: [0, -1, 0],
     initialCameraPosition: [0, 0, -5],
     initialCameraLookAt: [0, 0, 0],
     sharedMemoryForWorkers: false,   // GitHub Pages não envia COOP/COEP
-    antialiased: true
-  });
+    antialiased: true,
+    integerBasedSort: false,         // sort em float: menos "estalos" ao girar
+    splatSortDistMapPrecision: 32    // máxima precisão na ordenação por distância
+  }, extra));
+  // "Voo para dentro": o zoom orbital para no alvo — quando você já está colado
+  // nele e continua dando scroll, empurramos alvo + câmera para frente juntos.
+  renderer.domElement.addEventListener('wheel', (e) => {
+    if (!v.controls || !v.camera) return;
+    const dist = v.camera.position.distanceTo(v.controls.target);
+    if (e.deltaY < 0 && dist < 0.8) {
+      const dir = new THREE.Vector3();
+      v.camera.getWorldDirection(dir);
+      const step = Math.max(dist, 0.15) * 0.5;
+      v.controls.target.addScaledVector(dir, step);
+      v.camera.position.addScaledVector(dir, step);
+    }
+  }, { passive: true });
+  return v;
+}
+window.addEventListener('resize', () => {
+  if (!viewer?.renderer) return;
+  viewer.renderer.setSize(window.innerWidth, window.innerHeight);
+  if (viewer.camera) {
+    viewer.camera.aspect = window.innerWidth / window.innerHeight;
+    viewer.camera.updateProjectionMatrix();
+  }
+});
+
+// aponta o alvo da órbita/zoom para o centro real da cena (bbox) — sem isso o
+// scroll converge para (0,0,0), que em cenas do SHARP fica fora do conteúdo
+function centerControls() {
+  if (!viewer?.controls || !bbox) return;
+  viewer.controls.target.set(
+    (bbox.min[0] + bbox.max[0]) / 2,
+    (bbox.min[1] + bbox.max[1]) / 2,
+    (bbox.min[2] + bbox.max[2]) / 2
+  );
+  viewer.controls.minDistance = 0.01; // deixa chegar bem perto
+  viewer.controls.zoomSpeed = 1.6;    // aproximação mais rápida
+  viewer.controls.update && viewer.controls.update();
+}
+
+async function loadScene(buffer, format, name) {
+  disposeViewer();
+  viewer = makeViewer();
   viewer.start(); // inicia já — com progressiveLoad a cena aparece enquanto carrega
   applyFov();     // aplica o FOV/lente atual à câmera nova
   const blob = new Blob([buffer]);
@@ -600,6 +777,7 @@ async function loadScene(buffer, format, name) {
   viewer.splatMesh.setSplatScale(anim.splatScale);
   const ok = bxPatchShader(viewer.splatMesh);
   if (ok) syncFxUniforms();
+  centerControls();
 }
 
 // sincroniza sliders do painel → uniforms do shader
@@ -656,6 +834,27 @@ function syncFxUniforms() {
   } else {
     set('uBxCropR', 0);
   }
+  // Deformers: twist / bend / taper + área do efeito
+  set('uBxTwistOn', anim.twistFx ? 1 : 0);
+  set('uBxTwistAmt', parseFloat($('tw-amt').value));
+  set('uBxTwistSpeed', parseFloat($('tw-speed').value));
+  set('uBxBendOn', anim.bendFx ? 1 : 0);
+  set('uBxBendAmt', parseFloat($('bd-amt').value));
+  set('uBxTaperOn', anim.taperFx ? 1 : 0);
+  set('uBxTaperAmt', parseFloat($('tp-amt').value));
+  set('uBxFxAreaOn', anim.fxArea ? 1 : 0);
+  if (bbox) {
+    const dx = bbox.max[0]-bbox.min[0], dy = bbox.max[1]-bbox.min[1], dz = bbox.max[2]-bbox.min[2];
+    set('uBxFxAreaR', Math.sqrt(dx*dx + dy*dy + dz*dz) * 0.6 * parseFloat($('fa-r').value));
+    const bmin = bxU('uBxBBMin'), bmax = bxU('uBxBBMax');
+    if (bmin) bmin.value.set(bbox.min[0], bbox.min[1], bbox.min[2]);
+    if (bmax) bmax.value.set(bbox.max[0], bbox.max[1], bbox.max[2]);
+  }
+  // Time Slice (4D)
+  set('uBxTimeSliceOn', (anim.timeSlice && seq) ? 1 : 0);
+  set('uBxSliceAxis', parseFloat($('ts-axis').value));
+  set('uBxSliceInvert', anim.sliceInvert ? 1 : 0);
+  set('uBxSliceShift', parseFloat($('ts-shift').value) + anim.sliceAnim);
   // Pontos P&B (usa o point cloud mode nativo da lib + dessaturação)
   set('uBxMono', anim.pb ? 1 : 0);
   const pc = viewer?.splatMesh?.material?.uniforms?.pointCloudModeEnabled;
@@ -693,34 +892,42 @@ async function loadSequence(files) {
   let list = [...files].filter(f => formatFromName(f.name) !== null);
   if (list.length === 0) { showError('Nenhum arquivo suportado.'); return; }
   list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-  if (list.length > 32) { showError('Máximo de 32 frames — usando os 32 primeiros.'); list = list.slice(0, 32); }
+  if (list.length > maxFramesReal) {
+    showError(`Máximo de ${maxFramesReal} frames — usando os ${maxFramesReal} primeiros.`);
+    list = list.slice(0, maxFramesReal);
+  }
 
   dropzone.classList.add('hidden');
   loading.classList.add('visible');
   seq = null; currentBuffer = null; bbox = null;
   disposeViewer();
-  viewer = new GaussianSplats3D.Viewer({
-    rootElement: $('viewer-container'),
-    cameraUp: [0, -1, 0],
-    initialCameraPosition: [0, 0, -5],
-    initialCameraLookAt: [0, 0, 0],
-    sharedMemoryForWorkers: false,
-    enableOptionalEffects: true,   // necessário para visibilidade por cena
-    antialiased: true
-  });
+  viewer = makeViewer({ enableOptionalEffects: true }); // visibilidade por cena (4DGS)
   viewer.start();
   applyFov();
   try {
+    let union = null; // bounding box unificado de todos os frames
     for (let i = 0; i < list.length; i++) {
       loadingText.textContent = `Carregando frame ${i + 1}/${list.length}… (${list[i].name})`;
       const buf = await list[i].arrayBuffer();
+      const fmt = formatFromName(list[i].name);
+      // acumula o bbox do frame no bbox da sequência (pivô/reveal/crop radial usam isso)
+      const g = analyzeGeom(buf, fmt);
+      if (g) {
+        const b = computeGeomBBox(buf, g);
+        if (!union) union = { min: [...b.min], max: [...b.max] };
+        else for (let k = 0; k < 3; k++) {
+          union.min[k] = Math.min(union.min[k], b.min[k]);
+          union.max[k] = Math.max(union.max[k], b.max[k]);
+        }
+      }
       const url = URL.createObjectURL(new Blob([buf]));
       await viewer.addSplatScene(url, {
-        format: formatFromName(list[i].name),
+        format: fmt,
         showLoadingUI: false, progressiveLoad: false
       });
       URL.revokeObjectURL(url);
     }
+    bbox = union; // efeitos (pivô, epicentro, crop radial) refletem o volume real da sequência
   } catch (e) {
     console.error(e);
     loading.classList.remove('visible');
@@ -731,6 +938,8 @@ async function loadSequence(files) {
   seq = { count: list.length, current: 0, playing: false, fps: parseFloat($('sq-fps').value), timer: 0 };
   const ok = bxPatchShader(viewer.splatMesh);
   if (ok) syncFxUniforms();
+  applyTransforms(); // pivô com o bbox da sequência
+  centerControls();  // zoom/órbita miram o centro real da cena
   setSeqFrame(0);
   loading.classList.remove('visible');
   topbar.classList.add('visible');
@@ -745,7 +954,9 @@ function setSeqFrame(i) {
   seq.current = ((i % seq.count) + seq.count) % seq.count;
   for (let j = 0; j < seq.count; j++) {
     const sc = viewer.getSplatScene(j);
-    if (sc) { sc.visible = (j === seq.current); sc.opacity = (j === seq.current) ? 1 : 0; }
+    if (!sc) continue;
+    if (anim.timeSlice) { sc.visible = true; sc.opacity = 1; }        // shader escolhe o frame por splat
+    else { sc.visible = (j === seq.current); sc.opacity = (j === seq.current) ? 1 : 0; }
   }
   $('seq-label').textContent = `${seq.current + 1}/${seq.count}`;
 }
@@ -1089,6 +1300,43 @@ function startReveal(dir) {
 $('r-play').addEventListener('click', () => startReveal('in'));
 $('r-hide').addEventListener('click', () => startReveal('out'));
 
+// --- twist / bend / taper / área do efeito ---
+function fxToggle(btnId, key, labelOn, labelOff) {
+  $(btnId).addEventListener('click', () => {
+    anim[key] = !anim[key];
+    $(btnId).classList.toggle('on', anim[key]);
+    $(btnId).textContent = anim[key] ? labelOn : labelOff;
+    syncFxUniforms();
+  });
+}
+bindSlider('tw-amt', 'v-twamt', v => v.toFixed(2), () => syncFxUniforms());
+bindSlider('tw-speed', 'v-twspeed', v => v.toFixed(1), () => syncFxUniforms());
+bindSlider('bd-amt', 'v-bdamt', v => v.toFixed(2), () => syncFxUniforms());
+bindSlider('tp-amt', 'v-tpamt', v => v.toFixed(2), () => syncFxUniforms());
+bindSlider('fa-r', 'v-far', v => Math.round(v*100)+'%', () => syncFxUniforms());
+fxToggle('tw-toggle', 'twistFx', '⏸ Twist (ligado)', '▶ Twist');
+fxToggle('bd-toggle', 'bendFx', '⏸ Bend (ligado)', '▶ Bend');
+fxToggle('tp-toggle', 'taperFx', '⏸ Taper (ligado)', '▶ Taper');
+fxToggle('fa-toggle', 'fxArea', '⏸ Área limitada (ligada)', '▶ Limitar efeitos à esfera do pivô');
+
+// --- time slice (4D) ---
+bindSlider('ts-axis', 'v-tsaxis', v => 'XYZ'[Math.round(v)], () => syncFxUniforms());
+bindSlider('ts-shift', 'v-tsshift', v => Math.round(v*100)+'%', () => syncFxUniforms());
+$('ts-invert').addEventListener('click', () => {
+  anim.sliceInvert = !anim.sliceInvert;
+  $('ts-invert').classList.toggle('on', anim.sliceInvert);
+  syncFxUniforms();
+});
+$('ts-toggle').addEventListener('click', () => {
+  if (!seq) { showError('Time Slice só funciona com uma sequência 4D carregada.'); return; }
+  anim.timeSlice = !anim.timeSlice;
+  $('ts-toggle').classList.toggle('on', anim.timeSlice);
+  $('ts-toggle').textContent = anim.timeSlice ? '⏸ Time Slice (ligado)' : '▶ Time Slice';
+  anim.sliceAnim = 0;
+  setSeqFrame(seq.current); // atualiza visibilidade das cenas
+  syncFxUniforms();
+});
+
 // --- pontos P&B ---
 $('pb-toggle').addEventListener('click', () => {
   anim.pb = !anim.pb;
@@ -1134,9 +1382,16 @@ function tick(now) {
   const uR = bxU('uBxReveal'); if (uR) uR.value = anim.revealVal;
   // playback da sequência 4DGS
   if (seq && seq.playing) {
-    seq.timer += dt;
-    const spf = 1 / seq.fps;
-    while (seq.timer > spf) { seq.timer -= spf; setSeqFrame(seq.current + 1); }
+    if (anim.timeSlice) {
+      // com time slice, o play varre a fatia pela cena
+      anim.sliceAnim += dt * seq.fps / seq.count;
+      const uSh = bxU('uBxSliceShift');
+      if (uSh) uSh.value = parseFloat($('ts-shift').value) + anim.sliceAnim;
+    } else {
+      seq.timer += dt;
+      const spf = 1 / seq.fps;
+      while (seq.timer > spf) { seq.timer -= spf; setSeqFrame(seq.current + 1); }
+    }
   }
   requestAnimationFrame(tick);
 }
@@ -1146,8 +1401,13 @@ requestAnimationFrame(tick);
 bindSlider('rec-dur', 'v-recdur', v => v.toFixed(0) + 's', () => {});
 let recorder = null;
 
+bindSlider('rec-bps', 'v-recbps', v => v.toFixed(0) + 'M', () => {});
 function pickMime() {
-  const c = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+  const c = ['video/mp4;codecs=avc1.640033',   // H264 High profile
+             'video/mp4;codecs=avc1',
+             'video/mp4',
+             'video/webm;codecs=vp9',
+             'video/webm'];
   for (const m of c) if (MediaRecorder.isTypeSupported(m)) return m;
   return '';
 }
@@ -1160,8 +1420,9 @@ function record(durationMs, withOrbit) {
 
   const mime = pickMime();
   const ext = mime.includes('mp4') ? 'mp4' : 'webm';
-  const stream = canvas.captureStream(30);
-  recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12_000_000 });
+  const stream = canvas.captureStream(60);
+  const bps = parseFloat($('rec-bps').value) * 1_000_000;
+  recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bps });
   const chunks = [];
   recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
   recorder.onstop = () => {

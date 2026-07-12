@@ -194,6 +194,19 @@
   </div>
   <p class="note" id="crop-note">Crop disponível para <b>.splat</b> e <b>.ply</b> binário padrão.</p>
 
+  <h3>Câmera / Lente</h3>
+  <div class="row"><label>FOV</label><input type="range" id="cam-fov" min="15" max="120" step="1" value="60"><span class="val" id="v-fov">60°</span></div>
+  <p class="note" id="v-mm">Equivalente a ~21mm (full frame)</p>
+
+  <h3>Anchor / Pivô</h3>
+  <div class="row"><label>Pivô X</label><input type="range" id="a-x" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-ax">50%</span></div>
+  <div class="row"><label>Pivô Y</label><input type="range" id="a-y" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-ay">50%</span></div>
+  <div class="row"><label>Pivô Z</label><input type="range" id="a-z" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-az2">50%</span></div>
+  <button class="panel-btn" id="ac-toggle">▶ Crop radial no pivô</button>
+  <div class="row"><label>Raio</label><input type="range" id="a-r" min="0.05" max="1" step="0.01" value="0.5"><span class="val" id="v-ar">50%</span></div>
+  <button class="panel-btn" id="a-epi">Usar pivô como epicentro do reveal</button>
+  <p class="note">O pivô é o centro da escala, rotação e do crop radial (esfera).</p>
+
   <h3>Animar Câmera</h3>
   <button class="panel-btn" id="a-orbit">▶ Órbita (turntable)</button>
   <div class="row"><label>Velocidade</label><input type="range" id="a-orbitspeed" min="-10" max="10" step="0.5" value="2"><span class="val" id="v-orbitspeed">2.0</span></div>
@@ -355,6 +368,8 @@ uniform float uBxReveal;
 uniform vec3 uBxRevealCenter;
 uniform float uBxRevealMax;
 uniform float uBxMono;
+uniform vec3 uBxAnchor;
+uniform float uBxCropR;
 float bxFade = 1.0;
 float bxHash(vec3 p){ return fract(sin(dot(p, vec3(127.1,311.7,74.7)))*43758.5453); }
 vec3 bruxosPos(vec3 p){
@@ -407,6 +422,9 @@ if (uBxDofOn > 0.5) {
 }
 `;
 const BX_REVEAL_GLSL = `splatCenter = bruxosPos(splatCenter);
+if (uBxCropR > 0.0 && length(splatCenter - uBxAnchor) > uBxCropR) {
+  gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return;
+}
 if (uBxReveal < 0.999) {
   float bxRd = length(splatCenter - uBxRevealCenter);
   float bxEdge = uBxReveal * uBxRevealMax;
@@ -459,7 +477,9 @@ function bxPatchShader(mesh) {
     uBxReveal:        { value: 1.0 },
     uBxRevealCenter:  { value: new THREE.Vector3(0, 0, 0) },
     uBxRevealMax:     { value: 10.0 },
-    uBxMono:          { value: 0 }
+    uBxMono:          { value: 0 },
+    uBxAnchor:        { value: new THREE.Vector3(0, 0, 0) },
+    uBxCropR:         { value: 0 }
   });
   mat.needsUpdate = true;
   return true;
@@ -483,7 +503,7 @@ let bbox = null;            // bounding box do .splat original
 // estado de animação
 const anim = { orbit: false, wobble: false, wobbleT: 0, dissolve: null, splatScale: 1, userScale: {x:1,y:1,z:1}, rotY: 0,
                waves: false, relight: false, smoke: null, smokeVal: 0, fxTime: 0,
-               light2: false, dof: false, reveal: null, revealVal: 1, pb: false };
+               light2: false, dof: false, reveal: null, revealVal: 1, pb: false, anchorCrop: false };
 let lastTime = performance.now();
 
 function showError(msg) {
@@ -519,6 +539,7 @@ async function loadScene(buffer, format, name) {
     antialiased: true
   });
   viewer.start(); // inicia já — com progressiveLoad a cena aparece enquanto carrega
+  applyFov();     // aplica o FOV/lente atual à câmera nova
   const blob = new Blob([buffer]);
   const url = URL.createObjectURL(blob);
   // .ksplat não suporta carregamento progressivo via blob em algumas versões
@@ -591,6 +612,15 @@ function syncFxUniforms() {
     }
   }
   set('uBxReveal', anim.revealVal);
+  // Anchor: crop radial (esfera em torno do pivô)
+  const ua = bxU('uBxAnchor');
+  if (ua) ua.value.copy(getAnchor());
+  if (anim.anchorCrop && bbox) {
+    const dx = bbox.max[0]-bbox.min[0], dy = bbox.max[1]-bbox.min[1], dz = bbox.max[2]-bbox.min[2];
+    set('uBxCropR', Math.sqrt(dx*dx + dy*dy + dz*dz) * 0.6 * parseFloat($('a-r').value));
+  } else {
+    set('uBxCropR', 0);
+  }
   // Pontos P&B (usa o point cloud mode nativo da lib + dessaturação)
   set('uBxMono', anim.pb ? 1 : 0);
   const pc = viewer?.splatMesh?.material?.uniforms?.pointCloudModeEnabled;
@@ -648,7 +678,14 @@ bindSlider('p-splatscale', 'v-splatscale', v => v.toFixed(2), v => {
   if (viewer?.splatMesh && !anim.dissolve) viewer.splatMesh.setSplatScale(v);
 });
 
-// --- distorcer / esticar ---
+// --- anchor / pivô (em coordenadas dos dados, mapeado no bounding box) ---
+function getAnchor() {
+  if (!bbox) return new THREE.Vector3(0, 0, 0);
+  const m = (k, id) => bbox.min[k] + (bbox.max[k] - bbox.min[k]) * parseFloat($(id).value);
+  return new THREE.Vector3(m(0, 'a-x'), m(1, 'a-y'), m(2, 'a-z'));
+}
+
+// --- distorcer / esticar (escala e rotação em torno do pivô) ---
 function applyTransforms() {
   if (!viewer?.splatMesh) return;
   const m = viewer.splatMesh;
@@ -660,6 +697,10 @@ function applyTransforms() {
   m.scale.set(anim.userScale.x * (1 + wob), anim.userScale.y * (1 - wob), anim.userScale.z * (1 + wob * 0.5));
   const twist = parseFloat($('p-twist').value) * Math.PI / 180;
   m.rotation.set(0, anim.rotY * Math.PI / 180, twist);
+  // compensa a posição para girar/escalar em torno do pivô: pos = P - R*S*P
+  const P = getAnchor();
+  const v = new THREE.Vector3(P.x * m.scale.x, P.y * m.scale.y, P.z * m.scale.z).applyEuler(m.rotation);
+  m.position.set(P.x - v.x, P.y - v.y, P.z - v.z);
 }
 bindSlider('p-sx', 'v-sx', v => v.toFixed(2), v => { anim.userScale.x = v; applyTransforms(); });
 bindSlider('p-sy', 'v-sy', v => v.toFixed(2), v => { anim.userScale.y = v; applyTransforms(); });
@@ -792,6 +833,39 @@ $('c-reset').addEventListener('click', async () => {
     try { await loadScene(currentBuffer, currentFormat, currentName); } catch(e){ showError(String(e)); }
     loading.classList.remove('visible');
   }
+});
+
+// --- câmera / lente (FOV) ---
+function applyFov() {
+  const fov = parseFloat($('cam-fov').value);
+  $('v-fov').textContent = fov.toFixed(0) + '°';
+  const mm = Math.round(12 / Math.tan(fov * Math.PI / 360));
+  $('v-mm').textContent = `Equivalente a ~${mm}mm (full frame)`;
+  if (viewer?.camera) {
+    viewer.camera.fov = fov;
+    viewer.camera.updateProjectionMatrix();
+  }
+}
+$('cam-fov').addEventListener('input', applyFov);
+
+// --- anchor / pivô ---
+bindSlider('a-x', 'v-ax', v => Math.round(v*100)+'%', () => { applyTransforms(); syncFxUniforms(); });
+bindSlider('a-y', 'v-ay', v => Math.round(v*100)+'%', () => { applyTransforms(); syncFxUniforms(); });
+bindSlider('a-z', 'v-az2', v => Math.round(v*100)+'%', () => { applyTransforms(); syncFxUniforms(); });
+bindSlider('a-r', 'v-ar', v => Math.round(v*100)+'%', () => syncFxUniforms());
+$('ac-toggle').addEventListener('click', () => {
+  anim.anchorCrop = !anim.anchorCrop;
+  $('ac-toggle').classList.toggle('on', anim.anchorCrop);
+  $('ac-toggle').textContent = anim.anchorCrop ? '⏸ Crop radial (ligado)' : '▶ Crop radial no pivô';
+  syncFxUniforms();
+});
+$('a-epi').addEventListener('click', () => {
+  // copia o pivô para o epicentro do reveal
+  ['x','y','z'].forEach(k => {
+    $('r-' + k).value = $('a-' + k).value;
+    $('v-r' + (k === 'y' ? 'y2' : k)).textContent = Math.round(parseFloat($('a-' + k).value)*100)+'%';
+  });
+  syncFxUniforms();
 });
 
 // --- animar câmera (órbita) ---

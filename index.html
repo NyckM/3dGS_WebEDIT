@@ -787,4 +787,34 @@ function record(durationMs, withOrbit) {
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     recorder = null;
     $('btn-rec').classList.remove('recording');
-    $
+    $('btn-rec').textContent = '⏺ Gravar MP4';
+    if (withOrbit && !anim.orbit && viewer?.controls) viewer.controls.autoRotate = false;
+  };
+
+  if (withOrbit && viewer?.controls) {
+    viewer.controls.autoRotate = true;
+    viewer.controls.autoRotateSpeed = parseFloat($('a-orbitspeed').value);
+  }
+  recorder.start();
+  $('btn-rec').classList.add('recording');
+  $('btn-rec').textContent = '⏹ Parar gravação';
+  if (durationMs) setTimeout(() => { if (recorder) recorder.stop(); }, durationMs);
+}
+
+$('btn-rec').addEventListener('click', () => record(null, false));            // manual start/stop
+$('rec-orbit').addEventListener('click', () => record(parseFloat($('rec-dur').value) * 1000, true)); // órbita automática
+
+// ===== ?url= =====
+const params = new URLSearchParams(location.search);
+if (params.has('url')) {
+  const u = params.get('url');
+  fetch(u).then(r => r.arrayBuffer()).then(buf => {
+    const fakeName = u.split('/').pop() || 'scene.splat';
+    return loadFile(new File([buf], fakeName));
+  }).catch(e => showError('Erro ao carregar URL: ' + e));
+}
+</script>
+</body>
+</html>
+<!-- Bruxos do VFX · 3DGS Viewer -->
+

@@ -224,14 +224,43 @@
   <div class="row"><label>Distância</label><input type="range" id="s-dist" min="0.5" max="10" step="0.1" value="3"><span class="val" id="v-sdist">3.0</span></div>
   <div class="row"><label>Duração</label><input type="range" id="s-dur" min="0.5" max="10" step="0.5" value="3"><span class="val" id="v-sdur">3.0s</span></div>
 
-  <h3>Relight</h3>
+  <h3>Relight (2 luzes + sombra)</h3>
   <button class="panel-btn" id="l-toggle">▶ Relight</button>
+  <div class="row"><label>Sombra</label><input type="range" id="l-shadow" min="0.3" max="5" step="0.1" value="1"><span class="val" id="v-lshadow">1.0</span></div>
+  <div class="row"><label>Ambiente</label><input type="range" id="l-amb" min="0" max="1" step="0.05" value="0.35"><span class="val" id="v-lamb">0.35</span></div>
+  <p class="note"><b>Luz 1</b></p>
   <div class="row"><label>Azimute</label><input type="range" id="l-az" min="-180" max="180" step="1" value="45"><span class="val" id="v-laz">45°</span></div>
   <div class="row"><label>Altura</label><input type="range" id="l-el" min="-90" max="90" step="1" value="30"><span class="val" id="v-lel">30°</span></div>
   <div class="row"><label>Intensidade</label><input type="range" id="l-str" min="0" max="3" step="0.05" value="1.2"><span class="val" id="v-lstr">1.20</span></div>
-  <div class="row"><label>Ambiente</label><input type="range" id="l-amb" min="0" max="1" step="0.05" value="0.35"><span class="val" id="v-lamb">0.35</span></div>
-  <div class="row"><label>Cor da luz</label><input type="color" id="l-color" value="#ffffff" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
-  <p class="note">Relight aproximado (sem normais reais — usa direção radial).</p>
+  <div class="row"><label>Cor</label><input type="color" id="l-color" value="#ffffff" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
+  <button class="panel-btn" id="l2-toggle">+ Luz 2 (desligada)</button>
+  <div class="row"><label>Azimute 2</label><input type="range" id="l2-az" min="-180" max="180" step="1" value="-120"><span class="val" id="v-l2az">-120°</span></div>
+  <div class="row"><label>Altura 2</label><input type="range" id="l2-el" min="-90" max="90" step="1" value="10"><span class="val" id="v-l2el">10°</span></div>
+  <div class="row"><label>Intens. 2</label><input type="range" id="l2-str" min="0" max="3" step="0.05" value="0.8"><span class="val" id="v-l2str">0.80</span></div>
+  <div class="row"><label>Cor 2</label><input type="color" id="l2-color" value="#aaccff" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
+  <p class="note">Relight aproximado (sem normais reais — usa direção radial). "Sombra" controla a dureza do sombreado.</p>
+
+  <h3>Desfoque de fundo (DoF)</h3>
+  <button class="panel-btn" id="d-toggle">▶ Desfoque</button>
+  <div class="row"><label>Foco (dist.)</label><input type="range" id="d-dist" min="0.1" max="20" step="0.1" value="3"><span class="val" id="v-ddist">3.0</span></div>
+  <div class="row"><label>Faixa nítida</label><input type="range" id="d-range" min="0.1" max="10" step="0.1" value="1.5"><span class="val" id="v-drange">1.5</span></div>
+  <div class="row"><label>Intensidade</label><input type="range" id="d-blur" min="0.5" max="12" step="0.5" value="6"><span class="val" id="v-dblur">6.0</span></div>
+  <p class="note">Mantém nítido o que está à distância de foco da câmera; o resto desfoca.</p>
+
+  <h3>Reveal (epicentro)</h3>
+  <div class="btn-pair">
+    <button class="panel-btn" id="r-play">▶ Revelar</button>
+    <button class="panel-btn" id="r-hide">◀ Esconder</button>
+  </div>
+  <div class="row"><label>Duração</label><input type="range" id="r-dur" min="0.5" max="10" step="0.5" value="3"><span class="val" id="v-rdur">3.0s</span></div>
+  <div class="row"><label>Epicentro X</label><input type="range" id="r-x" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-rx">50%</span></div>
+  <div class="row"><label>Epicentro Y</label><input type="range" id="r-y" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-ry2">50%</span></div>
+  <div class="row"><label>Epicentro Z</label><input type="range" id="r-z" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-rz">50%</span></div>
+  <p class="note">Os pontos aparecem do epicentro para as bordas.</p>
+
+  <h3>Pontos P&B</h3>
+  <button class="panel-btn" id="pb-toggle">▶ Modo pontos P&B</button>
+  <p class="note">Renderiza como nuvem de pontos em preto e branco. Use o slider "Tamanho" para o tamanho dos pontos.</p>
 
   <h3>Gravação</h3>
   <div class="row"><label>Duração</label><input type="range" id="rec-dur" min="2" max="30" step="1" value="8"><span class="val" id="v-recdur">8s</span></div>
@@ -249,9 +278,9 @@
 // ============================================================
 // EDITE AQUI: link do seu notebook no Colab.
 // Depois de subir o Bruxos_VFX_3DGS.ipynb no seu repo do GitHub,
-// troque SEUUSUARIO/SEU-REPO pelo caminho real.
+// (já apontando para nyckm/3dGS_WebEDIT)
 // ============================================================
-const COLAB_URL = "https://colab.research.google.com/github/SEUUSUARIO/SEU-REPO/blob/main/Bruxos_VFX_3DGS.ipynb";
+const COLAB_URL = "https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_3DGS.ipynb";
 document.getElementById('btn-colab').href = COLAB_URL;
 
 // ===== Logo Bruxos do VFX (embutida em base64) =====
@@ -295,6 +324,20 @@ uniform vec3 uBxLightDir;
 uniform float uBxLightStrength;
 uniform float uBxAmbient;
 uniform vec3 uBxLightColor;
+uniform float uBxLight2On;
+uniform vec3 uBxLight2Dir;
+uniform float uBxLight2Strength;
+uniform vec3 uBxLight2Color;
+uniform float uBxShadowHard;
+uniform float uBxDofOn;
+uniform float uBxFocusDist;
+uniform float uBxFocusRange;
+uniform float uBxBlurMax;
+uniform float uBxReveal;
+uniform vec3 uBxRevealCenter;
+uniform float uBxRevealMax;
+uniform float uBxMono;
+float bxFade = 1.0;
 float bxHash(vec3 p){ return fract(sin(dot(p, vec3(127.1,311.7,74.7)))*43758.5453); }
 vec3 bruxosPos(vec3 p){
   if (uBxWaveOn > 0.5) {
@@ -319,14 +362,40 @@ vec3 bruxosPos(vec3 p){
 const BX_COLOR_GLSL = `
 if (uBxLightOn > 0.5) {
   vec3 bxN = normalize(splatCenter - sceneCenter);
-  float bxLam = max(dot(bxN, -normalize(uBxLightDir)), 0.0);
-  vColor.rgb *= (vec3(uBxAmbient) + bxLam * uBxLightStrength * uBxLightColor);
+  float bxLam1 = pow(max(dot(bxN, -normalize(uBxLightDir)), 0.0), uBxShadowHard);
+  vec3 bxLight = vec3(uBxAmbient) + bxLam1 * uBxLightStrength * uBxLightColor;
+  if (uBxLight2On > 0.5) {
+    float bxLam2 = pow(max(dot(bxN, -normalize(uBxLight2Dir)), 0.0), uBxShadowHard);
+    bxLight += bxLam2 * uBxLight2Strength * uBxLight2Color;
+  }
+  vColor.rgb *= bxLight;
+}
+if (uBxMono > 0.5) {
+  vColor.rgb = vec3(dot(vColor.rgb, vec3(0.299, 0.587, 0.114)));
 }
 if (uBxSmoke > 0.001) {
   vColor.a *= (1.0 - uBxSmoke);
   vColor.rgb = mix(vColor.rgb, vec3(dot(vColor.rgb, vec3(0.3333))), uBxSmoke*0.6);
 }
+vColor.a *= bxFade;
 `;
+const BX_DOF_GLSL = `
+if (uBxDofOn > 0.5) {
+  float bxDepth = -viewCenter.z;
+  float bxCoc = clamp(abs(bxDepth - uBxFocusDist) / max(uBxFocusRange, 0.001) - 1.0, 0.0, uBxBlurMax);
+  basisVector1 *= (1.0 + bxCoc);
+  basisVector2 *= (1.0 + bxCoc);
+  vColor.a /= (1.0 + bxCoc * bxCoc);
+}
+`;
+const BX_REVEAL_GLSL = `splatCenter = bruxosPos(splatCenter);
+if (uBxReveal < 0.999) {
+  float bxRd = length(splatCenter - uBxRevealCenter);
+  float bxEdge = uBxReveal * uBxRevealMax;
+  if (bxRd > bxEdge) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; }
+  bxFade = 1.0 - smoothstep(bxEdge * 0.85, bxEdge, bxRd) * 0.7;
+}
+            `;
 
 function bxPatchShader(mesh) {
   const mat = mesh.material;
@@ -341,8 +410,11 @@ function bxPatchShader(mesh) {
     return false;
   }
   vs = vs.replace(aMain, BX_UNIFORMS_GLSL + '\n' + aMain);
-  vs = vs.replace(aView, 'splatCenter = bruxosPos(splatCenter);\n            ' + aView);
+  vs = vs.replace(aView, BX_REVEAL_GLSL + aView);
   vs = vs.replace(aColor, aColor + '\n' + BX_COLOR_GLSL);
+  // DoF: escala os vetores de base pela distância ao plano de foco
+  const aBasis = 'vec2 ndcOffset = vec2(vPosition.x * basisVector1 + vPosition.y * basisVector2)';
+  if (vs.includes(aBasis)) vs = vs.replace(aBasis, BX_DOF_GLSL + '\n            ' + aBasis);
   mat.vertexShader = vs;
   Object.assign(mat.uniforms, {
     uBxTime:          { value: 0 },
@@ -356,7 +428,20 @@ function bxPatchShader(mesh) {
     uBxLightDir:      { value: new THREE.Vector3(-0.5, -0.5, -0.7).normalize() },
     uBxLightStrength: { value: 1.2 },
     uBxAmbient:       { value: 0.35 },
-    uBxLightColor:    { value: new THREE.Color(1, 1, 1) }
+    uBxLightColor:    { value: new THREE.Color(1, 1, 1) },
+    uBxLight2On:      { value: 0 },
+    uBxLight2Dir:     { value: new THREE.Vector3(0.5, -0.5, 0.7).normalize() },
+    uBxLight2Strength:{ value: 0.8 },
+    uBxLight2Color:   { value: new THREE.Color(1, 1, 1) },
+    uBxShadowHard:    { value: 1.0 },
+    uBxDofOn:         { value: 0 },
+    uBxFocusDist:     { value: 3.0 },
+    uBxFocusRange:    { value: 1.5 },
+    uBxBlurMax:       { value: 6.0 },
+    uBxReveal:        { value: 1.0 },
+    uBxRevealCenter:  { value: new THREE.Vector3(0, 0, 0) },
+    uBxRevealMax:     { value: 10.0 },
+    uBxMono:          { value: 0 }
   });
   mat.needsUpdate = true;
   return true;
@@ -379,7 +464,8 @@ let bbox = null;            // bounding box do .splat original
 
 // estado de animação
 const anim = { orbit: false, wobble: false, wobbleT: 0, dissolve: null, splatScale: 1, userScale: {x:1,y:1,z:1}, rotY: 0,
-               waves: false, relight: false, smoke: null, smokeVal: 0, fxTime: 0 };
+               waves: false, relight: false, smoke: null, smokeVal: 0, fxTime: 0,
+               light2: false, dof: false, reveal: null, revealVal: 1, pb: false };
 let lastTime = performance.now();
 
 function showError(msg) {
@@ -454,13 +540,43 @@ function syncFxUniforms() {
   set('uBxLightStrength', parseFloat($('l-str').value));
   set('uBxAmbient', parseFloat($('l-amb').value));
   const lc = bxU('uBxLightColor'); if (lc) lc.value.set($('l-color').value);
-  const ld = bxU('uBxLightDir');
-  if (ld) {
-    const az = parseFloat($('l-az').value) * Math.PI / 180;
-    const el = parseFloat($('l-el').value) * Math.PI / 180;
+  const setDir = (uName, azId, elId) => {
+    const u = bxU(uName);
+    if (!u) return;
+    const az = parseFloat($(azId).value) * Math.PI / 180;
+    const el = parseFloat($(elId).value) * Math.PI / 180;
     // direção DA luz (de onde ela vem, apontando para a cena); y invertido (cameraUp = -Y)
-    ld.value.set(-Math.cos(el) * Math.sin(az), Math.sin(el), -Math.cos(el) * Math.cos(az)).normalize();
+    u.value.set(-Math.cos(el) * Math.sin(az), Math.sin(el), -Math.cos(el) * Math.cos(az)).normalize();
+  };
+  setDir('uBxLightDir', 'l-az', 'l-el');
+  setDir('uBxLight2Dir', 'l2-az', 'l2-el');
+  set('uBxShadowHard', parseFloat($('l-shadow').value));
+  set('uBxLight2On', anim.light2 ? 1 : 0);
+  set('uBxLight2Strength', parseFloat($('l2-str').value));
+  const l2c = bxU('uBxLight2Color'); if (l2c) l2c.value.set($('l2-color').value);
+  // DoF
+  set('uBxDofOn', anim.dof ? 1 : 0);
+  set('uBxFocusDist', parseFloat($('d-dist').value));
+  set('uBxFocusRange', parseFloat($('d-range').value));
+  set('uBxBlurMax', parseFloat($('d-blur').value));
+  // Reveal: epicentro mapeado no bounding box (se houver)
+  const rc = bxU('uBxRevealCenter'), rm = bxU('uBxRevealMax');
+  if (rc && rm) {
+    if (bbox) {
+      const map = (k, id) => bbox.min[k] + (bbox.max[k] - bbox.min[k]) * parseFloat($(id).value);
+      rc.value.set(map(0, 'r-x'), map(1, 'r-y'), map(2, 'r-z'));
+      const dx = bbox.max[0]-bbox.min[0], dy = bbox.max[1]-bbox.min[1], dz = bbox.max[2]-bbox.min[2];
+      rm.value = Math.sqrt(dx*dx + dy*dy + dz*dz) * 1.05;
+    } else {
+      rc.value.set(0, 0, 0);
+      rm.value = 15;
+    }
   }
+  set('uBxReveal', anim.revealVal);
+  // Pontos P&B (usa o point cloud mode nativo da lib + dessaturação)
+  set('uBxMono', anim.pb ? 1 : 0);
+  const pc = viewer?.splatMesh?.material?.uniforms?.pointCloudModeEnabled;
+  if (pc) pc.value = anim.pb ? 1 : 0;
 }
 
 async function loadFile(file) {
@@ -726,6 +842,52 @@ $('l-toggle').addEventListener('click', () => {
   $('l-toggle').textContent = anim.relight ? '⏸ Relight (ligado)' : '▶ Relight';
   syncFxUniforms();
 });
+bindSlider('l-shadow', 'v-lshadow', v => v.toFixed(1), () => syncFxUniforms());
+
+// --- luz 2 ---
+['l2-az','l2-el','l2-str'].forEach((id, i) => {
+  const vids = ['v-l2az','v-l2el','v-l2str'];
+  const fmts = [v => v.toFixed(0)+'°', v => v.toFixed(0)+'°', v => v.toFixed(2)];
+  bindSlider(id, vids[i], fmts[i], () => syncFxUniforms());
+});
+$('l2-color').addEventListener('input', () => syncFxUniforms());
+$('l2-toggle').addEventListener('click', () => {
+  anim.light2 = !anim.light2;
+  $('l2-toggle').classList.toggle('on', anim.light2);
+  $('l2-toggle').textContent = anim.light2 ? '− Luz 2 (ligada)' : '+ Luz 2 (desligada)';
+  syncFxUniforms();
+});
+
+// --- desfoque de fundo (DoF) ---
+bindSlider('d-dist', 'v-ddist', v => v.toFixed(1), () => syncFxUniforms());
+bindSlider('d-range', 'v-drange', v => v.toFixed(1), () => syncFxUniforms());
+bindSlider('d-blur', 'v-dblur', v => v.toFixed(1), () => syncFxUniforms());
+$('d-toggle').addEventListener('click', () => {
+  anim.dof = !anim.dof;
+  $('d-toggle').classList.toggle('on', anim.dof);
+  $('d-toggle').textContent = anim.dof ? '⏸ Desfoque (ligado)' : '▶ Desfoque';
+  syncFxUniforms();
+});
+
+// --- reveal por epicentro ---
+bindSlider('r-dur', 'v-rdur', v => v.toFixed(1) + 's', () => {});
+bindSlider('r-x', 'v-rx', v => Math.round(v*100)+'%', () => syncFxUniforms());
+bindSlider('r-y', 'v-ry2', v => Math.round(v*100)+'%', () => syncFxUniforms());
+bindSlider('r-z', 'v-rz', v => Math.round(v*100)+'%', () => syncFxUniforms());
+function startReveal(dir) {
+  if (dir === 'in' && anim.revealVal >= 0.999) anim.revealVal = 0; // revelar do zero
+  anim.reveal = { dir, start: performance.now(), dur: parseFloat($('r-dur').value) * 1000, from: anim.revealVal };
+}
+$('r-play').addEventListener('click', () => startReveal('in'));
+$('r-hide').addEventListener('click', () => startReveal('out'));
+
+// --- pontos P&B ---
+$('pb-toggle').addEventListener('click', () => {
+  anim.pb = !anim.pb;
+  $('pb-toggle').classList.toggle('on', anim.pb);
+  $('pb-toggle').textContent = anim.pb ? '⏸ Modo pontos P&B (ligado)' : '▶ Modo pontos P&B';
+  syncFxUniforms();
+});
 
 // --- loop de animação próprio (wobble + dissolve + efeitos GPU) ---
 function tick(now) {
@@ -752,6 +914,16 @@ function tick(now) {
     if (t >= 1) anim.smoke = null;
   }
   const uS = bxU('uBxSmoke'); if (uS) uS.value = anim.smokeVal;
+  // animação do reveal (epicentro → bordas)
+  if (anim.reveal) {
+    const r = anim.reveal;
+    let t = Math.min(1, (now - r.start) / r.dur);
+    const ease = t*t*(3-2*t);
+    const target = r.dir === 'in' ? 1 : 0;
+    anim.revealVal = r.from + (target - r.from) * ease;
+    if (t >= 1) anim.reveal = null;
+  }
+  const uR = bxU('uBxReveal'); if (uR) uR.value = anim.revealVal;
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
@@ -787,34 +959,4 @@ function record(durationMs, withOrbit) {
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     recorder = null;
     $('btn-rec').classList.remove('recording');
-    $('btn-rec').textContent = '⏺ Gravar MP4';
-    if (withOrbit && !anim.orbit && viewer?.controls) viewer.controls.autoRotate = false;
-  };
-
-  if (withOrbit && viewer?.controls) {
-    viewer.controls.autoRotate = true;
-    viewer.controls.autoRotateSpeed = parseFloat($('a-orbitspeed').value);
-  }
-  recorder.start();
-  $('btn-rec').classList.add('recording');
-  $('btn-rec').textContent = '⏹ Parar gravação';
-  if (durationMs) setTimeout(() => { if (recorder) recorder.stop(); }, durationMs);
-}
-
-$('btn-rec').addEventListener('click', () => record(null, false));            // manual start/stop
-$('rec-orbit').addEventListener('click', () => record(parseFloat($('rec-dur').value) * 1000, true)); // órbita automática
-
-// ===== ?url= =====
-const params = new URLSearchParams(location.search);
-if (params.has('url')) {
-  const u = params.get('url');
-  fetch(u).then(r => r.arrayBuffer()).then(buf => {
-    const fakeName = u.split('/').pop() || 'scene.splat';
-    return loadFile(new File([buf], fakeName));
-  }).catch(e => showError('Erro ao carregar URL: ' + e));
-}
-</script>
-</body>
-</html>
-<!-- Bruxos do VFX · 3DGS Viewer -->
-
+    $

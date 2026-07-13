@@ -307,36 +307,6 @@
   <div class="row"><label>Epicentro Z</label><input type="range" id="r-z" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-rz">50%</span></div>
   <p class="note">Os pontos aparecem do epicentro para as bordas.</p>
 
-  <h3>Color Grading (LUT)</h3>
-  <button class="panel-btn" id="cg-toggle">▶ Grading</button>
-  <div class="row"><label>Exposição</label><input type="range" id="cg-exp" min="0.2" max="2.5" step="0.02" value="1"><span class="val" id="v-cgexp">1.00</span></div>
-  <div class="row"><label>Contraste</label><input type="range" id="cg-con" min="0.5" max="2" step="0.02" value="1"><span class="val" id="v-cgcon">1.00</span></div>
-  <div class="row"><label>Saturação</label><input type="range" id="cg-sat" min="0" max="2" step="0.02" value="1"><span class="val" id="v-cgsat">1.00</span></div>
-  <div class="row"><label>Temperatura</label><input type="range" id="cg-temp" min="-0.5" max="0.5" step="0.01" value="0"><span class="val" id="v-cgtemp">0.00</span></div>
-  <div class="row"><label>Tint</label><input type="range" id="cg-tint" min="-0.5" max="0.5" step="0.01" value="0"><span class="val" id="v-cgtint">0.00</span></div>
-  <div class="btn-pair">
-    <button class="panel-btn" id="cg-cine">🎬 Cine</button>
-    <button class="panel-btn" id="cg-reset">Resetar</button>
-  </div>
-
-  <h3>Paint (pintar no pivô)</h3>
-  <button class="panel-btn" id="pt-toggle">▶ Paint</button>
-  <div class="row"><label>Cor</label><input type="color" id="pt-color" value="#9933b3" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
-  <div class="row"><label>Raio</label><input type="range" id="pt-r" min="0.05" max="1" step="0.01" value="0.4"><span class="val" id="v-ptr">40%</span></div>
-  <div class="row"><label>Força</label><input type="range" id="pt-str" min="0" max="1" step="0.05" value="0.8"><span class="val" id="v-ptstr">0.80</span></div>
-  <p class="note">Pinta os splats dentro da esfera do pivô. Mova o pivô (Anchor) para pintar outras áreas.</p>
-
-  <h3>Weather (clima)</h3>
-  <button class="panel-btn" id="fog-toggle">▶ Névoa</button>
-  <div class="row"><label>Cor</label><input type="color" id="fog-color" value="#b3bfd9" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
-  <div class="row"><label>Início</label><input type="range" id="fog-near" min="0" max="15" step="0.1" value="2"><span class="val" id="v-fognear">2.0</span></div>
-  <div class="row"><label>Fim</label><input type="range" id="fog-far" min="1" max="30" step="0.5" value="12"><span class="val" id="v-fogfar">12</span></div>
-  <div class="btn-pair">
-    <button class="panel-btn" id="wx-snow">❄ Neve</button>
-    <button class="panel-btn" id="wx-rain">🌧 Chuva</button>
-  </div>
-  <div class="row"><label>Quantidade</label><input type="range" id="wx-amt" min="500" max="12000" step="500" value="4000"><span class="val" id="v-wxamt">4k</span></div>
-
   <h3>Pontos P&B</h3>
   <button class="panel-btn" id="pb-toggle">▶ Modo pontos P&B</button>
   <p class="note">Renderiza como nuvem de pontos em preto e branco. Use o slider "Tamanho" para o tamanho dos pontos.</p>
@@ -606,20 +576,6 @@ uniform float uBxRevealMax;
 uniform float uBxMono;
 uniform vec3 uBxAnchor;
 uniform float uBxCropR;
-uniform float uBxGradeOn;
-uniform float uBxExposure;
-uniform float uBxContrast;
-uniform float uBxSaturation;
-uniform float uBxTemp;
-uniform float uBxTint;
-uniform float uBxPaintOn;
-uniform vec3 uBxPaintColor;
-uniform float uBxPaintR;
-uniform float uBxPaintStrength;
-uniform float uBxFogOn;
-uniform vec3 uBxFogColor;
-uniform float uBxFogNear;
-uniform float uBxFogFar;
 uniform float uBxFxAreaOn;
 uniform float uBxFxAreaR;
 uniform float uBxTwistOn;
@@ -696,28 +652,6 @@ if (uBxLightOn > 0.5) {
     bxLight += bxLam2 * uBxLight2Strength * uBxLight2Color;
   }
   vColor.rgb *= bxLight;
-}
-// Paint: pinta uma cor dentro da esfera do pivô (borda suave)
-if (uBxPaintOn > 0.5) {
-  float pd = length(splatCenter - uBxAnchor);
-  float pm = 1.0 - smoothstep(uBxPaintR * 0.7, uBxPaintR, pd);
-  vColor.rgb = mix(vColor.rgb, uBxPaintColor, pm * uBxPaintStrength);
-}
-// Color grading (estilo LUT): exposição, temperatura, tint, contraste, saturação
-if (uBxGradeOn > 0.5) {
-  vec3 c = vColor.rgb * uBxExposure;
-  c.r *= (1.0 + uBxTemp); c.b *= (1.0 - uBxTemp);
-  c.g *= (1.0 + uBxTint);
-  c = (c - 0.5) * uBxContrast + 0.5;
-  float lg = dot(c, vec3(0.299, 0.587, 0.114));
-  c = mix(vec3(lg), c, uBxSaturation);
-  vColor.rgb = clamp(c, 0.0, 1.0);
-}
-// Weather: névoa atmosférica por profundidade
-if (uBxFogOn > 0.5) {
-  float fz = -viewCenter.z;
-  float ff = clamp((fz - uBxFogNear) / max(uBxFogFar - uBxFogNear, 0.001), 0.0, 1.0);
-  vColor.rgb = mix(vColor.rgb, uBxFogColor, ff);
 }
 if (uBxMono > 0.5) {
   vColor.rgb = vec3(dot(vColor.rgb, vec3(0.299, 0.587, 0.114)));
@@ -807,20 +741,6 @@ function bxPatchShader(mesh) {
     uBxMono:          { value: 0 },
     uBxAnchor:        { value: new THREE.Vector3(0, 0, 0) },
     uBxCropR:         { value: 0 },
-    uBxGradeOn:       { value: 0 },
-    uBxExposure:      { value: 1.0 },
-    uBxContrast:      { value: 1.0 },
-    uBxSaturation:    { value: 1.0 },
-    uBxTemp:          { value: 0.0 },
-    uBxTint:          { value: 0.0 },
-    uBxPaintOn:       { value: 0 },
-    uBxPaintColor:    { value: new THREE.Color(0.6, 0.2, 0.7) },
-    uBxPaintR:        { value: 1.0 },
-    uBxPaintStrength: { value: 0.8 },
-    uBxFogOn:         { value: 0 },
-    uBxFogColor:      { value: new THREE.Color(0.7, 0.75, 0.85) },
-    uBxFogNear:       { value: 2.0 },
-    uBxFogFar:        { value: 12.0 },
     uBxFxAreaOn:      { value: 0 },
     uBxFxAreaR:       { value: 1.0 },
     uBxTwistOn:       { value: 0 },
@@ -862,8 +782,7 @@ const anim = { orbit: false, wobble: false, wobbleT: 0, dissolve: null, splatSca
                waves: false, relight: false, smoke: null, smokeVal: 0, fxTime: 0,
                light2: false, dof: false, reveal: null, revealVal: 1, pb: false, anchorCrop: false,
                twistFx: false, bendFx: false, taperFx: false, fxArea: false,
-               timeSlice: false, sliceInvert: false, sliceAnim: 0,
-               grade: false, paint: false, fog: false, weather: null };
+               timeSlice: false, sliceInvert: false, sliceAnim: 0 };
 let lastTime = performance.now();
 
 function showError(msg) {
@@ -903,7 +822,6 @@ async function loadSplat4dFile(file) {
 }
 
 function disposeViewer() {
-  if (typeof clearWeather === 'function') clearWeather();
   if (viewer) {
     try { viewer.renderer?.dispose(); } catch(e){}
     try { viewer.dispose(); } catch(e){}
@@ -1077,26 +995,6 @@ function syncFxUniforms() {
   set('uBxSliceAxis', parseFloat($('ts-axis').value));
   set('uBxSliceInvert', anim.sliceInvert ? 1 : 0);
   set('uBxSliceShift', parseFloat($('ts-shift').value) + anim.sliceAnim);
-  // Color grading
-  set('uBxGradeOn', anim.grade ? 1 : 0);
-  set('uBxExposure', parseFloat($('cg-exp').value));
-  set('uBxContrast', parseFloat($('cg-con').value));
-  set('uBxSaturation', parseFloat($('cg-sat').value));
-  set('uBxTemp', parseFloat($('cg-temp').value));
-  set('uBxTint', parseFloat($('cg-tint').value));
-  // Paint
-  set('uBxPaintOn', anim.paint ? 1 : 0);
-  const pc2 = bxU('uBxPaintColor'); if (pc2) pc2.value.set($('pt-color').value);
-  set('uBxPaintStrength', parseFloat($('pt-str').value));
-  if (bbox) {
-    const dx = bbox.max[0]-bbox.min[0], dy = bbox.max[1]-bbox.min[1], dz = bbox.max[2]-bbox.min[2];
-    set('uBxPaintR', Math.sqrt(dx*dx + dy*dy + dz*dz) * 0.6 * parseFloat($('pt-r').value));
-  }
-  // Weather: névoa
-  set('uBxFogOn', anim.fog ? 1 : 0);
-  const fc = bxU('uBxFogColor'); if (fc) fc.value.set($('fog-color').value);
-  set('uBxFogNear', parseFloat($('fog-near').value));
-  set('uBxFogFar', parseFloat($('fog-far').value));
   // Pontos P&B (usa o point cloud mode nativo da lib + dessaturação)
   set('uBxMono', anim.pb ? 1 : 0);
   const pc = viewer?.splatMesh?.material?.uniforms?.pointCloudModeEnabled;
@@ -1578,118 +1476,6 @@ $('ts-toggle').addEventListener('click', () => {
   syncFxUniforms();
 });
 
-// --- color grading ---
-['cg-exp','cg-con','cg-sat','cg-temp','cg-tint'].forEach((id,i) => {
-  const vids = ['v-cgexp','v-cgcon','v-cgsat','v-cgtemp','v-cgtint'];
-  bindSlider(id, vids[i], v => v.toFixed(2), () => syncFxUniforms());
-});
-$('cg-toggle').addEventListener('click', () => {
-  anim.grade = !anim.grade;
-  $('cg-toggle').classList.toggle('on', anim.grade);
-  $('cg-toggle').textContent = anim.grade ? '⏸ Grading (ligado)' : '▶ Grading';
-  syncFxUniforms();
-});
-$('cg-cine').addEventListener('click', () => {
-  // preset cinematográfico: leve teal-orange, contraste, dessaturado
-  $('cg-exp').value = 1.05; $('cg-con').value = 1.2; $('cg-sat').value = 0.85;
-  $('cg-temp').value = 0.08; $('cg-tint').value = -0.03;
-  ['v-cgexp','v-cgcon','v-cgsat','v-cgtemp','v-cgtint'].forEach((v,i) =>
-    $(v).textContent = [1.05,1.2,0.85,0.08,-0.03][i].toFixed(2));
-  if (!anim.grade) $('cg-toggle').click(); else syncFxUniforms();
-});
-$('cg-reset').addEventListener('click', () => {
-  const d = { 'cg-exp':1,'cg-con':1,'cg-sat':1,'cg-temp':0,'cg-tint':0 };
-  const vv = { 'v-cgexp':1,'v-cgcon':1,'v-cgsat':1,'v-cgtemp':0,'v-cgtint':0 };
-  for (const k in d) $(k).value = d[k];
-  for (const k in vv) $(k).textContent = vv[k].toFixed(2);
-  syncFxUniforms();
-});
-
-// --- paint ---
-bindSlider('pt-r', 'v-ptr', v => Math.round(v*100)+'%', () => syncFxUniforms());
-bindSlider('pt-str', 'v-ptstr', v => v.toFixed(2), () => syncFxUniforms());
-$('pt-color').addEventListener('input', () => syncFxUniforms());
-$('pt-toggle').addEventListener('click', () => {
-  anim.paint = !anim.paint;
-  $('pt-toggle').classList.toggle('on', anim.paint);
-  $('pt-toggle').textContent = anim.paint ? '⏸ Paint (ligado)' : '▶ Paint';
-  syncFxUniforms();
-});
-
-// --- weather: névoa ---
-bindSlider('fog-near', 'v-fognear', v => v.toFixed(1), () => syncFxUniforms());
-bindSlider('fog-far', 'v-fogfar', v => v.toFixed(0), () => syncFxUniforms());
-$('fog-color').addEventListener('input', () => syncFxUniforms());
-$('fog-toggle').addEventListener('click', () => {
-  anim.fog = !anim.fog;
-  $('fog-toggle').classList.toggle('on', anim.fog);
-  $('fog-toggle').textContent = anim.fog ? '⏸ Névoa (ligada)' : '▶ Névoa';
-  syncFxUniforms();
-});
-
-// --- weather: partículas (neve/chuva) ---
-let weatherPts = null;
-bindSlider('wx-amt', 'v-wxamt', v => (v/1000)+'k', () => { if (anim.weather) startWeather(anim.weather); });
-function clearWeather() {
-  if (weatherPts && viewer?.threeScene) viewer.threeScene.remove(weatherPts);
-  if (weatherPts) { weatherPts.geometry.dispose(); weatherPts.material.dispose(); }
-  weatherPts = null;
-}
-function startWeather(kind) {
-  clearWeather();
-  anim.weather = kind;
-  if (!viewer) return;
-  const scene = viewer.threeScene || viewer.scene;
-  if (!scene) return;
-  const N = parseInt($('wx-amt').value);
-  let ext = 8, cx = 0, cy = 0, cz = 0;
-  if (bbox) {
-    ext = Math.max(bbox.max[0]-bbox.min[0], bbox.max[1]-bbox.min[1], bbox.max[2]-bbox.min[2]) * 1.3 || 8;
-    cx = (bbox.min[0]+bbox.max[0])/2; cy = (bbox.min[1]+bbox.max[1])/2; cz = (bbox.min[2]+bbox.max[2])/2;
-  }
-  const pos = new Float32Array(N * 3);
-  for (let i = 0; i < N; i++) {
-    pos[i*3]   = cx + (Math.random()-0.5) * ext;
-    pos[i*3+1] = cy + (Math.random()-0.5) * ext;
-    pos[i*3+2] = cz + (Math.random()-0.5) * ext;
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const snow = kind === 'snow';
-  const mat = new THREE.PointsMaterial({
-    color: snow ? 0xffffff : 0x99bbdd,
-    size: snow ? ext*0.006 : ext*0.004,
-    transparent: true, opacity: snow ? 0.9 : 0.5, depthWrite: false
-  });
-  weatherPts = new THREE.Points(geo, mat);
-  weatherPts.userData = { ext, cx, cy, cz, snow, speed: snow ? 0.4 : 2.2 };
-  scene.add(weatherPts);
-}
-function tickWeather(dt) {
-  if (!weatherPts) return;
-  const u = weatherPts.userData;
-  const p = weatherPts.geometry.attributes.position.array;
-  const drop = u.speed * dt * (u.ext * 0.15);
-  for (let i = 0; i < p.length; i += 3) {
-    p[i+1] += drop; // cameraUp = -Y, então +Y "cai" na tela
-    if (u.snow) p[i] += Math.sin((p[i+1]+i) * 2) * u.ext * 0.0006;
-    if (p[i+1] > u.cy + u.ext/2) p[i+1] = u.cy - u.ext/2;
-  }
-  weatherPts.geometry.attributes.position.needsUpdate = true;
-}
-$('wx-snow').addEventListener('click', () => {
-  const on = anim.weather === 'snow';
-  if (on) { clearWeather(); anim.weather = null; $('wx-snow').classList.remove('on'); $('wx-snow').textContent = '❄ Neve'; }
-  else { startWeather('snow'); $('wx-snow').classList.add('on'); $('wx-rain').classList.remove('on');
-         $('wx-snow').textContent = '❄ Neve (ligada)'; $('wx-rain').textContent = '🌧 Chuva'; }
-});
-$('wx-rain').addEventListener('click', () => {
-  const on = anim.weather === 'rain';
-  if (on) { clearWeather(); anim.weather = null; $('wx-rain').classList.remove('on'); $('wx-rain').textContent = '🌧 Chuva'; }
-  else { startWeather('rain'); $('wx-rain').classList.add('on'); $('wx-snow').classList.remove('on');
-         $('wx-rain').textContent = '🌧 Chuva (ligada)'; $('wx-snow').textContent = '❄ Neve'; }
-});
-
 // --- pontos P&B ---
 $('pb-toggle').addEventListener('click', () => {
   anim.pb = !anim.pb;
@@ -1733,7 +1519,6 @@ function tick(now) {
     if (t >= 1) anim.reveal = null;
   }
   const uR = bxU('uBxReveal'); if (uR) uR.value = anim.revealVal;
-  tickWeather(dt); // partículas de neve/chuva
   // playback da sequência 4DGS
   if (seq && seq.playing) {
     if (anim.timeSlice) {

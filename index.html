@@ -412,7 +412,7 @@ import * as THREE from 'three';
 // Baixa o código da lib, troca a constante e importa via blob.
 // Se qualquer coisa falhar, cai na lib original (limite 32).
 // ============================================================
-const MAX_FRAMES = 64;
+const MAX_FRAMES = 128;  // teto de cenas na lib (frames 4D)
 const GS_CDN = 'https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.js';
 let GaussianSplats3D;
 let maxFramesReal = 32;

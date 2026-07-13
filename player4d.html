@@ -45,8 +45,12 @@
   <span class="title"><span class="b">Bruxos</span> do <span class="v">VFX</span></span>
   <span class="tag">PLAYER 4D · STREAMING</span>
   <span class="spacer"></span>
+  <input id="scene-url" type="text" placeholder="URL de um .splat4d…"
+         style="background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); color:#eee;
+                border-radius:999px; padding:6px 14px; font-size:.78rem; width:min(320px,34vw); outline:none;">
+  <a href="#" id="scene-go" title="Carregar cena">Carregar</a>
   <a id="open-viewer" href="index.html">← Viewer 3DGS</a>
-  <a id="open-full" href="#" target="_blank" rel="noopener">Abrir em tela cheia ↗</a>
+  <a id="open-full" href="#" target="_blank" rel="noopener">Tela cheia ↗</a>
 </div>
 
 <!-- fallback caso o embed seja bloqueado -->
@@ -58,15 +62,36 @@
 <iframe id="frame" allow="fullscreen; xr-spatial-tracking" allowfullscreen></iframe>
 
 <script>
+  // O player real fica em /demo/ (a raiz do site deles é só a página do projeto).
+  // embed=1 abre no modo limpo, ideal para iframe.
+  const PLAYER_BASE = 'https://adamraudonis.github.io/splats4D/demo/';
   // arquivo padrão: cena.splat4d na raiz deste site.
   // Pode trocar via URL: player4d.html?file=https://.../outra_cena.splat4d
   const DEFAULT_FILE = new URL('cena.splat4d', location.href).href;
-  const file = new URLSearchParams(location.search).get('file') || DEFAULT_FILE;
-  const playerUrl = 'https://adamraudonis.github.io/splats4D/?file=' + encodeURIComponent(file);
 
-  document.getElementById('frame').src = playerUrl;
-  document.getElementById('open-full').href = playerUrl;
-  document.getElementById('open-direct').href = playerUrl;
+  function buildUrl(file) {
+    return PLAYER_BASE + '?embed=1&file=' + encodeURIComponent(file);
+  }
+  function loadScene(file) {
+    const url = buildUrl(file);
+    document.getElementById('frame').src = url;
+    document.getElementById('open-full').href = url;
+    document.getElementById('open-direct').href = url;
+    document.getElementById('scene-url').value = file;
+    history.replaceState(null, '', 'player4d.html?file=' + encodeURIComponent(file));
+  }
+
+  const inicial = new URLSearchParams(location.search).get('file') || DEFAULT_FILE;
+  loadScene(inicial);
+
+  document.getElementById('scene-go').addEventListener('click', (e) => {
+    e.preventDefault();
+    const v = document.getElementById('scene-url').value.trim();
+    if (v) loadScene(v);
+  });
+  document.getElementById('scene-url').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { const v = e.target.value.trim(); if (v) loadScene(v); }
+  });
 
   // esconde o fallback quando o iframe carregar
   document.getElementById('frame').addEventListener('load', () => {

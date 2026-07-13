@@ -24,27 +24,6 @@ Viewer e editor de **3D Gaussian Splatting** no navegador + pipeline gratuito pa
 - Gravação de vídeo do canvas (MP4 no Chrome/Edge, WebM nos demais)
 - Carregar cena por URL: `index.html?url=https://.../cena.splat`
 
-## 🚀 Como publicar (grátis, GitHub Pages)
-
-1. Crie um repositório público no GitHub e suba `index.html` e `Bruxos_VFX_3DGS.ipynb`
-2. Vá em **Settings → Pages**, selecione branch `main` e pasta `/ (root)`, clique **Save**
-3. Em 1-2 minutos o site estará em `https://nyckm.github.io/3dGS_WebEDIT/`
-
-## 🔗 Conectar o botão do Colab
-
-O viewer tem o botão **"🎬 Não tem um splat? Crie a partir de um vídeo"** na tela inicial. Para ativá-lo:
-
-1. Abra o `index.html` e procure por `COLAB_URL` (tem um comentário `EDITE AQUI`)
-2. Troque `nyckm/3dGS_WebEDIT` pelo caminho real do seu repositório:
-
-```js
-const COLAB_URL = "https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_3DGS.ipynb";
-```
-
-3. No notebook (`Bruxos_VFX_3DGS.ipynb`), edite a última célula com o link do seu viewer
-
-Pronto: quem clicar no botão abre o Colab, roda o pipeline na GPU gratuita do Google e baixa o `.ply` para abrir no viewer.
-
 ## 🎥 Como criar um splat a partir de vídeo
 
 1. Grave 30s-2min orbitando o objeto/cena devagar (boa luz, sem borrão)

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bruxos do VFX — Player 4D</title>
+<style>
+  :root { --roxo: #7b2d8e; --roxo-claro: #b064c4; --verde: #96c93d; --bg: #0d0a12; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; }
+
+  #bar {
+    position: fixed; top: 0; left: 0; right: 0; height: 46px; z-index: 10;
+    display: flex; align-items: center; gap: 12px; padding: 0 16px;
+    background: rgba(13,10,18,.92); border-bottom: 1px solid rgba(255,255,255,.1);
+  }
+  #bar .title { font-weight: 700; font-size: .95rem; white-space: nowrap; }
+  #bar .title .b { color: var(--verde); }
+  #bar .title .v { color: var(--roxo-claro); }
+  #bar .tag { font-size: .7rem; color: #888; letter-spacing: 2px; }
+  #bar .spacer { flex: 1; }
+  #bar a {
+    color: #eee; text-decoration: none; font-size: .8rem;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+    padding: 6px 14px; border-radius: 999px; white-space: nowrap;
+  }
+  #bar a:hover { background: rgba(150,201,61,.25); border-color: var(--verde); }
+
+  #frame { position: fixed; top: 46px; left: 0; right: 0; bottom: 0; width: 100%; height: calc(100% - 46px); border: 0; background: #000; }
+
+  #fallback {
+    position: fixed; top: 46px; left: 0; right: 0; bottom: 0; z-index: 5;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    text-align: center; padding: 24px; color: #bbb;
+  }
+  #fallback .btn {
+    background: linear-gradient(135deg, var(--roxo), #9b3db0); color: #fff; text-decoration: none;
+    padding: 12px 28px; border-radius: 999px; font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <span class="title"><span class="b">Bruxos</span> do <span class="v">VFX</span></span>
+  <span class="tag">PLAYER 4D · STREAMING</span>
+  <span class="spacer"></span>
+  <a id="open-viewer" href="index.html">← Viewer 3DGS</a>
+  <a id="open-full" href="#" target="_blank" rel="noopener">Abrir em tela cheia ↗</a>
+</div>
+
+<!-- fallback caso o embed seja bloqueado -->
+<div id="fallback">
+  <p>Carregando o player 4D…<br>Se não aparecer em alguns segundos, o navegador bloqueou o embed.</p>
+  <a class="btn" id="open-direct" href="#" target="_blank" rel="noopener">Abrir o player diretamente</a>
+</div>
+
+<iframe id="frame" allow="fullscreen; xr-spatial-tracking" allowfullscreen></iframe>
+
+<script>
+  // arquivo padrão: cena.splat4d na raiz deste site.
+  // Pode trocar via URL: player4d.html?file=https://.../outra_cena.splat4d
+  const DEFAULT_FILE = new URL('cena.splat4d', location.href).href;
+  const file = new URLSearchParams(location.search).get('file') || DEFAULT_FILE;
+  const playerUrl = 'https://adamraudonis.github.io/splats4D/?file=' + encodeURIComponent(file);
+
+  document.getElementById('frame').src = playerUrl;
+  document.getElementById('open-full').href = playerUrl;
+  document.getElementById('open-direct').href = playerUrl;
+
+  // esconde o fallback quando o iframe carregar
+  document.getElementById('frame').addEventListener('load', () => {
+    document.getElementById('fallback').style.display = 'none';
+  });
+</script>
+</body>
+</html>

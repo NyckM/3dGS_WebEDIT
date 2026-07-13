@@ -165,11 +165,11 @@
     <a class="btn ghost" id="btn-colab" href="#" target="_blank" rel="noopener">🎬 Criar splat a partir de um vídeo</a>
     <a class="btn ghost" id="btn-sharp" href="#" target="_blank" rel="noopener">🖼️ Criar splat a partir de uma foto</a>
     <a class="btn ghost" id="btn-4dgs" href="#" target="_blank" rel="noopener">🎞️ Criar sequência 4D a partir de um vídeo</a>
-  <a class="btn ghost" id="btn-player4d" href="#" target="_blank" rel="noopener">▶ Player 4D em tempo real (.splat4d)</a>
+  <a class="btn ghost" id="btn-player4d" href="#" target="_blank" rel="noopener">▶ Player 4D externo em tempo real (streaming)</a>
   </div>
-  <p class="formats">Arraste para cá ou importe — <b>.ply</b> · <b>.splat</b> · <b>.ksplat</b></p>
-  <input type="file" id="file-input" accept=".ply,.splat,.ksplat" multiple hidden>
-  <p class="formats">Selecione <b>vários .ply</b> de uma vez para importar uma sequência 4D ▶</p>
+  <p class="formats">Arraste para cá ou importe — <b>.ply</b> · <b>.splat</b> · <b>.ksplat</b> · <b>.splat4d</b> (4D)</p>
+  <input type="file" id="file-input" accept=".ply,.splat,.ksplat,.splat4d" multiple hidden>
+  <p class="formats">Importe um <b>.splat4d</b> (4D com efeitos) ou vários <b>.ply</b> de uma vez ▶</p>
 </div>
 
 <!-- ===== TOPBAR ===== -->
@@ -401,7 +401,8 @@ setTimeout(function () {
 {
   "imports": {
     "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "@mkkellogg/gaussian-splats-3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.js"
+    "@mkkellogg/gaussian-splats-3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.js",
+    "fzstd": "https://cdn.jsdelivr.net/npm/fzstd@0.1.1/+esm"
   }
 }
 </script>
@@ -430,6 +431,121 @@ try {
 } catch (e) {
   console.warn('Bruxos: patch de MaxScenes falhou, usando lib padrão (32 frames):', e);
   GaussianSplats3D = await import('@mkkellogg/gaussian-splats-3d');
+}
+
+// ============================================================
+// Decodificador .splat4d (porta do format.ts + worker.ts do splats4D, MIT).
+// Decodifica o container 4D em N frames .splat (32 bytes/splat), que
+// alimentam a nossa sequência — assim TODOS os efeitos Bruxos valem no 4D.
+// ============================================================
+import { decompress as zstdDecompress } from 'fzstd';
+const STREAM_HDR = 11;
+function s4dParseHeader(buf) {
+  if (buf[0]!==0x53||buf[1]!==0x50||buf[2]!==0x34||buf[3]!==0x44) throw new Error('não é um .splat4d');
+  const dv = new DataView(buf.buffer, buf.byteOffset);
+  if (dv.getUint16(4, true) !== 1) throw new Error('versão .splat4d não suportada');
+  const jsonLen = dv.getUint32(8, true);
+  const header = JSON.parse(new TextDecoder().decode(buf.subarray(12, 12+jsonLen)));
+  return header;
+}
+function s4dWiden(planes, width, elems) {
+  if (width === 1) return planes;
+  if (width === 2) { const o = new Uint16Array(elems); for (let i=0;i<elems;i++) o[i]=planes[i]|(planes[elems+i]<<8); return o; }
+  const o = new Uint32Array(elems);
+  for (let i=0;i<elems;i++) o[i]=(planes[i]|(planes[elems+i]<<8)|(planes[2*elems+i]<<16)|(planes[3*elems+i]<<24))>>>0;
+  return o;
+}
+function s4dReadStream(buf, off) {
+  const dv = new DataView(buf.buffer, buf.byteOffset);
+  const attr = buf[off], kind = buf[off+1], width = buf[off+2];
+  const elems = dv.getUint32(off+3, true), comp = dv.getUint32(off+7, true);
+  const start = off + STREAM_HDR;
+  const planes = zstdDecompress(buf.subarray(start, start+comp), new Uint8Array(elems*width));
+  return [{ attr, kind, syms: s4dWiden(planes, width, elems) }, start + comp];
+}
+const s4dUnzig = z => (z >>> 1) ^ -(z & 1);
+function s4dUnbitmap(syms, n) { const o = new Uint8Array(n); for (let i=0;i<n;i++) o[i]=(syms[i>>3]>>(7-(i&7)))&1; return o; }
+function s4dUnSpatial(syms, c) {
+  const nn = syms.length/c, out = new Int32Array(syms.length), prev = new Int32Array(c);
+  for (let i=0;i<nn;i++) for (let k=0;k<c;k++){ prev[k]+=s4dUnzig(syms[i*c+k]); out[i*c+k]=prev[k]; }
+  return out;
+}
+function s4dParseStatic(buf, header) {
+  const n = header.n; let off = 0;
+  const next = () => { const [s, no] = s4dReadStream(buf, off); off = no; return s.syms; };
+  const masks = [s4dUnbitmap(next(),n), s4dUnbitmap(next(),n), s4dUnbitmap(next(),n), s4dUnbitmap(next(),n), s4dUnbitmap(next(),n)];
+  const basePos = s4dUnSpatial(next(), 3), baseLs = s4dUnSpatial(next(), 3);
+  const baseRgb = Uint8Array.from(next()), baseAlpha = Uint8Array.from(next());
+  const bRotS = next(), baseRot = new Int16Array(bRotS.length);
+  for (let i=0;i<bRotS.length;i++) baseRot[i]=bRotS[i]-128;
+  return { masks, basePos, baseLs, baseRgb, baseAlpha, baseRot };
+}
+function s4dParseGop(buf) {
+  const dv = new DataView(buf.buffer, buf.byteOffset);
+  const count = dv.getUint16(0, true); let off = 2;
+  const metas = [];
+  for (let i=0;i<count;i++){ metas.push({attr:buf[off],kind:buf[off+1],width:buf[off+2],elems:dv.getUint32(off+3,true),comp:dv.getUint32(off+7,true)}); off+=STREAM_HDR; }
+  const keys=[null,null,null,null,null], deltas=[null,null,null,null,null];
+  for (const m of metas){ const planes=zstdDecompress(buf.subarray(off,off+m.comp), new Uint8Array(m.elems*m.width)); off+=m.comp; const syms=s4dWiden(planes,m.width,m.elems); if(m.kind===0) keys[m.attr]=syms; else deltas[m.attr]=syms; }
+  return { keys, deltas };
+}
+const S4D_CH = [3,4,3,1,3];
+// decodifica o arquivo inteiro em até maxFrames buffers .splat (32B/splat)
+function decodeSplat4d(fileBuf, maxFrames) {
+  const header = s4dParseHeader(fileBuf);
+  const st = header.steps, n = header.n;
+  const stat = s4dParseStatic(fileBuf.subarray(header.static_section.offset, header.static_section.offset + header.static_section.len), header);
+  const gops = header.gops.map(g => s4dParseGop(fileBuf.subarray(g.offset, g.offset + g.len)));
+  // estado inicial (frame-0 base)
+  const posF = new Float32Array(n*3), scaleF = new Float32Array(n*3), quatB = new Uint8Array(n*4), rgbaB = new Uint8Array(n*4);
+  const cl8 = v => v<0?0:v>255?255:v;
+  for (let i=0;i<n;i++){
+    posF[i*3]=stat.basePos[i*3]*st.base_pos; posF[i*3+1]=stat.basePos[i*3+1]*st.base_pos; posF[i*3+2]=stat.basePos[i*3+2]*st.base_pos;
+    scaleF[i*3]=Math.exp(stat.baseLs[i*3]*st.base_scale_log); scaleF[i*3+1]=Math.exp(stat.baseLs[i*3+1]*st.base_scale_log); scaleF[i*3+2]=Math.exp(stat.baseLs[i*3+2]*st.base_scale_log);
+    quatB[i*4]=cl8(stat.baseRot[i*4]+128); quatB[i*4+1]=cl8(stat.baseRot[i*4+1]+128); quatB[i*4+2]=cl8(stat.baseRot[i*4+2]+128); quatB[i*4+3]=cl8(stat.baseRot[i*4+3]+128);
+    rgbaB[i*4]=stat.baseRgb[i*3]; rgbaB[i*4+1]=stat.baseRgb[i*3+1]; rgbaB[i*4+2]=stat.baseRgb[i*3+2]; rgbaB[i*4+3]=stat.baseAlpha[i];
+  }
+  // índices dinâmicos por atributo
+  const dynIdx = [], cur = [];
+  for (let a=0;a<5;a++){ const mask=stat.masks[a]; let c=0; for(let i=0;i<n;i++) if(!mask[i]) c++; const idx=new Uint32Array(c); let j=0; for(let i=0;i<n;i++) if(!mask[i]) idx[j++]=i; dynIdx.push(idx); cur.push(new Int32Array(c*S4D_CH[a])); }
+  let curFrame = -1;
+  const applyKey = (a, keys) => { const k=keys[a]; if(!k) return; const c=cur[a]; for(let i=0;i<c.length;i++) c[i]=s4dUnzig(k[i]); };
+  const applyDelta = (a, deltas, row) => { const d=deltas[a]; if(!d) return; const c=cur[a]; const o=row*c.length; for(let i=0;i<c.length;i++) c[i]+=s4dUnzig(d[o+i]); };
+  function rollTo(frame){
+    const g = Math.floor(frame/header.gop), gd = gops[g], f0 = header.gops[g].f0;
+    let from;
+    if (curFrame>=f0 && curFrame<=frame) from = curFrame;
+    else { for(let a=0;a<5;a++) applyKey(a, gd.keys); from = f0; }
+    for (let f=from+1; f<=frame; f++) for(let a=0;a<5;a++) applyDelta(a, gd.deltas, f-f0-1);
+    curFrame = frame;
+  }
+  function updateState(){
+    let idx=dynIdx[0], c=cur[0]; for(let j=0;j<idx.length;j++){const i=idx[j]; posF[i*3]=c[j*3]*st.pos; posF[i*3+1]=c[j*3+1]*st.pos; posF[i*3+2]=c[j*3+2]*st.pos;}
+    idx=dynIdx[1]; c=cur[1]; for(let j=0;j<idx.length;j++){const i=idx[j]; quatB[i*4]=cl8(c[j*4]*st.rot+128); quatB[i*4+1]=cl8(c[j*4+1]*st.rot+128); quatB[i*4+2]=cl8(c[j*4+2]*st.rot+128); quatB[i*4+3]=cl8(c[j*4+3]*st.rot+128);}
+    idx=dynIdx[4]; c=cur[4]; for(let j=0;j<idx.length;j++){const i=idx[j]; scaleF[i*3]=Math.exp(c[j*3]*st.scale_log); scaleF[i*3+1]=Math.exp(c[j*3+1]*st.scale_log); scaleF[i*3+2]=Math.exp(c[j*3+2]*st.scale_log);}
+    idx=dynIdx[2]; c=cur[2]; for(let j=0;j<idx.length;j++){const i=idx[j]; rgbaB[i*4]=cl8(c[j*3]*st.rgb); rgbaB[i*4+1]=cl8(c[j*3+1]*st.rgb); rgbaB[i*4+2]=cl8(c[j*3+2]*st.rgb);}
+    idx=dynIdx[3]; c=cur[3]; for(let j=0;j<idx.length;j++){const i=idx[j]; rgbaB[i*4+3]=cl8(c[j]*st.alpha);}
+  }
+  function serialize(){
+    const out = new ArrayBuffer(n*32);
+    const f = new Float32Array(out), u = new Uint8Array(out);
+    for (let i=0;i<n;i++){
+      f[i*8]=posF[i*3]; f[i*8+1]=posF[i*3+1]; f[i*8+2]=posF[i*3+2];
+      f[i*8+3]=scaleF[i*3]; f[i*8+4]=scaleF[i*3+1]; f[i*8+5]=scaleF[i*3+2];
+      u[i*32+24]=rgbaB[i*4]; u[i*32+25]=rgbaB[i*4+1]; u[i*32+26]=rgbaB[i*4+2]; u[i*32+27]=rgbaB[i*4+3];
+      u[i*32+28]=quatB[i*4]; u[i*32+29]=quatB[i*4+1]; u[i*32+30]=quatB[i*4+2]; u[i*32+31]=quatB[i*4+3];
+    }
+    return out;
+  }
+  // amostra os frames (se t > maxFrames, pega uniformemente)
+  const T = header.t, keep = Math.min(T, maxFrames || T);
+  const frames = [];
+  for (let k=0;k<keep;k++){
+    const f = keep === T ? k : Math.round(k * (T-1) / (keep-1 || 1));
+    rollTo(f); updateState();
+    frames.push(serialize());
+  }
+  return { frames, total: T, used: keep };
 }
 
 // ============================================================
@@ -687,6 +803,25 @@ function formatFromName(name) {
   if (n.endsWith('.ksplat')) return GaussianSplats3D.SceneFormat.KSplat;
   if (n.endsWith('.splat')) return GaussianSplats3D.SceneFormat.Splat;
   return null;
+}
+
+// carrega um .splat4d: decodifica em frames e envia para a sequência (com efeitos)
+async function loadSplat4dFile(file) {
+  dropzone.classList.add('hidden');
+  loading.classList.add('visible');
+  loadingText.textContent = `Decodificando ${file.name}…`;
+  try {
+    const buf = new Uint8Array(await file.arrayBuffer());
+    const { frames, total, used } = decodeSplat4d(buf, maxFramesReal);
+    if (total > used) showError(`${total} frames no arquivo — usando ${used} (limite do viewer). Para todos, use o Player 4D.`);
+    const files = frames.map((b, i) => new File([b], `f_${String(i).padStart(4,'0')}.splat`));
+    await loadSequence(files);
+  } catch (e) {
+    console.error(e);
+    loading.classList.remove('visible');
+    dropzone.classList.remove('hidden');
+    showError('Erro ao decodificar .splat4d: ' + (e.message || e));
+  }
 }
 
 function disposeViewer() {
@@ -984,17 +1119,16 @@ $('sq-fps').addEventListener('input', () => {
 // ===== Import / drag & drop =====
 $('btn-import').addEventListener('click', () => fileInput.click());
 $('btn-new').addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', () => {
-  if (fileInput.files.length > 1) loadSequence(fileInput.files);
-  else if (fileInput.files.length === 1) { seq = null; $('seqbar').classList.remove('visible'); loadFile(fileInput.files[0]); }
-  fileInput.value = '';
-});
+function handleFiles(files) {
+  const arr = [...files];
+  if (arr.length === 1 && arr[0].name.toLowerCase().endsWith('.splat4d')) { seq = null; $('seqbar').classList.remove('visible'); loadSplat4dFile(arr[0]); }
+  else if (arr.length > 1) loadSequence(arr);
+  else if (arr.length === 1) { seq = null; $('seqbar').classList.remove('visible'); loadFile(arr[0]); }
+}
+fileInput.addEventListener('change', () => { handleFiles(fileInput.files); fileInput.value = ''; });
 ['dragenter','dragover'].forEach(ev => window.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('dragover'); }));
 ['dragleave','drop'].forEach(ev => window.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
-window.addEventListener('drop', e => {
-  if (e.dataTransfer.files.length > 1) loadSequence(e.dataTransfer.files);
-  else if (e.dataTransfer.files.length === 1) { seq = null; $('seqbar').classList.remove('visible'); loadFile(e.dataTransfer.files[0]); }
-});
+window.addEventListener('drop', e => { if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
 
 // ===== Painel =====
 $('btn-panel').addEventListener('click', () => {

@@ -468,11 +468,24 @@ try {
 import { decompress as zstdDecompress } from 'fzstd';
 const STREAM_HDR = 11;
 function s4dParseHeader(buf) {
-  if (buf[0]!==0x53||buf[1]!==0x50||buf[2]!==0x34||buf[3]!==0x44) throw new Error('não é um .splat4d');
+  if (buf.length < 12) throw new Error('arquivo muito curto — provavelmente incompleto/corrompido');
+  if (buf[0]!==0x53||buf[1]!==0x50||buf[2]!==0x34||buf[3]!==0x44) throw new Error('não é um .splat4d válido (assinatura ausente)');
   const dv = new DataView(buf.buffer, buf.byteOffset);
   if (dv.getUint16(4, true) !== 1) throw new Error('versão .splat4d não suportada');
   const jsonLen = dv.getUint32(8, true);
-  const header = JSON.parse(new TextDecoder().decode(buf.subarray(12, 12+jsonLen)));
+  // validação: o cabeçalho JSON é pequeno. Se vier gigante, o arquivo está corrompido.
+  if (jsonLen <= 0 || jsonLen > 8_000_000 || 12 + jsonLen > buf.length)
+    throw new Error('cabeçalho inválido — o arquivo parece incompleto (o encode do Colab pode não ter terminado). Gere o .splat4d novamente.');
+  let header;
+  try { header = JSON.parse(new TextDecoder().decode(buf.subarray(12, 12+jsonLen))); }
+  catch (e) { throw new Error('cabeçalho ilegível — arquivo corrompido. Gere o .splat4d novamente.'); }
+  // checagem de integridade das seções apontadas pelo cabeçalho
+  const ss = header.static_section;
+  if (!ss || ss.offset + ss.len > buf.length)
+    throw new Error(`arquivo truncado: faltam dados (esperado ${((ss?(ss.offset+ss.len):0)/1e6).toFixed(0)}MB, tem ${(buf.length/1e6).toFixed(0)}MB). O download ou o encode ficou incompleto.`);
+  const lastGop = header.gops && header.gops[header.gops.length-1];
+  if (lastGop && lastGop.offset + lastGop.len > buf.length)
+    throw new Error(`arquivo truncado no fim da sequência (tem ${(buf.length/1e6).toFixed(0)}MB, precisa de ${((lastGop.offset+lastGop.len)/1e6).toFixed(0)}MB). Refaça o download/encode.`);
   return header;
 }
 function s4dWiden(planes, width, elems) {
@@ -482,12 +495,18 @@ function s4dWiden(planes, width, elems) {
   for (let i=0;i<elems;i++) o[i]=(planes[i]|(planes[elems+i]<<8)|(planes[2*elems+i]<<16)|(planes[3*elems+i]<<24))>>>0;
   return o;
 }
+function s4dZstd(input, outLen) {
+  // fzstd falha em streams > ~205MB descompactados. Avisa com mensagem clara.
+  if (outLen > 200_000_000)
+    throw new Error(`STREAM_GRANDE:${(outLen/1e6).toFixed(0)}`);
+  return zstdDecompress(input, new Uint8Array(outLen));
+}
 function s4dReadStream(buf, off) {
   const dv = new DataView(buf.buffer, buf.byteOffset);
   const attr = buf[off], kind = buf[off+1], width = buf[off+2];
   const elems = dv.getUint32(off+3, true), comp = dv.getUint32(off+7, true);
   const start = off + STREAM_HDR;
-  const planes = zstdDecompress(buf.subarray(start, start+comp), new Uint8Array(elems*width));
+  const planes = s4dZstd(buf.subarray(start, start+comp), elems*width);
   return [{ attr, kind, syms: s4dWiden(planes, width, elems) }, start + comp];
 }
 const s4dUnzig = z => (z >>> 1) ^ -(z & 1);
@@ -513,7 +532,7 @@ function s4dParseGop(buf) {
   const metas = [];
   for (let i=0;i<count;i++){ metas.push({attr:buf[off],kind:buf[off+1],width:buf[off+2],elems:dv.getUint32(off+3,true),comp:dv.getUint32(off+7,true)}); off+=STREAM_HDR; }
   const keys=[null,null,null,null,null], deltas=[null,null,null,null,null];
-  for (const m of metas){ const planes=zstdDecompress(buf.subarray(off,off+m.comp), new Uint8Array(m.elems*m.width)); off+=m.comp; const syms=s4dWiden(planes,m.width,m.elems); if(m.kind===0) keys[m.attr]=syms; else deltas[m.attr]=syms; }
+  for (const m of metas){ const planes=s4dZstd(buf.subarray(off,off+m.comp), m.elems*m.width); off+=m.comp; const syms=s4dWiden(planes,m.width,m.elems); if(m.kind===0) keys[m.attr]=syms; else deltas[m.attr]=syms; }
   return { keys, deltas };
 }
 const S4D_CH = [3,4,3,1,3];
@@ -772,6 +791,7 @@ function bxPatchShader(mesh) {
     console.warn('Bruxos FX: anchors não encontrados nesta versão da lib');
     return false;
   }
+  const originalVS = mat.vertexShader; // guarda para reverter se o patch não compilar
   vs = vs.replace(aMain, BX_UNIFORMS_GLSL + '\n' + aMain);
   vs = vs.replace(aView, BX_REVEAL_GLSL + aView);
   vs = vs.replace(aColor, aColor + '\n' + BX_COLOR_GLSL);
@@ -838,6 +858,19 @@ function bxPatchShader(mesh) {
     uBxSliceShift:    { value: 0 }
   });
   mat.needsUpdate = true;
+  // testa a compilação; se os efeitos quebrarem o shader, reverte (nunca deixa tela preta)
+  try {
+    window.__bxShaderErr = '';
+    if (viewer?.renderer && viewer?.threeScene && viewer?.camera)
+      viewer.renderer.compile(viewer.threeScene, viewer.camera);
+    if (window.__bxShaderErr) throw new Error(window.__bxShaderErr);
+  } catch (e) {
+    console.error('Bruxos FX: shader não compilou, revertendo para render normal:', e);
+    showError('Efeitos desativados (shader): ' + String(e.message || e).slice(0, 140));
+    mat.vertexShader = originalVS;
+    mat.needsUpdate = true;
+    return false;
+  }
   return true;
 }
 function bxU(name) {
@@ -898,7 +931,11 @@ async function loadSplat4dFile(file) {
     console.error(e);
     loading.classList.remove('visible');
     dropzone.classList.remove('hidden');
-    showError('Erro ao decodificar .splat4d: ' + (e.message || e));
+    const msg = String(e.message || e);
+    if (msg.startsWith('STREAM_GRANDE') || msg.includes('Invalid string length'))
+      showError('Este .splat4d é pesado demais para o navegador (frames com splats demais). Gere no notebook com MAX_SPLATS_FRAME = 400000 e tente de novo.');
+    else
+      showError('Erro ao decodificar .splat4d: ' + msg);
   }
 }
 
@@ -915,6 +952,13 @@ function disposeViewer() {
 // cria o viewer com renderer próprio: preserveDrawingBuffer permite gravação sem flicker
 function makeViewer(extra = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  // captura erros de compilação de shader (para reverter os efeitos se preciso)
+  renderer.debug.checkShaderErrors = true;
+  renderer.debug.onShaderError = (gl, prog, vsh, fsh) => {
+    const vlog = (gl.getShaderInfoLog(vsh) || '').trim();
+    const flog = (gl.getShaderInfoLog(fsh) || '').trim();
+    window.__bxShaderErr = (vlog || flog || 'erro de shader desconhecido').split('\n')[0];
+  };
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   $('viewer-container').appendChild(renderer.domElement);
@@ -1700,6 +1744,11 @@ $('pb-toggle').addEventListener('click', () => {
 
 // --- loop de animação próprio (wobble + dissolve + efeitos GPU) ---
 function tick(now) {
+  try { tickBody(now); }
+  catch (e) { console.error('tick:', e); }
+  requestAnimationFrame(tick);
+}
+function tickBody(now) {
   const dt = (now - lastTime) / 1000; lastTime = now;
   if (anim.wobble) { anim.wobbleT += dt; applyTransforms(); }
   if (anim.dissolve && viewer?.splatMesh) {
@@ -1747,7 +1796,6 @@ function tick(now) {
       while (seq.timer > spf) { seq.timer -= spf; setSeqFrame(seq.current + 1); }
     }
   }
-  requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
 

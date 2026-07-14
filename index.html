@@ -223,6 +223,7 @@
     <button class="fx-tab" data-tab="tab-luz">💡 Luz/Cor</button>
     <button class="fx-tab" data-tab="tab-trans">✨ Transição</button>
     <button class="fx-tab" data-tab="tab-misc">🧪 Diversos</button>
+    <button class="fx-tab" data-tab="tab-inter">🕹 Interativo</button>
   </div>
 
   <!-- ========== EDITAR GAUSSIANS ========== -->
@@ -488,6 +489,48 @@
     <div class="row"><label>Deslocar</label><input type="range" id="ts-shift" min="0" max="1" step="0.01" value="0"><span class="val" id="v-tsshift">0%</span></div>
     <button class="panel-btn" id="ts-invert">Inverter direção</button>
     <p class="note">Só em sequências 4D: cada fatia do espaço mostra um frame do tempo (slit-scan).</p>
+  </div>
+
+  <!-- ========== INTERATIVO ========== -->
+  <div class="tab-page" id="tab-inter">
+    <h3>🖱 Mouse como força</h3>
+    <div class="axis-row"><span class="lbl">Modo</span>
+      <button class="ax-btn on" id="mf-off">Off</button>
+      <button class="ax-btn" id="mf-rep">Repele</button>
+      <button class="ax-btn" id="mf-att">Atrai</button>
+      <button class="ax-btn" id="mf-rip">Ripple</button>
+    </div>
+    <div class="row"><label>Raio</label><input type="range" id="mf-r" min="0.02" max="1" step="0.01" value="0.3"><span class="val" id="v-mfr">30%</span></div>
+    <div class="row"><label>Força</label><input type="range" id="mf-str" min="0" max="1" step="0.005" value="0.3"><span class="val" id="v-mfstr">0.090</span></div>
+    <p class="note">Os Gaussians reagem ao cursor sobre a cena (no plano do alvo da câmera). Funciona junto com a órbita.</p>
+
+    <h3>〰 LFO 1</h3>
+    <button class="panel-btn" id="lfo0-on">▶ LFO 1</button>
+    <div class="row"><label>Alvo</label><select class="au-sel it-target" id="lfo0-target"></select></div>
+    <div class="row"><label>Onda</label><select class="au-sel" id="lfo0-wave">
+      <option value="sin">Seno</option><option value="tri">Triângulo</option><option value="noise">Noise suave</option>
+    </select></div>
+    <div class="row"><label>Rate (Hz)</label><input type="range" id="lfo0-rate" min="0.05" max="8" step="0.05" value="0.5"><span class="val" id="v-lfo0rate">0.50</span></div>
+    <div class="row"><label>Profund.</label><input type="range" id="lfo0-depth" min="0" max="1" step="0.01" value="0.3"><span class="val" id="v-lfo0depth">0.30</span></div>
+
+    <h3>〰 LFO 2</h3>
+    <button class="panel-btn" id="lfo1-on">▶ LFO 2</button>
+    <div class="row"><label>Alvo</label><select class="au-sel it-target" id="lfo1-target"></select></div>
+    <div class="row"><label>Onda</label><select class="au-sel" id="lfo1-wave">
+      <option value="sin">Seno</option><option value="tri">Triângulo</option><option value="noise">Noise suave</option>
+    </select></div>
+    <div class="row"><label>Rate (Hz)</label><input type="range" id="lfo1-rate" min="0.05" max="8" step="0.05" value="1"><span class="val" id="v-lfo1rate">1.00</span></div>
+    <div class="row"><label>Profund.</label><input type="range" id="lfo1-depth" min="0" max="1" step="0.01" value="0.3"><span class="val" id="v-lfo1depth">0.30</span></div>
+    <p class="note">O LFO oscila o slider alvo em volta do valor atual dele (o valor volta quando desligar).</p>
+
+    <h3>🎹 MIDI</h3>
+    <button class="panel-btn" id="midi-on">🎹 Ativar MIDI</button>
+    <div class="row"><label>Alvo</label><select class="au-sel it-target" id="midi-target"></select></div>
+    <div class="btn-pair">
+      <button class="panel-btn" id="midi-learn">Mapear (mexa um knob)</button>
+      <button class="panel-btn" id="midi-clear">Limpar</button>
+    </div>
+    <p class="note" id="midi-status">Conecte um controlador MIDI e clique em Ativar (Chrome/Edge).</p>
   </div>
 
   <h3>Gravação</h3>
@@ -783,6 +826,10 @@ uniform float uBxDHigh;
 uniform float uBxTrail;
 uniform float uBxCAOn;
 uniform float uBxCAAmt;
+uniform float uBxMouseOn;
+uniform vec3 uBxMousePos;
+uniform float uBxMouseR;
+uniform float uBxMouseStr;
 // --- crop box (ao vivo) ---
 uniform float uBxCropBoxOn;
 uniform vec3  uBxCropBoxPos;
@@ -949,6 +996,17 @@ vec3 bruxosPos(vec3 p){
     vec3 q2 = q * 3.7;
     vec3 nh = vec3(bxVN(q2 + 13.1), bxVN(q2 + 47.9), bxVN(q2 + 91.4)) - 0.5;
     p += (nl * uBxDLow + nh * uBxDHigh) * uBxDAxis[7] * (uBxDAmp[7] * 1.5 * m);
+  }
+  // MOUSE como força: repele / atrai / ripple no ponto do cursor
+  if (uBxMouseOn > 0.5) {
+    vec3 mrel = p - uBxMousePos;
+    float md = length(mrel) + 0.0001;
+    float mfall = 1.0 - smoothstep(0.0, max(uBxMouseR, 0.0001), md);
+    if (mfall > 0.001) {
+      if (uBxMouseOn < 1.5)      p += (mrel/md) * (mfall * uBxMouseStr);
+      else if (uBxMouseOn < 2.5) p -= (mrel/md) * (mfall * uBxMouseStr);
+      else p += (mrel/md) * (sin(md * 10.0 / max(uBxMouseR, 0.001) - bxTT * 7.0) * mfall * uBxMouseStr);
+    }
   }
   // fumaça (difusão global do centro para fora)
   if (uBxSmoke > 0.001) {
@@ -1129,6 +1187,10 @@ function bxPatchShader(mesh) {
     uBxTrail:      { value: 0 },
     uBxCAOn:       { value: 0 },
     uBxCAAmt:      { value: 0.06 },
+    uBxMouseOn:    { value: 0 },
+    uBxMousePos:   { value: new THREE.Vector3(1e9, 1e9, 1e9) },
+    uBxMouseR:     { value: 1 },
+    uBxMouseStr:   { value: 0.1 },
     // crop box
     uBxCropBoxOn:      { value: 0 },
     uBxCropBoxPos:     { value: v3() },
@@ -1236,7 +1298,7 @@ const anim = {
   dof: false, ca: false, reveal: null, revealVal: 1, pb: false, depthCol: false, anchorCrop: false,
   timeSlice: false, sliceInvert: false, sliceAnim: 0,
   grade: false, fog: false, weather: null, paintMode: false, plGizmo: false,
-  disVal: 0, disAnim: null, recOrbit: false,
+  disVal: 0, disAnim: null, recOrbit: false, mouseFx: 0,
   cropBox: { on:false, px:.5, py:.5, pz:.5, sx:1, sy:1, sz:1, rx:0, ry:0, rz:0 },
   cam: { orbit:false, vertigo:false, vertigoK:1, dolly:false, truck:false, tilt:false, shake:false, shakeAx:[1,1,1],
          shakePrev: new THREE.Vector3() }
@@ -1678,6 +1740,9 @@ function syncFxUniforms() {
   set('uBxTrail', parseFloat($('tr-amt').value));
   set('uBxCAOn', anim.ca ? 1 : 0);
   set('uBxCAAmt', parseFloat($('ca-amt').value));
+  set('uBxMouseOn', anim.mouseFx);
+  set('uBxMouseR', diag * 0.4 * parseFloat($('mf-r').value));
+  set('uBxMouseStr', diag * 0.15 * Math.pow(parseFloat($('mf-str').value), 2));
   // --- crop box (ao vivo) ---
   set('uBxCropBoxOn', anim.cropBox.on ? 1 : 0);
   {
@@ -2283,6 +2348,159 @@ bindSlider('tur-high', 'v-turhigh', v => v.toFixed(2), () => syncFxUniforms());
 bindSlider('tr-amt', 'v-tramt', v => v.toFixed(2) + 's', () => syncFxUniforms());
 
 // ============================================================
+// 🕹 INTERATIVO — mouse como força, LFOs e MIDI (estilo TouchDesigner)
+// ============================================================
+// --- mouse como força ---
+[['mf-off',0],['mf-rep',1],['mf-att',2],['mf-rip',3]].forEach(([id, mode]) => {
+  $(id).addEventListener('click', () => {
+    anim.mouseFx = mode;
+    [['mf-off',0],['mf-rep',1],['mf-att',2],['mf-rip',3]].forEach(([id2, m2]) =>
+      $(id2).classList.toggle('on', m2 === anim.mouseFx));
+    syncFxUniforms();
+  });
+});
+bindSlider('mf-r', 'v-mfr', v => Math.round(v*100)+'%', () => syncFxUniforms());
+bindSlider('mf-str', 'v-mfstr', v => Math.pow(v, 2).toFixed(3), () => syncFxUniforms());
+function bxScreenToModel(e) {
+  if (!viewer?.camera || !viewer?.controls || !viewer?.splatMesh) return null;
+  const rect = $('viewer-container').getBoundingClientRect();
+  const ndc = new THREE.Vector2(
+    ((e.clientX - rect.left) / rect.width) * 2 - 1,
+    -(((e.clientY - rect.top) / rect.height) * 2 - 1));
+  const ray = new THREE.Raycaster();
+  ray.setFromCamera(ndc, viewer.camera);
+  const n = new THREE.Vector3();
+  viewer.camera.getWorldDirection(n);
+  const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(n, viewer.controls.target);
+  const pt = new THREE.Vector3();
+  if (!ray.ray.intersectPlane(plane, pt)) return null;
+  return viewer.splatMesh.worldToLocal(pt);
+}
+$('viewer-container').addEventListener('pointermove', e => {
+  if (!anim.mouseFx) return;
+  const pt = bxScreenToModel(e);
+  const u = bxU('uBxMousePos');
+  if (pt && u) u.value.copy(pt);
+});
+$('viewer-container').addEventListener('pointerleave', () => {
+  const u = bxU('uBxMousePos');
+  if (u) u.value.set(1e9, 1e9, 1e9);
+});
+
+// --- alvos moduláveis (LFO e MIDI) ---
+const IT_TARGETS = [
+  ['p-splatscale', 'Tamanho do splat'],
+  ['wob-amp', 'Wobble · amplitude'], ['rip-amp', 'Ripple · amplitude'], ['wav-amp', 'Waves · amplitude'],
+  ['twi-amp', 'Twist · amplitude'], ['ben-amp', 'Bend · amplitude'], ['tap-amp', 'Taper · amplitude'],
+  ['bul-amp', 'Bulge · amplitude'], ['tur-amp', 'Turbulent · amplitude'],
+  ['cam-fov', 'FOV (lente)'], ['pl-str', 'Luz pontual · intensidade'],
+  ['cg-exp', 'Exposição'], ['d-dist', 'DoF · foco'], ['a-orbitspeed', 'Órbita · vel. Y'],
+  ['tr-amt', 'Rastro'], ['mf-str', 'Mouse · força']
+];
+document.querySelectorAll('.it-target').forEach(sel => {
+  sel.innerHTML = IT_TARGETS.map(([id, nm]) => `<option value="${id}">${nm}</option>`).join('');
+});
+function itSetSlider(id, val) {
+  const el = $(id);
+  if (!el) return;
+  const mn = parseFloat(el.min), mx = parseFloat(el.max);
+  el.value = Math.min(mx, Math.max(mn, val));
+  el.dispatchEvent(new Event('input'));
+}
+
+// --- LFOs ---
+const lfos = [
+  { on:false, base:null, target:null, phase: Math.random() },
+  { on:false, base:null, target:null, phase: Math.random() }
+];
+function lfoRestore(L) {
+  if (L.target !== null && L.base !== null) itSetSlider(L.target, L.base);
+  L.base = null; L.target = null;
+}
+[0, 1].forEach(i => {
+  const L = lfos[i];
+  bindSlider(`lfo${i}-rate`, `v-lfo${i}rate`, v => v.toFixed(2), () => {});
+  bindSlider(`lfo${i}-depth`, `v-lfo${i}depth`, v => v.toFixed(2), () => {});
+  $(`lfo${i}-on`).addEventListener('click', () => {
+    L.on = !L.on;
+    $(`lfo${i}-on`).classList.toggle('on', L.on);
+    $(`lfo${i}-on`).textContent = L.on ? `⏸ LFO ${i+1} (ligado)` : `▶ LFO ${i+1}`;
+    if (L.on) { L.target = $(`lfo${i}-target`).value; L.base = parseFloat($(L.target).value); }
+    else lfoRestore(L);
+  });
+  $(`lfo${i}-target`).addEventListener('change', () => {
+    if (!L.on) return;
+    lfoRestore(L);
+    L.target = $(`lfo${i}-target`).value;
+    L.base = parseFloat($(L.target).value);
+  });
+});
+function lfoWave(kind, t) {
+  if (kind === 'sin') return Math.sin(t * Math.PI * 2);
+  if (kind === 'tri') { const f = t - Math.floor(t); return 4 * Math.abs(f - 0.5) - 1; }
+  return Math.sin(t*6.28)*0.5 + Math.sin(t*13.7+1.3)*0.3 + Math.sin(t*29.1+4.1)*0.2; // noise suave
+}
+function tickInteractive() {
+  for (let i = 0; i < 2; i++) {
+    const L = lfos[i];
+    if (!L.on || L.base === null) continue;
+    const el = $(L.target);
+    if (!el) continue;
+    const rate = parseFloat($(`lfo${i}-rate`).value);
+    const depth = parseFloat($(`lfo${i}-depth`).value);
+    const w = lfoWave($(`lfo${i}-wave`).value, anim.fxTime * rate + L.phase);
+    const half = (parseFloat(el.max) - parseFloat(el.min)) / 2;
+    itSetSlider(L.target, L.base + w * depth * half);
+  }
+}
+
+// --- MIDI (Web MIDI API) ---
+const midi = { access: null, learn: false, maps: [] };
+function midiStatus(msg) { $('midi-status').innerHTML = msg; }
+function midiMsg(e) {
+  const [st, d1, d2] = e.data;
+  if ((st & 0xf0) !== 0xB0) return; // só Control Change
+  if (midi.learn) {
+    const target = $('midi-target').value;
+    midi.maps = midi.maps.filter(m => m.cc !== d1); // um alvo por knob
+    midi.maps.push({ cc: d1, target });
+    midi.learn = false;
+    $('midi-learn').classList.remove('on');
+    midiStatus(`CC ${d1} → <b>${IT_TARGETS.find(t => t[0] === target)?.[1] || target}</b> · ${midi.maps.length} mapeamento(s)`);
+    return;
+  }
+  for (const m of midi.maps) {
+    if (m.cc !== d1) continue;
+    const el = $(m.target);
+    if (!el) continue;
+    const mn = parseFloat(el.min), mx = parseFloat(el.max);
+    itSetSlider(m.target, mn + (d2 / 127) * (mx - mn));
+  }
+}
+$('midi-on').addEventListener('click', async () => {
+  if (!navigator.requestMIDIAccess) { showError('Web MIDI não suportado neste navegador.'); return; }
+  try {
+    midi.access = await navigator.requestMIDIAccess();
+    const hook = () => { for (const inp of midi.access.inputs.values()) inp.onmidimessage = midiMsg; };
+    hook();
+    midi.access.onstatechange = hook;
+    $('midi-on').classList.add('on');
+    const n = [...midi.access.inputs.values()].length;
+    midiStatus(n ? `${n} dispositivo(s) MIDI conectado(s). Escolha o alvo e clique em Mapear.` : 'MIDI ativo — conecte um controlador.');
+  } catch (e) { showError('MIDI negado/indisponível: ' + (e.message || e)); }
+});
+$('midi-learn').addEventListener('click', () => {
+  if (!midi.access) { showError('Ative o MIDI primeiro.'); return; }
+  midi.learn = !midi.learn;
+  $('midi-learn').classList.toggle('on', midi.learn);
+  if (midi.learn) midiStatus('Aguardando… mexa um knob/fader do controlador.');
+});
+$('midi-clear').addEventListener('click', () => {
+  midi.maps = [];
+  midiStatus('Mapeamentos limpos.');
+});
+
+// ============================================================
 // EFEITOS DE CÂMERA (aplicados no tick)
 // ============================================================
 function anchorWorld() {
@@ -2864,6 +3082,7 @@ function tickBody(now) {
   anim.fxTime += dt;
   const uT = bxU('uBxTime'); if (uT) uT.value = anim.fxTime;
   tickAudio(); // 🎵 modulação por áudio (graves/médios/agudos)
+  tickInteractive(); // 🕹 LFOs
   // animação da fumaça
   if (anim.smoke) {
     const s = anim.smoke;

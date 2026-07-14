@@ -251,12 +251,12 @@
       <button class="ax-btn gz-mode" data-mode="scale">Escala</button>
     </div>
     <p class="note">Com o box ligado, arraste o gizmo 3D na cena (Mover/Girar/Escala) ou use os sliders.</p>
-    <div class="row"><label>Pos X</label><input type="range" id="cb-px" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-cbpx">50%</span></div>
-    <div class="row"><label>Pos Y</label><input type="range" id="cb-py" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-cbpy">50%</span></div>
-    <div class="row"><label>Pos Z</label><input type="range" id="cb-pz" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-cbpz">50%</span></div>
-    <div class="row"><label>Escala X</label><input type="range" id="cb-sx" min="0.02" max="1.2" step="0.01" value="1"><span class="val" id="v-cbsx">1.00</span></div>
-    <div class="row"><label>Escala Y</label><input type="range" id="cb-sy" min="0.02" max="1.2" step="0.01" value="1"><span class="val" id="v-cbsy">1.00</span></div>
-    <div class="row"><label>Escala Z</label><input type="range" id="cb-sz" min="0.02" max="1.2" step="0.01" value="1"><span class="val" id="v-cbsz">1.00</span></div>
+    <div class="row"><label>Pos X</label><input type="range" id="cb-px" min="0" max="1" step="0.001" value="0.5"><span class="val" id="v-cbpx">50%</span></div>
+    <div class="row"><label>Pos Y</label><input type="range" id="cb-py" min="0" max="1" step="0.001" value="0.5"><span class="val" id="v-cbpy">50%</span></div>
+    <div class="row"><label>Pos Z</label><input type="range" id="cb-pz" min="0" max="1" step="0.001" value="0.5"><span class="val" id="v-cbpz">50%</span></div>
+    <div class="row"><label>Escala X</label><input type="range" id="cb-sx" min="0.005" max="1.2" step="0.005" value="1"><span class="val" id="v-cbsx">1.00</span></div>
+    <div class="row"><label>Escala Y</label><input type="range" id="cb-sy" min="0.005" max="1.2" step="0.005" value="1"><span class="val" id="v-cbsy">1.00</span></div>
+    <div class="row"><label>Escala Z</label><input type="range" id="cb-sz" min="0.005" max="1.2" step="0.005" value="1"><span class="val" id="v-cbsz">1.00</span></div>
     <div class="row"><label>Rot X</label><input type="range" id="cb-rx" min="-180" max="180" step="1" value="0"><span class="val" id="v-cbrx">0°</span></div>
     <div class="row"><label>Rot Y</label><input type="range" id="cb-ry" min="-180" max="180" step="1" value="0"><span class="val" id="v-cbry">0°</span></div>
     <div class="row"><label>Rot Z</label><input type="range" id="cb-rz" min="-180" max="180" step="1" value="0"><span class="val" id="v-cbrz">0°</span></div>
@@ -1381,9 +1381,9 @@ function bxGizmoChanged() {
   b.rx = h.rotation.x * 180 / Math.PI;
   b.ry = h.rotation.y * 180 / Math.PI;
   b.rz = h.rotation.z * 180 / Math.PI;
-  b.sx = Math.max(h.scale.x / ex[0], 0.02);
-  b.sy = Math.max(h.scale.y / ex[1], 0.02);
-  b.sz = Math.max(h.scale.z / ex[2], 0.02);
+  b.sx = Math.max(h.scale.x / ex[0], 0.002);
+  b.sy = Math.max(h.scale.y / ex[1], 0.002);
+  b.sz = Math.max(h.scale.z / ex[2], 0.002);
   bxGizmoSliders(b);
   syncFxUniforms();
 }
@@ -1393,12 +1393,12 @@ function bxGizmoSliders(b) {
     const s = $(fx ? `${fx}-b${k}` : `cb-${k}`), v = $(fx ? `v-${fx}b${k}` : `v-cb${k}`);
     if (s) { s.value = val; v.textContent = txt; }
   };
-  setS('px', b.px, Math.round(b.px*100)+'%');
-  setS('py', b.py, Math.round(b.py*100)+'%');
-  setS('pz', b.pz, Math.round(b.pz*100)+'%');
-  setS('sx', b.sx, b.sx.toFixed(2));
-  setS('sy', b.sy, b.sy.toFixed(2));
-  setS('sz', b.sz, b.sz.toFixed(2));
+  setS('px', b.px, (b.px*100).toFixed(1)+'%');
+  setS('py', b.py, (b.py*100).toFixed(1)+'%');
+  setS('pz', b.pz, (b.pz*100).toFixed(1)+'%');
+  setS('sx', b.sx, b.sx.toFixed(3));
+  setS('sy', b.sy, b.sy.toFixed(3));
+  setS('sz', b.sz, b.sz.toFixed(3));
   setS('rx', b.rx, b.rx.toFixed(0)+'°');
   setS('ry', b.ry, b.ry.toFixed(0)+'°');
   setS('rz', b.rz, b.rz.toFixed(0)+'°');
@@ -1870,13 +1870,13 @@ function cropGeomBox(buf, g, w, invRot) {
 }
 {
   const CB = anim.cropBox;
-  const cbFmtPct = v => Math.round(v*100) + '%';
+  const cbFmtPct = v => (v*100).toFixed(1) + '%';
   bindSlider('cb-px', 'v-cbpx', cbFmtPct, v => { CB.px = v; syncFxUniforms(); });
   bindSlider('cb-py', 'v-cbpy', cbFmtPct, v => { CB.py = v; syncFxUniforms(); });
   bindSlider('cb-pz', 'v-cbpz', cbFmtPct, v => { CB.pz = v; syncFxUniforms(); });
-  bindSlider('cb-sx', 'v-cbsx', v => v.toFixed(2), v => { CB.sx = v; syncFxUniforms(); });
-  bindSlider('cb-sy', 'v-cbsy', v => v.toFixed(2), v => { CB.sy = v; syncFxUniforms(); });
-  bindSlider('cb-sz', 'v-cbsz', v => v.toFixed(2), v => { CB.sz = v; syncFxUniforms(); });
+  bindSlider('cb-sx', 'v-cbsx', v => v.toFixed(3), v => { CB.sx = v; syncFxUniforms(); });
+  bindSlider('cb-sy', 'v-cbsy', v => v.toFixed(3), v => { CB.sy = v; syncFxUniforms(); });
+  bindSlider('cb-sz', 'v-cbsz', v => v.toFixed(3), v => { CB.sz = v; syncFxUniforms(); });
   bindSlider('cb-rx', 'v-cbrx', v => v.toFixed(0) + '°', v => { CB.rx = v; syncFxUniforms(); });
   bindSlider('cb-ry', 'v-cbry', v => v.toFixed(0) + '°', v => { CB.ry = v; syncFxUniforms(); });
   bindSlider('cb-rz', 'v-cbrz', v => v.toFixed(0) + '°', v => { CB.rz = v; syncFxUniforms(); });
@@ -1987,8 +1987,8 @@ const dfxState = DFX.map(d => ({
       <button class="panel-btn" id="${p}-boxon">▶ Limitar por box</button>
       <div class="sub" id="${p}-boxui" style="display:none">
         <button class="panel-btn" id="${p}-boxshow">👁 Mostrar box</button>
-        ${boxRow('px','Pos X',0,1,0.01,0.5,'50%')}${boxRow('py','Pos Y',0,1,0.01,0.5,'50%')}${boxRow('pz','Pos Z',0,1,0.01,0.5,'50%')}
-        ${boxRow('sx','Escala X',0.02,1.2,0.01,0.5,'0.50')}${boxRow('sy','Escala Y',0.02,1.2,0.01,0.5,'0.50')}${boxRow('sz','Escala Z',0.02,1.2,0.01,0.5,'0.50')}
+        ${boxRow('px','Pos X',0,1,0.001,0.5,'50.0%')}${boxRow('py','Pos Y',0,1,0.001,0.5,'50.0%')}${boxRow('pz','Pos Z',0,1,0.001,0.5,'50.0%')}
+        ${boxRow('sx','Escala X',0.005,1.2,0.005,0.5,'0.500')}${boxRow('sy','Escala Y',0.005,1.2,0.005,0.5,'0.500')}${boxRow('sz','Escala Z',0.005,1.2,0.005,0.5,'0.500')}
         ${boxRow('rx','Rot X',-180,180,1,0,'0°')}${boxRow('ry','Rot Y',-180,180,1,0,'0°')}${boxRow('rz','Rot Z',-180,180,1,0,'0°')}
       </div>`;
     cont.appendChild(sec);
@@ -2027,8 +2027,8 @@ const dfxState = DFX.map(d => ({
       DFX.forEach((dd, k) => $(`${dd.id}-boxshow`).classList.toggle('on', dfxState[k].showBox));
       syncFxUniforms();
     });
-    ['px','py','pz'].forEach(k => bindSlider(`${p}-b${k}`, `v-${p}b${k}`, v => Math.round(v*100)+'%', v => { st.box[k] = v; syncFxUniforms(); }));
-    ['sx','sy','sz'].forEach(k => bindSlider(`${p}-b${k}`, `v-${p}b${k}`, v => v.toFixed(2), v => { st.box[k] = v; syncFxUniforms(); }));
+    ['px','py','pz'].forEach(k => bindSlider(`${p}-b${k}`, `v-${p}b${k}`, v => (v*100).toFixed(1)+'%', v => { st.box[k] = v; syncFxUniforms(); }));
+    ['sx','sy','sz'].forEach(k => bindSlider(`${p}-b${k}`, `v-${p}b${k}`, v => v.toFixed(3), v => { st.box[k] = v; syncFxUniforms(); }));
     ['rx','ry','rz'].forEach(k => bindSlider(`${p}-b${k}`, `v-${p}b${k}`, v => v.toFixed(0)+'°', v => { st.box[k] = v; syncFxUniforms(); }));
   });
 })();

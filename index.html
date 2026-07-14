@@ -154,6 +154,14 @@
   .fxsec { border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 8px 10px; margin: 10px 0; }
   .fxsec h4 { font-size: .72rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--verde); margin-bottom: 4px; }
 
+  .au-sel {
+    flex: 1; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+    color: #eee; font-size: .78rem; padding: 5px 6px; border-radius: 6px;
+  }
+  .au-sel option { background: #1c1226; }
+  .au-meter { height: 4px; background: rgba(255,255,255,.1); border-radius: 2px; margin: 2px 0 10px; overflow: hidden; }
+  .au-fill { height: 100%; width: 0%; background: var(--verde); border-radius: 2px; transition: width .05s linear; }
+
   /* ================= LOADING / ERRO ================= */
   #loading {
     position: fixed; inset: 0; z-index: 30; display: none;
@@ -281,6 +289,8 @@
 
   <!-- ========== EFEITOS DE CÂMERA ========== -->
   <div class="tab-page" id="tab-cam">
+    <button class="panel-btn" id="cam-reset">🎯 Resetar câmera (posição inicial)</button>
+
     <h3>Lente</h3>
     <div class="row"><label>FOV</label><input type="range" id="cam-fov" min="15" max="120" step="1" value="60"><span class="val" id="v-fov">60°</span></div>
     <p class="note" id="v-mm">Equivalente a ~21mm (full frame)</p>
@@ -298,9 +308,9 @@
 
     <h3>Dolly</h3>
     <button class="panel-btn" id="dl-toggle">▶ Dolly In/Out</button>
-    <div class="row"><label>Velocidade</label><input type="range" id="dl-speed" min="-5" max="5" step="0.1" value="1"><span class="val" id="v-dlspeed">1.0</span></div>
+    <div class="row"><label>Velocidade</label><input type="range" id="dl-speed" min="-3" max="3" step="0.01" value="0.3"><span class="val" id="v-dlspeed">0.30</span></div>
     <button class="panel-btn" id="tk-toggle">▶ Dolly Left/Right</button>
-    <div class="row"><label>Velocidade</label><input type="range" id="tk-speed" min="-5" max="5" step="0.1" value="1"><span class="val" id="v-tkspeed">1.0</span></div>
+    <div class="row"><label>Velocidade</label><input type="range" id="tk-speed" min="-3" max="3" step="0.01" value="0.3"><span class="val" id="v-tkspeed">0.30</span></div>
 
     <h3>Tilt</h3>
     <button class="panel-btn" id="tl-toggle">▶ Tilt Up/Down</button>
@@ -308,8 +318,13 @@
 
     <h3>Handheld (shake)</h3>
     <button class="panel-btn" id="hh-toggle">▶ Camera shake</button>
-    <div class="row"><label>Intensidade</label><input type="range" id="hh-amp" min="0" max="3" step="0.05" value="0.6"><span class="val" id="v-hhamp">0.60</span></div>
+    <div class="row"><label>Intensidade</label><input type="range" id="hh-amp" min="0" max="2" step="0.01" value="0.3"><span class="val" id="v-hhamp">0.30</span></div>
     <div class="row"><label>Frequência</label><input type="range" id="hh-freq" min="0.2" max="8" step="0.1" value="2"><span class="val" id="v-hhfreq">2.0</span></div>
+    <div class="axis-row"><span class="lbl">Eixos</span>
+      <button class="ax-btn on" id="hh-ax">X</button>
+      <button class="ax-btn on" id="hh-ay">Y</button>
+      <button class="ax-btn on" id="hh-az">Z</button>
+    </div>
 
     <h3>Desfoque de fundo (DoF)</h3>
     <button class="panel-btn" id="d-toggle">▶ Desfoque</button>
@@ -334,13 +349,14 @@
 
     <h3>Luz pontual (point light)</h3>
     <button class="panel-btn" id="pl-toggle">▶ Luz pontual</button>
+    <button class="panel-btn" id="pl-gizmo">🕹 Gizmo da luz (arrastar)</button>
     <div class="row"><label>Pos X</label><input type="range" id="pl-x" min="-0.5" max="1.5" step="0.01" value="0.5"><span class="val" id="v-plx">50%</span></div>
     <div class="row"><label>Pos Y</label><input type="range" id="pl-y" min="-0.5" max="1.5" step="0.01" value="0.1"><span class="val" id="v-ply">10%</span></div>
     <div class="row"><label>Pos Z</label><input type="range" id="pl-z" min="-0.5" max="1.5" step="0.01" value="0.5"><span class="val" id="v-plz">50%</span></div>
     <div class="row"><label>Intensidade</label><input type="range" id="pl-str" min="0" max="5" step="0.05" value="1.5"><span class="val" id="v-plstr">1.50</span></div>
     <div class="row"><label>Alcance</label><input type="range" id="pl-radius" min="0.1" max="2" step="0.02" value="1"><span class="val" id="v-plradius">1.00</span></div>
     <div class="row"><label>Cor</label><input type="color" id="pl-color" value="#ffd9a0" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
-    <p class="note">Posição mapeada no volume da cena. A dureza da sombra usa o slider "Sombra" do Relight.</p>
+    <p class="note">Com a luz ligada aparece uma esfera com gizmo na cena — arraste para posicionar. A dureza da sombra usa o slider "Sombra" do Relight.</p>
 
     <h3>Relight (2 luzes + sombra)</h3>
     <button class="panel-btn" id="l-toggle">▶ Relight</button>
@@ -429,6 +445,57 @@
     <div class="row"><label>Força</label><input type="range" id="pt-str" min="0" max="1" step="0.05" value="0.8"><span class="val" id="v-ptstr">0.80</span></div>
     <button class="panel-btn" id="pt-clear">Limpar pinceladas</button>
     <p class="note">Com o modo pincel ligado, clique e arraste sobre a cena para pintar (a órbita do mouse fica pausada). Até 64 pinceladas.</p>
+
+    <h3>🎵 Audio reactive</h3>
+    <div class="btn-pair">
+      <button class="panel-btn" id="au-file">🎵 Carregar áudio</button>
+      <button class="panel-btn" id="au-mic">🎙 Microfone</button>
+    </div>
+    <button class="panel-btn" id="au-play">▶ Tocar / Pausar</button>
+    <input type="file" id="au-input" accept="audio/*" hidden>
+    <div class="row"><label>Graves</label><select class="au-sel" id="au-t0">
+        <option value="none">Nenhum</option>
+        <option value="wob">Wobble (amplitude)</option>
+        <option value="rip">Ripple (amplitude)</option>
+        <option value="wav">Waves (amplitude)</option>
+        <option value="twi">Twist (intensidade)</option>
+        <option value="ben">Bend (curvatura)</option>
+        <option value="tap">Taper (afunilar)</option>
+        <option value="bul" selected>Bulge (inflar)</option>
+        <option value="splat">Tamanho do splat</option>
+        <option value="plight">Luz pontual (intensidade)</option>
+      </select></div>
+    <div class="row"><label>Reação</label><input type="range" id="au-g0" min="0" max="3" step="0.05" value="1"><span class="val" id="v-aug0">1.00</span></div>
+    <div class="au-meter"><div class="au-fill" id="au-m0"></div></div>
+    <div class="row"><label>Médios</label><select class="au-sel" id="au-t1">
+        <option value="none">Nenhum</option>
+        <option value="wob">Wobble (amplitude)</option>
+        <option value="rip">Ripple (amplitude)</option>
+        <option value="wav" selected>Waves (amplitude)</option>
+        <option value="twi">Twist (intensidade)</option>
+        <option value="ben">Bend (curvatura)</option>
+        <option value="tap">Taper (afunilar)</option>
+        <option value="bul">Bulge (inflar)</option>
+        <option value="splat">Tamanho do splat</option>
+        <option value="plight">Luz pontual (intensidade)</option>
+      </select></div>
+    <div class="row"><label>Reação</label><input type="range" id="au-g1" min="0" max="3" step="0.05" value="1"><span class="val" id="v-aug1">1.00</span></div>
+    <div class="au-meter"><div class="au-fill" id="au-m1"></div></div>
+    <div class="row"><label>Agudos</label><select class="au-sel" id="au-t2">
+        <option value="none">Nenhum</option>
+        <option value="wob">Wobble (amplitude)</option>
+        <option value="rip">Ripple (amplitude)</option>
+        <option value="wav">Waves (amplitude)</option>
+        <option value="twi">Twist (intensidade)</option>
+        <option value="ben">Bend (curvatura)</option>
+        <option value="tap">Taper (afunilar)</option>
+        <option value="bul">Bulge (inflar)</option>
+        <option value="splat" selected>Tamanho do splat</option>
+        <option value="plight">Luz pontual (intensidade)</option>
+      </select></div>
+    <div class="row"><label>Reação</label><input type="range" id="au-g2" min="0" max="3" step="0.05" value="1"><span class="val" id="v-aug2">1.00</span></div>
+    <div class="au-meter"><div class="au-fill" id="au-m2"></div></div>
+    <p class="note">O som modula a amplitude do efeito escolhido. Para as distorções, ligue o efeito na aba 🌀 Distorção (o áudio controla a força dele). A "Reação" é o ganho de cada banda.</p>
 
     <h3>Time Slice (4D)</h3>
     <button class="panel-btn" id="ts-toggle">▶ Time Slice</button>
@@ -1135,10 +1202,10 @@ const anim = {
   relight: false, light2: false, plight: false, smoke: null, smokeVal: 0, fxTime: 0,
   dof: false, reveal: null, revealVal: 1, pb: false, depthCol: false, anchorCrop: false,
   timeSlice: false, sliceInvert: false, sliceAnim: 0,
-  grade: false, fog: false, weather: null, paintMode: false,
+  grade: false, fog: false, weather: null, paintMode: false, plGizmo: false,
   disVal: 0, disAnim: null, recOrbit: false,
   cropBox: { on:false, px:.5, py:.5, pz:.5, sx:1, sy:1, sz:1, rx:0, ry:0, rz:0 },
-  cam: { orbit:false, vertigo:false, vertigoK:1, dolly:false, truck:false, tilt:false, shake:false,
+  cam: { orbit:false, vertigo:false, vertigoK:1, dolly:false, truck:false, tilt:false, shake:false, shakeAx:[1,1,1],
          shakePrev: new THREE.Vector3() }
 };
 let lastTime = performance.now();
@@ -1257,6 +1324,8 @@ function centerControls() {
   viewer.controls.minDistance = 0.01; // deixa chegar bem perto
   viewer.controls.zoomSpeed = 1.6;    // aproximação mais rápida
   viewer.controls.update && viewer.controls.update();
+  // guarda o estado inicial da câmera desta cena (para o botão Resetar câmera)
+  if (viewer.camera) anim.camHome = { pos: viewer.camera.position.clone(), target: viewer.controls.target.clone() };
 }
 
 async function loadScene(buffer, format, name) {
@@ -1432,6 +1501,118 @@ function updateBoxHelpers() {
   if (iFx >= 0) bxUpdateGizmo(hFx, dfxState[iFx].box, iFx);
   else if (anim.cropBox.on) bxUpdateGizmo(hCrop, anim.cropBox, -1);
   else bxUpdateGizmo(null, null, -1);
+  updateLightGizmo();
+}
+// --- luz pontual: marcador (esfera) + gizmo próprio para posicionar em 3D ---
+const bxLight = { marker: null, ctl: null, dragging: false };
+function bxUpdateLightHelper() {
+  const mesh = viewer?.splatMesh;
+  if (!mesh) return;
+  let mk = bxLight.marker;
+  if (!mk) {
+    mk = bxLight.marker = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 16, 12),
+      new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0.95, depthTest: false, depthWrite: false }));
+    mk.renderOrder = 9995;
+  }
+  if (mk.parent !== mesh) { try { mk.parent?.remove(mk); } catch(e){} mesh.add(mk); }
+  mk.visible = anim.plight;
+  const r = bxDiag() * 0.018;
+  mk.scale.set(r, r, r);
+  mk.material.color.set($('pl-color').value);
+  if (!(bxLight.dragging && bxLight.ctl)) {
+    mk.position.set(
+      bxMap01(0, parseFloat($('pl-x').value)),
+      bxMap01(1, parseFloat($('pl-y').value)),
+      bxMap01(2, parseFloat($('pl-z').value)));
+  }
+  if (!TransformControls || !viewer?.camera || !viewer?.renderer) return;
+  let g = bxLight.ctl;
+  if (g && g.camera !== viewer.camera) {
+    try { g.detach(); g.dispose(); g.parent?.remove(g); } catch(e){}
+    g = bxLight.ctl = null;
+  }
+  if (!anim.plight) { if (g) { g.detach(); g.visible = false; } return; }
+  if (!g) {
+    g = bxLight.ctl = new TransformControls(viewer.camera, viewer.renderer.domElement);
+    g.setSize(0.7);
+    g.setMode('translate');
+    g.addEventListener('dragging-changed', e => {
+      bxLight.dragging = e.value;
+      if (viewer?.controls) viewer.controls.enabled = !e.value && !anim.paintMode;
+    });
+    g.addEventListener('objectChange', () => {
+      const mp = bxLight.marker.position;
+      const ex = bbox ? [bbox.max[0]-bbox.min[0]||1, bbox.max[1]-bbox.min[1]||1, bbox.max[2]-bbox.min[2]||1] : [5,5,5];
+      const mn = bbox ? bbox.min : [-2.5,-2.5,-2.5];
+      [['pl-x','v-plx',(mp.x-mn[0])/ex[0]], ['pl-y','v-ply',(mp.y-mn[1])/ex[1]], ['pl-z','v-plz',(mp.z-mn[2])/ex[2]]]
+        .forEach(([id, vid, val]) => {
+          $(id).value = Math.max(-0.5, Math.min(1.5, val));
+          $(vid).textContent = Math.round(val*100) + '%';
+        });
+      syncFxUniforms();
+    });
+    viewer.threeScene.add(g);
+  }
+  if (g.parent !== viewer.threeScene) viewer.threeScene.add(g);
+  if (g.object !== mk) g.attach(mk);
+  g.visible = true; g.enabled = true;
+}
+
+// --- luz pontual: marcador 3D (esfera) + gizmo para arrastar no espaço ---
+const plG = { marker: null, ctl: null, dragging: false };
+function updateLightGizmo() {
+  const mesh = viewer?.splatMesh;
+  if (!mesh) return;
+  if (!plG.marker) {
+    plG.marker = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 20, 14),
+      new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0.95, depthTest: false, depthWrite: false }));
+    plG.marker.renderOrder = 9995;
+  }
+  const mk = plG.marker;
+  if (mk.parent !== mesh) { try { mk.parent?.remove(mk); } catch(e){} mesh.add(mk); }
+  mk.visible = anim.plight;
+  mk.material.color.set($('pl-color').value);
+  const mr = bxDiag() * 0.015;
+  mk.scale.set(mr, mr, mr);
+  if (!plG.dragging) {
+    mk.position.set(
+      bxMap01(0, parseFloat($('pl-x').value)),
+      bxMap01(1, parseFloat($('pl-y').value)),
+      bxMap01(2, parseFloat($('pl-z').value)));
+  }
+  if (!TransformControls || !viewer?.camera || !viewer?.renderer) return;
+  let g = plG.ctl;
+  if (g && g.camera !== viewer.camera) { try { g.detach(); g.dispose(); g.parent?.remove(g); } catch(e){} g = plG.ctl = null; }
+  const want = anim.plight && anim.plGizmo;
+  if (!want) { if (g) { g.detach(); g.visible = false; } return; }
+  if (!g) {
+    g = plG.ctl = new TransformControls(viewer.camera, viewer.renderer.domElement);
+    g.setSize(0.7);
+    g.setMode('translate');
+    g.addEventListener('dragging-changed', e => {
+      plG.dragging = e.value;
+      if (viewer?.controls) viewer.controls.enabled = !e.value && !anim.paintMode;
+    });
+    g.addEventListener('objectChange', () => {
+      const mn = bbox ? bbox.min : [-2.5, -2.5, -2.5];
+      const ex = bbox
+        ? [bbox.max[0]-bbox.min[0] || 1, bbox.max[1]-bbox.min[1] || 1, bbox.max[2]-bbox.min[2] || 1]
+        : [5, 5, 5];
+      const f = [(mk.position.x-mn[0])/ex[0], (mk.position.y-mn[1])/ex[1], (mk.position.z-mn[2])/ex[2]];
+      [['pl-x','v-plx'], ['pl-y','v-ply'], ['pl-z','v-plz']].forEach(([sid, vid], j) => {
+        $(sid).value = f[j];
+        $(vid).textContent = Math.round(f[j]*100) + '%';
+      });
+      const plp = bxU('uBxPLPos');
+      if (plp) plp.value.copy(mk.position); // segue o gizmo mesmo fora do range dos sliders
+    });
+    viewer.threeScene.add(g);
+  }
+  if (g.parent !== viewer.threeScene) viewer.threeScene.add(g);
+  if (g.object !== mk) g.attach(mk);
+  g.visible = true; g.enabled = true;
 }
 
 // sincroniza sliders do painel → uniforms do shader
@@ -1554,8 +1735,9 @@ function syncFxUniforms() {
   set('uBxMono', anim.pb ? 1 : 0);
   const pc = viewer?.splatMesh?.material?.uniforms?.pointCloudModeEnabled;
   if (pc) pc.value = (anim.pb || anim.depthCol) ? 1 : 0;
-  // wireframes dos boxes
+  // wireframes dos boxes + marcador/gizmo da luz pontual
   updateBoxHelpers();
+  bxUpdateLightHelper();
 }
 
 async function loadFile(file) {
@@ -2060,15 +2242,39 @@ camToggle('vt-toggle', 'vertigo', '⏸ Vertigo (ligado)', '▶ Vertigo', () => {
   const dist = viewer.camera.position.distanceTo(anchorWorld());
   anim.cam.vertigoK = Math.max(dist, 0.05) * Math.tan(viewer.camera.fov * Math.PI / 360);
 });
-bindSlider('dl-speed', 'v-dlspeed', v => v.toFixed(1), () => {});
+bindSlider('dl-speed', 'v-dlspeed', v => v.toFixed(2), () => {});
 camToggle('dl-toggle', 'dolly', '⏸ Dolly In/Out (ligado)', '▶ Dolly In/Out');
-bindSlider('tk-speed', 'v-tkspeed', v => v.toFixed(1), () => {});
+bindSlider('tk-speed', 'v-tkspeed', v => v.toFixed(2), () => {});
 camToggle('tk-toggle', 'truck', '⏸ Dolly Left/Right (ligado)', '▶ Dolly Left/Right');
 bindSlider('tl-speed', 'v-tlspeed', v => v.toFixed(1), () => {});
 camToggle('tl-toggle', 'tilt', '⏸ Tilt (ligado)', '▶ Tilt Up/Down');
 bindSlider('hh-amp', 'v-hhamp', v => v.toFixed(2), () => {});
 bindSlider('hh-freq', 'v-hhfreq', v => v.toFixed(1), () => {});
 camToggle('hh-toggle', 'shake', '⏸ Camera shake (ligado)', '▶ Camera shake');
+['hh-ax','hh-ay','hh-az'].forEach((id, j) => $(id).addEventListener('click', () => {
+  anim.cam.shakeAx[j] = anim.cam.shakeAx[j] ? 0 : 1;
+  $(id).classList.toggle('on', !!anim.cam.shakeAx[j]);
+}));
+// --- resetar câmera: desliga os efeitos, endireita o up e volta ao enquadramento inicial ---
+$('cam-reset').addEventListener('click', () => {
+  if (!viewer?.camera || !viewer?.controls) return;
+  [['co-toggle','orbit','▶ Órbita'], ['vt-toggle','vertigo','▶ Vertigo'],
+   ['dl-toggle','dolly','▶ Dolly In/Out'], ['tk-toggle','truck','▶ Dolly Left/Right'],
+   ['tl-toggle','tilt','▶ Tilt Up/Down'], ['hh-toggle','shake','▶ Camera shake']]
+    .forEach(([id, key, label]) => {
+      if (anim.cam[key]) { anim.cam[key] = false; $(id).classList.remove('on'); $(id).textContent = label; }
+    });
+  anim.cam.shakePrev.set(0, 0, 0);
+  anim.recOrbit = false;
+  const cam = viewer.camera, ctr = viewer.controls;
+  cam.up.set(0, -1, 0); // endireita a câmera (horizonte reto)
+  if (anim.camHome) { cam.position.copy(anim.camHome.pos); ctr.target.copy(anim.camHome.target); }
+  else { ctr.target.set(0, 0, 0); cam.position.set(0, 0, -5); }
+  $('cam-fov').value = 60;
+  applyFov();
+  cam.lookAt(ctr.target);
+  ctr.update && ctr.update();
+});
 
 // executa os efeitos de câmera ativos (chamado no tick)
 function tickCamera(dt) {
@@ -2105,12 +2311,12 @@ function tickCamera(dt) {
   }
   const fwd = new THREE.Vector3(); cam.getWorldDirection(fwd);
   if (C.dolly) {
-    const s = parseFloat($('dl-speed').value) * dt * ext * 0.08;
+    const s = parseFloat($('dl-speed').value) * dt * ext * 0.05;
     cam.position.addScaledVector(fwd, s); ctr.target.addScaledVector(fwd, s);
   }
   if (C.truck) {
     const right = new THREE.Vector3().crossVectors(fwd, cam.up).normalize();
-    const s = parseFloat($('tk-speed').value) * dt * ext * 0.08;
+    const s = parseFloat($('tk-speed').value) * dt * ext * 0.05;
     cam.position.addScaledVector(right, s); ctr.target.addScaledVector(right, s);
   }
   if (C.tilt) {
@@ -2124,7 +2330,8 @@ function tickCamera(dt) {
     const f = parseFloat($('hh-freq').value);
     const t = anim.fxTime * f;
     const n = (a, b, c) => Math.sin(t*1.1+a)*0.5 + Math.sin(t*2.3+b)*0.35 + Math.sin(t*4.7+c)*0.15;
-    const off = new THREE.Vector3(n(1.7,4.2,9.1), n(2.9,0.6,5.3), n(7.7,3.1,1.9)).multiplyScalar(amp);
+    const A = C.shakeAx;
+    const off = new THREE.Vector3(n(1.7,4.2,9.1)*A[0], n(2.9,0.6,5.3)*A[1], n(7.7,3.1,1.9)*A[2]).multiplyScalar(amp);
     const d = new THREE.Vector3().subVectors(off, C.shakePrev);
     cam.position.add(d); ctr.target.add(d);
     C.shakePrev.copy(off);
@@ -2175,6 +2382,12 @@ $('pl-toggle').addEventListener('click', () => {
   $('pl-toggle').classList.toggle('on', anim.plight);
   $('pl-toggle').textContent = anim.plight ? '⏸ Luz pontual (ligada)' : '▶ Luz pontual';
   syncFxUniforms();
+});
+$('pl-gizmo').addEventListener('click', () => {
+  anim.plGizmo = !anim.plGizmo;
+  $('pl-gizmo').classList.toggle('on', anim.plGizmo);
+  if (anim.plGizmo && !anim.plight) $('pl-toggle').click(); // liga a luz junto
+  else syncFxUniforms();
 });
 // --- desfoque de fundo (DoF) ---
 bindSlider('d-dist', 'v-ddist', v => v.toFixed(1), () => syncFxUniforms());
@@ -2344,9 +2557,10 @@ function startWeather(kind) {
   const mat = new THREE.PointsMaterial({
     color: snow ? 0xffffff : 0x99bbdd,
     size: (snow ? ext*0.006 : ext*0.004) * szMul,
-    transparent: true, opacity: snow ? 0.9 : 0.5, depthWrite: false
+    transparent: true, opacity: snow ? 0.95 : 0.6, depthWrite: false, depthTest: false
   });
   weatherPts = new THREE.Points(geo, mat);
+  weatherPts.renderOrder = 9970; // desenha por cima dos splats (eles não gravam depth)
   weatherPts.userData = { ext, cx, cy, cz, snow, speed: snow ? 0.4 : 2.2 };
   scene.add(weatherPts);
 }
@@ -2412,6 +2626,123 @@ $('ts-toggle').addEventListener('click', () => {
 
 
 
+// ============================================================
+// 🎵 AUDIO REACTIVE — FFT do som separada em 3 bandas de vibração
+// (graves / médios / agudos), cada uma roteada para um efeito.
+// ============================================================
+const audioFx = { ctx:null, analyser:null, data:null, el:null, elSrc:null, mic:null, micSrc:null,
+                  active:false, bands:[0,0,0], splatWas:false };
+function auCtx() {
+  if (!audioFx.ctx) {
+    audioFx.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    audioFx.analyser = audioFx.ctx.createAnalyser();
+    audioFx.analyser.fftSize = 256;
+    audioFx.analyser.smoothingTimeConstant = 0.7;
+    audioFx.data = new Uint8Array(audioFx.analyser.frequencyBinCount);
+  }
+  if (audioFx.ctx.state === 'suspended') audioFx.ctx.resume();
+  return audioFx.ctx;
+}
+function auConnect(node, toSpeakers) {
+  try { audioFx.elSrc?.disconnect(); } catch(e){}
+  try { audioFx.micSrc?.disconnect(); } catch(e){}
+  try { audioFx.analyser.disconnect(); } catch(e){}
+  node.connect(audioFx.analyser);
+  if (toSpeakers) audioFx.analyser.connect(audioFx.ctx.destination);
+}
+function auRestore() { // devolve os valores base quando o áudio para
+  syncFxUniforms();
+  if (viewer?.splatMesh && !anim.dissolve) viewer.splatMesh.setSplatScale(anim.splatScale);
+  audioFx.splatWas = false;
+  [0,1,2].forEach(i => { const m = $('au-m'+i); if (m) m.style.width = '0%'; });
+}
+function auStopMic() {
+  if (audioFx.mic) { audioFx.mic.getTracks().forEach(t => t.stop()); audioFx.mic = null; }
+  $('au-mic').classList.remove('on');
+  $('au-mic').textContent = '🎙 Microfone';
+}
+$('au-file').addEventListener('click', () => $('au-input').click());
+$('au-input').addEventListener('change', () => {
+  const f = $('au-input').files[0];
+  if (!f) return;
+  const ctx = auCtx();
+  auStopMic();
+  if (!audioFx.el) {
+    audioFx.el = new Audio();
+    audioFx.el.loop = true;
+    audioFx.elSrc = ctx.createMediaElementSource(audioFx.el);
+  }
+  audioFx.el.src = URL.createObjectURL(f);
+  auConnect(audioFx.elSrc, true);
+  audioFx.el.play();
+  audioFx.active = true;
+  $('au-play').classList.add('on');
+  $('au-play').textContent = '⏸ Pausar';
+  $('au-input').value = '';
+});
+$('au-play').addEventListener('click', () => {
+  if (!audioFx.el || !audioFx.el.src) { showError('Carregue um áudio primeiro (ou ligue o microfone).'); return; }
+  if (audioFx.el.paused) {
+    auCtx(); audioFx.el.play(); audioFx.active = true;
+    $('au-play').classList.add('on'); $('au-play').textContent = '⏸ Pausar';
+  } else {
+    audioFx.el.pause(); audioFx.active = !!audioFx.mic;
+    if (!audioFx.active) auRestore();
+    $('au-play').classList.remove('on'); $('au-play').textContent = '▶ Tocar / Pausar';
+  }
+});
+$('au-mic').addEventListener('click', async () => {
+  if (audioFx.mic) { auStopMic(); audioFx.active = false; auRestore(); return; }
+  try {
+    const ctx = auCtx();
+    if (audioFx.el && !audioFx.el.paused) $('au-play').click();
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioFx.mic = stream;
+    audioFx.micSrc = ctx.createMediaStreamSource(stream);
+    auConnect(audioFx.micSrc, false); // sem alto-falante (evita microfonia)
+    audioFx.active = true;
+    $('au-mic').classList.add('on');
+    $('au-mic').textContent = '🎙 Microfone (ligado)';
+  } catch (e) { showError('Microfone indisponível: ' + (e.message || e)); }
+});
+['au-g0','au-g1','au-g2'].forEach((id, i) => bindSlider(id, 'v-aug' + i, v => v.toFixed(2), () => {}));
+const AU_DFX = { wob:0, rip:1, wav:2, twi:3, ben:4, tap:5, bul:6 };
+function tickAudio() {
+  if (!audioFx.active || !audioFx.analyser) return;
+  audioFx.analyser.getByteFrequencyData(audioFx.data);
+  const d = audioFx.data, nb = d.length;
+  const avg = (a, b) => { let t = 0; for (let i = a; i < b; i++) t += d[i]; return t / ((b - a) * 255); };
+  const raw = [avg(0, 4), avg(4, 24), avg(24, Math.min(nb, 96))]; // ~graves / médios / agudos
+  for (let i = 0; i < 3; i++) {
+    const k = raw[i] > audioFx.bands[i] ? 0.55 : 0.12; // ataque rápido, queda suave
+    audioFx.bands[i] += (raw[i] - audioFx.bands[i]) * k;
+    const m = $('au-m' + i);
+    if (m) m.style.width = Math.round(audioFx.bands[i] * 100) + '%';
+  }
+  // base de todos os alvos a cada frame, depois aplica as modulações
+  const dAmp = bxU('uBxDAmp');
+  if (dAmp) for (let i = 0; i < 7; i++) dAmp.value[i] = dfxState[i].amp;
+  const uPl = bxU('uBxPLStr');
+  if (uPl) uPl.value = parseFloat($('pl-str').value);
+  let splatMod = null;
+  for (let i = 0; i < 3; i++) {
+    const t = $('au-t' + i).value, g = parseFloat($('au-g' + i).value), e = audioFx.bands[i];
+    if (t === 'none' || g <= 0) continue;
+    if (t in AU_DFX) {
+      const fi = AU_DFX[t];
+      if (dAmp) dAmp.value[fi] = dfxState[fi].amp * (1 + g * 3 * e);
+    } else if (t === 'splat') {
+      splatMod = (splatMod ?? 1) * (1 + g * 0.8 * e);
+    } else if (t === 'plight' && uPl) {
+      uPl.value = parseFloat($('pl-str').value) * (1 + g * 2.5 * e);
+    }
+  }
+  if (viewer?.splatMesh && !anim.dissolve) {
+    if (splatMod !== null) { viewer.splatMesh.setSplatScale(anim.splatScale * splatMod); audioFx.splatWas = true; }
+    else if (audioFx.splatWas) { viewer.splatMesh.setSplatScale(anim.splatScale); audioFx.splatWas = false; }
+  }
+}
+
 function tick(now) {
   try { tickBody(now); }
   catch (e) { console.error('tick:', e); }
@@ -2433,6 +2764,7 @@ function tickBody(now) {
   // tempo global dos efeitos GPU
   anim.fxTime += dt;
   const uT = bxU('uBxTime'); if (uT) uT.value = anim.fxTime;
+  tickAudio(); // 🎵 modulação por áudio (graves/médios/agudos)
   // animação da fumaça
   if (anim.smoke) {
     const s = anim.smoke;

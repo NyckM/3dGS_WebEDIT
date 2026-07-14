@@ -30,40 +30,109 @@
   #corner-logo.visible { display: block; }
 
   /* ================= SPLASH ================= */
+  @keyframes dzDrift1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(18px,-24px); } }
+  @keyframes dzDrift2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-22px,16px); } }
+  @keyframes dzDrift3 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(14px,20px); } }
   #dropzone {
     position: fixed; inset: 0; z-index: 10;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 10px; text-align: center; padding: 24px;
-    background: radial-gradient(ellipse at 50% 40%, #1c1226 0%, var(--bg) 70%);
+    display: flex; align-items: stretch;
+    background: radial-gradient(ellipse 1200px 700px at 60% -10%, #1c1226 0%, var(--bg) 60%);
     transition: opacity .4s;
+    overflow: hidden;
   }
   #dropzone.hidden { opacity: 0; pointer-events: none; }
-  #dropzone.dragover { outline: 3px dashed var(--verde); outline-offset: -16px; }
-  #splash-logo { width: min(240px, 45vw); }
-  #dropzone .brand { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 800; letter-spacing: .5px; margin-top: 8px; }
+  #dropzone.dragover .dz-main { outline: 3px dashed var(--verde); outline-offset: -16px; }
+
+  #dz-glow {
+    position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(600px circle at var(--mx, 60%) var(--my, 30%), rgba(150,201,61,.10), rgba(176,100,196,.07) 40%, transparent 65%);
+    transition: background .15s ease-out;
+  }
+  .dz-particles { position: absolute; inset: 0; z-index: 1; pointer-events: none; transition: transform .2s ease-out; }
+  .dz-particle { position: absolute; border-radius: 50%; }
+
+  /* ---- sidebar ---- */
+  .dz-sidebar {
+    position: relative; z-index: 2; width: 76px; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 22px 0; background: rgba(255,255,255,.02); border-right: 1px solid rgba(255,255,255,.06);
+  }
+  .dz-sidebar .dz-mark { width: 40px; margin-bottom: 26px; }
+  .dz-sidebar .dz-mark svg, .dz-sidebar .dz-mark img { display: block; width: 100%; height: auto; }
+  .dz-nav { display: flex; flex-direction: column; gap: 10px; width: 100%; align-items: center; }
+  .dz-nav-item {
+    width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    color: #8a8794; text-decoration: none; font-size: 1.1rem; cursor: pointer; border: none; background: transparent;
+  }
+  .dz-nav-item.active { background: rgba(150,201,61,.14); color: var(--verde); border-left: 2px solid var(--verde); }
+  .dz-nav-item:hover { color: var(--verde); }
+  .dz-sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 16px; align-items: center; }
+  .dz-sidebar-bottom a { color: #7a7886; text-decoration: none; font-size: .62rem; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .dz-sidebar-bottom a:hover { color: var(--verde); }
+
+  /* ---- main ---- */
+  .dz-main { position: relative; z-index: 2; flex: 1; overflow-y: auto; padding: 32px 40px 50px; }
+  .dz-badge {
+    position: absolute; top: 24px; right: 32px; z-index: 3;
+    display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
+    border-radius: 999px; padding: 7px 16px; font-size: .78rem; font-weight: 600; color: #ddd;
+  }
+  .dz-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--verde); box-shadow: 0 0 8px var(--verde); }
+  .dz-hero { max-width: 780px; margin: 40px auto 0; text-align: center; }
+  #splash-logo { width: min(150px, 30vw); margin: 0 auto; }
+  #dropzone .brand { font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 800; letter-spacing: .5px; margin-top: 12px; }
   #dropzone .brand .b { color: var(--verde); }
   #dropzone .brand .v { color: var(--roxo-claro); }
-  #dropzone .sub { font-size: clamp(1.1rem, 3vw, 1.6rem); font-weight: 700; color: #888; letter-spacing: 6px; }
+  .dz-divider { color: var(--roxo-claro); font-size: .9rem; margin: 16px 0; opacity: .7; }
+  .dz-tagline { font-size: 1.02rem; color: #a9a6b3; line-height: 1.6; max-width: 560px; margin: 0 auto; }
   #dropzone .formats { font-size: .85rem; color: #666; margin-top: 14px; }
+
+  .dz-cards { display: grid; grid-template-columns: repeat(2, minmax(260px, 1fr)); gap: 18px; margin-top: 34px; text-align: left; }
+  .dz-card {
+    background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.12); border-radius: 18px; padding: 26px 26px 28px;
+    display: flex; flex-direction: column;
+  }
+  .dz-card.roxo { border-color: rgba(176,100,196,.35); }
+  .dz-card.verde { border-color: rgba(150,201,61,.3); }
+  .dz-card-icon { font-size: 1.3rem; margin-bottom: 6px; }
+  .dz-card h2 { font-size: 1.15rem; font-weight: 700; margin: 2px 0 8px; }
+  .dz-card.roxo h2 { color: var(--roxo-claro); }
+  .dz-card.verde h2 { color: var(--verde); }
+  .dz-card p { font-size: .86rem; color: #a9a6b3; line-height: 1.55; margin: 0 0 18px; }
+  .dz-dropbox {
+    border: 1px dashed rgba(255,255,255,.22); border-radius: 12px; padding: 22px 14px; text-align: center;
+    background: rgba(255,255,255,.015); margin-bottom: 14px;
+  }
+  .dz-dropbox .dz-dz-icon { font-size: 1.3rem; color: #8a8794; }
+  .dz-dropbox p { font-size: .85rem; color: #ccc; margin: 8px 0 4px; }
+  .dz-dropbox .fmt { font-size: .72rem; color: #77748a; margin: 0; }
+
   .btn {
     background: linear-gradient(135deg, var(--roxo), #9b3db0);
-    border: none; color: #fff; font-size: 1.05rem; font-weight: 600;
-    padding: 14px 34px; border-radius: 999px; cursor: pointer; margin-top: 20px;
-    box-shadow: 0 4px 24px rgba(123, 45, 142, .5);
+    border: none; color: #fff; font-size: .95rem; font-weight: 600;
+    padding: 13px 24px; border-radius: 999px; cursor: pointer;
+    box-shadow: 0 4px 24px rgba(123, 45, 142, .35);
     transition: transform .15s, box-shadow .15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-align: center;
+    text-decoration: none;
   }
-  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 30px rgba(150, 201, 61, .35); }
-  #dropzone .cta {
-    display: flex; flex-direction: column; align-items: stretch; gap: 10px;
-    width: min(420px, 88vw); margin-top: 22px;
-  }
-  #dropzone .cta .btn { margin-top: 0; width: 100%; text-align: center; }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 30px rgba(150, 201, 61, .3); }
+  .btn.verde { background: linear-gradient(135deg, #7ba32e, var(--verde)); color: #0d0a12; box-shadow: 0 4px 20px rgba(150,201,61,.3); }
+  #dropzone .cta { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
   .btn.ghost {
-    background: transparent; border: 2px solid var(--verde); box-shadow: none;
-    color: var(--verde); text-decoration: none; display: block;
-    padding: 12px 20px; font-size: .95rem;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15); box-shadow: none;
+    color: #eee; text-decoration: none; padding: 12px 20px; font-size: .88rem;
   }
-  .btn.ghost:hover { background: rgba(150,201,61,.15); box-shadow: none; transform: translateY(-1px); }
+  .btn.ghost:hover { background: rgba(255,255,255,.09); box-shadow: none; transform: translateY(-1px); }
+
+  .dz-tips {
+    margin-top: 22px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+    background: rgba(176,100,196,.06); border: 1px solid rgba(176,100,196,.2); border-radius: 14px; padding: 16px 22px;
+  }
+  .dz-tips .tip-lead { display: flex; align-items: center; gap: 10px; color: var(--roxo-claro); font-weight: 700; font-size: .85rem; white-space: nowrap; }
+  .dz-tips .tip-lead .bulb { width: 30px; height: 30px; border-radius: 50%; background: rgba(176,100,196,.2); display: flex; align-items: center; justify-content: center; }
+  .dz-tips .tip { font-size: .82rem; color: #a9a6b3; }
+  .dz-footer { text-align: center; font-size: .78rem; color: #55525f; margin-top: 40px; }
 
   /* ================= TOPBAR ================= */
   #topbar {
@@ -190,16 +259,71 @@
 
 <!-- ===== SPLASH ===== -->
 <div id="dropzone">
-  <div class="logo-wrap" id="splash-logo"></div>
-  <div class="brand"><span class="b">Bruxos</span> <span style="color:#fff">do</span> <span class="v">VFX</span></div>
-  <div class="sub">3DGS</div>
-  <div class="cta">
-    <button class="btn" id="btn-import">Importar Gaussians</button>
-    <a class="btn ghost" id="btn-criar" href="criar.html">✨ Criar meu splat (foto, vídeo, 4D) — guia passo a passo</a>
+  <div id="dz-glow"></div>
+  <div class="dz-particles" id="dz-particles">
+    <div class="dz-particle" style="top:14%; left:70%; width:5px; height:5px; background:#9ee05a; opacity:.5; animation: dzDrift1 9s ease-in-out infinite; box-shadow:0 0 12px 2px rgba(158,224,90,.5);"></div>
+    <div class="dz-particle" style="top:62%; left:82%; width:4px; height:4px; background:#b47af0; opacity:.45; animation: dzDrift2 11s ease-in-out infinite; box-shadow:0 0 10px 2px rgba(180,122,240,.5);"></div>
+    <div class="dz-particle" style="top:30%; left:92%; width:6px; height:6px; background:#9ee05a; opacity:.4; animation: dzDrift3 13s ease-in-out infinite; box-shadow:0 0 14px 2px rgba(158,224,90,.4);"></div>
+    <div class="dz-particle" style="top:80%; left:60%; width:4px; height:4px; background:#b47af0; opacity:.5; animation: dzDrift1 10s ease-in-out infinite reverse; box-shadow:0 0 10px 2px rgba(180,122,240,.5);"></div>
+    <div class="dz-particle" style="top:48%; left:20%; width:3px; height:3px; background:#e9f7d0; opacity:.3; animation: dzDrift2 8s ease-in-out infinite;"></div>
+    <div class="dz-particle" style="top:20%; left:35%; width:3px; height:3px; background:#b47af0; opacity:.3; animation: dzDrift3 12s ease-in-out infinite;"></div>
   </div>
-  <p class="formats">Arraste para cá ou importe — <b>.ply</b> · <b>.splat</b> · <b>.ksplat</b> · <b>.splat4d</b> (4D)</p>
-  <input type="file" id="file-input" accept=".ply,.splat,.ksplat,.splat4d" multiple hidden>
-  <p class="formats">Importe um <b>.splat4d</b> (4D com efeitos) ou vários <b>.ply</b> de uma vez ▶</p>
+
+  <div class="dz-sidebar">
+    <div class="dz-mark" id="dz-mark"></div>
+    <div class="dz-nav">
+      <a class="dz-nav-item active" href="#" title="Início">🏠</a>
+      <a class="dz-nav-item" href="criar.html" title="Ajuda">❔</a>
+    </div>
+    <div class="dz-sidebar-bottom">
+      <a href="criar.html">📖 Docs</a>
+      <a href="#">🐙 GitHub</a>
+    </div>
+  </div>
+
+  <div class="dz-main">
+    <div class="dz-badge"><span class="dot"></span> 3DGS</div>
+    <div class="dz-hero">
+      <div class="logo-wrap" id="splash-logo"></div>
+      <div class="brand"><span class="b">Bruxos</span> <span style="color:#fff">do</span> <span class="v">VFX</span></div>
+      <div class="dz-divider">✦</div>
+      <p class="dz-tagline">Ferramentas para transformar fotos em cenas 3D com Gaussian Splatting — simples, poderoso e mágico.</p>
+
+      <div class="dz-cards">
+        <div class="dz-card roxo">
+          <div class="dz-card-icon">☁️</div>
+          <h2>Importar Gaussians</h2>
+          <p>Importe um arquivo .ply ou .splat para visualizar e editar.</p>
+          <div class="dz-dropbox">
+            <div class="dz-dz-icon">☁️</div>
+            <p>Arraste e solte seu arquivo aqui</p>
+            <p class="fmt">.ply · .splat · .ksplat · .splat4d (4D)</p>
+          </div>
+          <button class="btn ghost" id="btn-import">📁 Selecionar arquivo</button>
+          <input type="file" id="file-input" accept=".ply,.splat,.ksplat,.splat4d" multiple hidden>
+        </div>
+
+        <div class="dz-card verde">
+          <div class="dz-card-icon">✨</div>
+          <h2>Criar meu splat</h2>
+          <p>Transforme suas fotos, vídeos ou dados 4D em Gaussian Splatting.</p>
+          <div class="cta" style="margin-top: auto;">
+            <a class="btn verde" id="btn-criar" href="criar.html">Começar agora →</a>
+            <a class="btn ghost" href="criar.html">📖 Ver guia passo a passo</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="dz-tips">
+        <div class="tip-lead"><span class="bulb">💡</span> Dicas rápidas</div>
+        <div class="tip">Use boas fotos com boa iluminação e foco.</div>
+        <div class="tip">Evite objetos muito reflexivos ou superfícies transparentes.</div>
+        <div class="tip">Quanto mais ângulos, melhor o resultado 3D.</div>
+      </div>
+
+      <p class="dz-footer">© 2025 Bruxos do VFX — Feito com magia e pixels.</p>
+    </div>
+  </div>
 </div>
 
 <!-- ===== TOPBAR ===== -->
@@ -600,6 +724,22 @@ function mountLogo(el) {
 }
 mountLogo(document.getElementById("splash-logo"));
 mountLogo(document.getElementById("corner-logo"));
+mountLogo(document.getElementById("dz-mark"));
+
+// ===== glow/parallax de fundo que reage ao mouse (splash) =====
+(function () {
+  const dz = document.getElementById('dropzone');
+  const particles = document.getElementById('dz-particles');
+  if (!dz || !particles) return;
+  dz.addEventListener('mousemove', (e) => {
+    const r = dz.getBoundingClientRect();
+    const mx = (e.clientX - r.left) / r.width;
+    const my = (e.clientY - r.top) / r.height;
+    dz.style.setProperty('--mx', (mx * 100) + '%');
+    dz.style.setProperty('--my', (my * 100) + '%');
+    particles.style.transform = 'translate(' + ((mx - 0.5) * -18) + 'px, ' + ((my - 0.5) * -14) + 'px)';
+  });
+})();
 
 // ===== Vigia de inicialização =====
 // Se o módulo principal não rodar (CDN bloqueado, sem internet, erro de script),

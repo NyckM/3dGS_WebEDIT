@@ -245,6 +245,12 @@
 
     <h3>Crop (box 3D)</h3>
     <button class="panel-btn" id="cb-toggle">▶ Crop box (ao vivo)</button>
+    <div class="axis-row"><span class="lbl">Gizmo</span>
+      <button class="ax-btn gz-mode on" data-mode="translate">Mover</button>
+      <button class="ax-btn gz-mode" data-mode="rotate">Girar</button>
+      <button class="ax-btn gz-mode" data-mode="scale">Escala</button>
+    </div>
+    <p class="note">Com o box ligado, arraste o gizmo 3D na cena (Mover/Girar/Escala) ou use os sliders.</p>
     <div class="row"><label>Pos X</label><input type="range" id="cb-px" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-cbpx">50%</span></div>
     <div class="row"><label>Pos Y</label><input type="range" id="cb-py" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-cbpy">50%</span></div>
     <div class="row"><label>Pos Z</label><input type="range" id="cb-pz" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-cbpz">50%</span></div>
@@ -264,6 +270,12 @@
   <!-- ========== EFEITOS DE DISTORÇÃO ========== -->
   <div class="tab-page" id="tab-dist">
     <p class="note">Todos animados, centrados no <b>Anchor Point</b>. "Raio" limita a uma esfera no pivô; o box (posição/escala/rotação) limita a uma caixa — o box roxo aparece com 👁.</p>
+    <div class="axis-row"><span class="lbl">Gizmo</span>
+      <button class="ax-btn gz-mode on" data-mode="translate">Mover</button>
+      <button class="ax-btn gz-mode" data-mode="rotate">Girar</button>
+      <button class="ax-btn gz-mode" data-mode="scale">Escala</button>
+    </div>
+    <p class="note">O gizmo age no box em exibição (👁).</p>
     <div id="dist-container"></div>
   </div>
 
@@ -298,6 +310,12 @@
     <button class="panel-btn" id="hh-toggle">▶ Camera shake</button>
     <div class="row"><label>Intensidade</label><input type="range" id="hh-amp" min="0" max="3" step="0.05" value="0.6"><span class="val" id="v-hhamp">0.60</span></div>
     <div class="row"><label>Frequência</label><input type="range" id="hh-freq" min="0.2" max="8" step="0.1" value="2"><span class="val" id="v-hhfreq">2.0</span></div>
+
+    <h3>Desfoque de fundo (DoF)</h3>
+    <button class="panel-btn" id="d-toggle">▶ Desfoque</button>
+    <div class="row"><label>Foco (dist.)</label><input type="range" id="d-dist" min="0.1" max="20" step="0.1" value="3"><span class="val" id="v-ddist">3.0</span></div>
+    <div class="row"><label>Faixa nítida</label><input type="range" id="d-range" min="0.1" max="10" step="0.1" value="1.5"><span class="val" id="v-drange">1.5</span></div>
+    <div class="row"><label>Intensidade</label><input type="range" id="d-blur" min="0.5" max="12" step="0.5" value="6"><span class="val" id="v-dblur">6.0</span></div>
   </div>
 
   <!-- ========== ILUMINAÇÃO / COR ========== -->
@@ -340,11 +358,6 @@
     <div class="row"><label>Cor 2</label><input type="color" id="l2-color" value="#aaccff" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
     <p class="note">Relight aproximado (sem normais reais — usa direção radial).</p>
 
-    <h3>Desfoque de fundo (DoF)</h3>
-    <button class="panel-btn" id="d-toggle">▶ Desfoque</button>
-    <div class="row"><label>Foco (dist.)</label><input type="range" id="d-dist" min="0.1" max="20" step="0.1" value="3"><span class="val" id="v-ddist">3.0</span></div>
-    <div class="row"><label>Faixa nítida</label><input type="range" id="d-range" min="0.1" max="10" step="0.1" value="1.5"><span class="val" id="v-drange">1.5</span></div>
-    <div class="row"><label>Intensidade</label><input type="range" id="d-blur" min="0.5" max="12" step="0.5" value="6"><span class="val" id="v-dblur">6.0</span></div>
   </div>
 
   <!-- ========== EFEITOS DE TRANSIÇÃO ========== -->
@@ -412,7 +425,7 @@
     <h3>Paint (pincel)</h3>
     <button class="panel-btn" id="pt-toggle">🖌 Modo pincel</button>
     <div class="row"><label>Cor</label><input type="color" id="pt-color" value="#9933b3" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
-    <div class="row"><label>Tamanho</label><input type="range" id="pt-r" min="0.05" max="1" step="0.01" value="0.25"><span class="val" id="v-ptr">25%</span></div>
+    <div class="row"><label>Tamanho</label><input type="range" id="pt-r" min="0.01" max="1" step="0.01" value="0.1"><span class="val" id="v-ptr">10%</span></div>
     <div class="row"><label>Força</label><input type="range" id="pt-str" min="0" max="1" step="0.05" value="0.8"><span class="val" id="v-ptstr">0.80</span></div>
     <button class="panel-btn" id="pt-clear">Limpar pinceladas</button>
     <p class="note">Com o modo pincel ligado, clique e arraste sobre a cena para pintar (a órbita do mouse fica pausada). Até 64 pinceladas.</p>
@@ -521,6 +534,17 @@ setTimeout(function () {
 
 <script type="module">
 import * as THREE from 'three';
+
+// módulos extras (gizmo 3D + linhas grossas dos boxes) — com fallback se o CDN falhar
+const THREE_EX = 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/';
+let TransformControls = null, LineSegments2 = null, LineSegmentsGeometry = null, LineMaterial = null;
+try { ({ TransformControls } = await import(THREE_EX + 'controls/TransformControls.js')); }
+catch (e) { console.warn('Bruxos: gizmo indisponível:', e); }
+try {
+  ({ LineSegments2 } = await import(THREE_EX + 'lines/LineSegments2.js'));
+  ({ LineSegmentsGeometry } = await import(THREE_EX + 'lines/LineSegmentsGeometry.js'));
+  ({ LineMaterial } = await import(THREE_EX + 'lines/LineMaterial.js'));
+} catch (e) { console.warn('Bruxos: linhas grossas indisponíveis, usando linhas simples:', e); }
 
 // ============================================================
 // Patch da lib: eleva o limite de cenas (frames 4D) de 32 → 64.
@@ -1212,6 +1236,7 @@ function makeViewer(extra = {}) {
   return v;
 }
 window.addEventListener('resize', () => {
+  bxLineMats.forEach(m => m.resolution.set(window.innerWidth, window.innerHeight));
   if (!viewer?.renderer) return;
   viewer.renderer.setSize(window.innerWidth, window.innerHeight);
   if (viewer.camera) {
@@ -1286,12 +1311,104 @@ function boxToWorld(b) {
     eul: new THREE.Euler(b.rx*Math.PI/180, b.ry*Math.PI/180, b.rz*Math.PI/180)
   };
 }
-// wireframes: verde = crop box, roxo = box do efeito de distorção em edição
+// wireframes dos boxes: overlay sempre visível (linhas grossas + preenchimento
+// translúcido, por cima da cena) + gizmo 3D (mover/girar/escalar) via TransformControls
 const bxHelpers = { crop: null, fx: null };
+const bxLineMats = []; // LineMaterials que precisam de resolution atualizada no resize
 function makeBoxHelper(color) {
-  const g = new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1));
-  return new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9, depthTest: false }));
+  const grp = new THREE.Group();
+  const edges = new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1));
+  let lines;
+  if (LineSegments2 && LineSegmentsGeometry && LineMaterial) {
+    const g = new LineSegmentsGeometry().setPositions(Array.from(edges.attributes.position.array));
+    const m = new LineMaterial({ color, linewidth: 3, transparent: true, opacity: 1, depthTest: false, depthWrite: false });
+    m.resolution.set(window.innerWidth, window.innerHeight);
+    bxLineMats.push(m);
+    lines = new LineSegments2(g, m);
+  } else {
+    lines = new THREE.LineSegments(edges,
+      new THREE.LineBasicMaterial({ color, transparent: true, opacity: 1, depthTest: false, depthWrite: false }));
+  }
+  lines.renderOrder = 9990;
+  const fill = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.08, depthTest: false, depthWrite: false, side: THREE.DoubleSide }));
+  fill.renderOrder = 9980;
+  grp.add(fill);
+  grp.add(lines);
+  return grp;
 }
+// --- gizmo 3D compartilhado (um por vez: box de efeito em exibição > crop box ligado) ---
+const bxGizmo = { ctl: null, dragging: false, mode: 'translate', state: null, fxIndex: -1 };
+function bxUpdateGizmo(target, state, fxIndex) {
+  if (!TransformControls || !viewer?.camera || !viewer?.renderer) return;
+  let g = bxGizmo.ctl;
+  if (g && g.camera !== viewer.camera) { // viewer novo → recria o gizmo
+    try { g.detach(); g.dispose(); g.parent?.remove(g); } catch (e) {}
+    g = bxGizmo.ctl = null;
+  }
+  if (!target) {
+    if (g) { g.detach(); g.visible = false; }
+    bxGizmo.state = null; bxGizmo.fxIndex = -1;
+    return;
+  }
+  if (!g) {
+    g = bxGizmo.ctl = new TransformControls(viewer.camera, viewer.renderer.domElement);
+    g.setSize(0.9);
+    g.addEventListener('dragging-changed', e => {
+      bxGizmo.dragging = e.value;
+      if (viewer?.controls) viewer.controls.enabled = !e.value && !anim.paintMode;
+    });
+    g.addEventListener('objectChange', bxGizmoChanged);
+    viewer.threeScene.add(g);
+  }
+  if (g.parent !== viewer.threeScene) viewer.threeScene.add(g);
+  g.setMode(bxGizmo.mode);
+  if (g.object !== target) g.attach(target);
+  g.visible = true; g.enabled = true;
+  bxGizmo.state = state; bxGizmo.fxIndex = fxIndex;
+}
+// arrastou o gizmo → grava no estado do box, reflete nos sliders e re-sincroniza
+function bxGizmoChanged() {
+  const b = bxGizmo.state, h = bxGizmo.ctl?.object;
+  if (!b || !h) return;
+  const ex = bbox
+    ? [bbox.max[0]-bbox.min[0] || 1, bbox.max[1]-bbox.min[1] || 1, bbox.max[2]-bbox.min[2] || 1]
+    : [5, 5, 5];
+  const mn = bbox ? bbox.min : [-2.5, -2.5, -2.5];
+  b.px = (h.position.x - mn[0]) / ex[0];
+  b.py = (h.position.y - mn[1]) / ex[1];
+  b.pz = (h.position.z - mn[2]) / ex[2];
+  b.rx = h.rotation.x * 180 / Math.PI;
+  b.ry = h.rotation.y * 180 / Math.PI;
+  b.rz = h.rotation.z * 180 / Math.PI;
+  b.sx = Math.max(h.scale.x / ex[0], 0.02);
+  b.sy = Math.max(h.scale.y / ex[1], 0.02);
+  b.sz = Math.max(h.scale.z / ex[2], 0.02);
+  bxGizmoSliders(b);
+  syncFxUniforms();
+}
+function bxGizmoSliders(b) {
+  const fx = bxGizmo.fxIndex >= 0 ? DFX[bxGizmo.fxIndex].id : null;
+  const setS = (k, val, txt) => {
+    const s = $(fx ? `${fx}-b${k}` : `cb-${k}`), v = $(fx ? `v-${fx}b${k}` : `v-cb${k}`);
+    if (s) { s.value = val; v.textContent = txt; }
+  };
+  setS('px', b.px, Math.round(b.px*100)+'%');
+  setS('py', b.py, Math.round(b.py*100)+'%');
+  setS('pz', b.pz, Math.round(b.pz*100)+'%');
+  setS('sx', b.sx, b.sx.toFixed(2));
+  setS('sy', b.sy, b.sy.toFixed(2));
+  setS('sz', b.sz, b.sz.toFixed(2));
+  setS('rx', b.rx, b.rx.toFixed(0)+'°');
+  setS('ry', b.ry, b.ry.toFixed(0)+'°');
+  setS('rz', b.rz, b.rz.toFixed(0)+'°');
+}
+// botões Mover / Girar / Escala (valem para o gizmo ativo, crop ou efeito)
+document.querySelectorAll('.gz-mode').forEach(bt => bt.addEventListener('click', () => {
+  bxGizmo.mode = bt.dataset.mode;
+  document.querySelectorAll('.gz-mode').forEach(b2 => b2.classList.toggle('on', b2.dataset.mode === bxGizmo.mode));
+  if (bxGizmo.ctl) bxGizmo.ctl.setMode(bxGizmo.mode);
+}));
 function updateBoxHelpers() {
   const mesh = viewer?.splatMesh;
   if (!mesh) return;
@@ -1300,16 +1417,21 @@ function updateBoxHelpers() {
     if (!h) h = bxHelpers[key] = makeBoxHelper(color);
     if (h.parent !== mesh) { try { h.parent?.remove(h); } catch(e){} mesh.add(h); }
     h.visible = !!(show && b);
-    if (b) {
+    if (b && !(bxGizmo.dragging && bxGizmo.ctl && bxGizmo.ctl.object === h)) {
       const w = boxToWorld(b);
       h.position.copy(w.pos);
       h.rotation.copy(w.eul);
       h.scale.set(w.half.x*2, w.half.y*2, w.half.z*2);
     }
+    return h;
   };
-  place('crop', 0x96c93d, anim.cropBox, anim.cropBox.on);
+  const hCrop = place('crop', 0x96c93d, anim.cropBox, anim.cropBox.on);
   const iFx = dfxState.findIndex(s => s.showBox);
-  place('fx', 0xb064c4, iFx >= 0 ? dfxState[iFx].box : null, iFx >= 0);
+  const hFx = place('fx', 0xb064c4, iFx >= 0 ? dfxState[iFx].box : null, iFx >= 0);
+  // gizmo: prioriza o box de efeito em exibição (👁); senão o crop box ligado
+  if (iFx >= 0) bxUpdateGizmo(hFx, dfxState[iFx].box, iFx);
+  else if (anim.cropBox.on) bxUpdateGizmo(hCrop, anim.cropBox, -1);
+  else bxUpdateGizmo(null, null, -1);
 }
 
 // sincroniza sliders do painel → uniforms do shader
@@ -2160,7 +2282,7 @@ function bxAddStroke(e) {
   const pt = new THREE.Vector3();
   if (!ray.ray.intersectPlane(plane, pt)) return;
   viewer.splatMesh.worldToLocal(pt); // pinta no espaço dos dados (acompanha escala/rotação)
-  const r = bxDiag() * 0.12 * parseFloat($('pt-r').value);
+  const r = bxDiag() * 0.06 * Math.pow(parseFloat($('pt-r').value), 1.35);
   if (bxLastStroke && bxLastStroke.distanceTo(pt) < r * 0.35) return;
   paintStrokes.push({ p: pt.clone(), r, c: new THREE.Color($('pt-color').value) });
   bxLastStroke = pt.clone();

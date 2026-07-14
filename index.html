@@ -229,6 +229,13 @@
   <div class="tab-page visible" id="tab-edit">
     <h3>Tamanho do splat</h3>
     <div class="row"><label>Tamanho</label><input type="range" id="p-splatscale" min="0.05" max="3" step="0.05" value="1"><span class="val" id="v-splatscale">1.00</span></div>
+    <div class="axis-row"><span class="lbl">🎧 Áudio</span>
+      <button class="ax-btn on" id="spl-auoff">—</button>
+      <button class="ax-btn" id="spl-aub0">G</button>
+      <button class="ax-btn" id="spl-aub1">M</button>
+      <button class="ax-btn" id="spl-aub2">A</button>
+    </div>
+    <div class="row"><label>Reação</label><input type="range" id="spl-aug" min="0" max="3" step="0.05" value="0.8"><span class="val" id="v-splaug">0.80</span></div>
 
     <h3>Posição dos Gaussians</h3>
     <div class="row"><label>Pos X</label><input type="range" id="p-px" min="-1" max="1" step="0.01" value="0"><span class="val" id="v-px">0.00</span></div>
@@ -284,6 +291,9 @@
       <button class="ax-btn gz-mode" data-mode="scale">Escala</button>
     </div>
     <p class="note">O gizmo age no box em exibição (👁).</p>
+    <h3>Rastro (atraso por partícula)</h3>
+    <div class="row"><label>Atraso</label><input type="range" id="tr-amt" min="0" max="2" step="0.02" value="0"><span class="val" id="v-tramt">0.00s</span></div>
+    <p class="note">Cada splat responde às distorções com um atraso aleatório — cria rastro/eco no movimento.</p>
     <div id="dist-container"></div>
   </div>
 
@@ -331,6 +341,11 @@
     <div class="row"><label>Foco (dist.)</label><input type="range" id="d-dist" min="0.1" max="20" step="0.1" value="3"><span class="val" id="v-ddist">3.0</span></div>
     <div class="row"><label>Faixa nítida</label><input type="range" id="d-range" min="0.1" max="10" step="0.1" value="1.5"><span class="val" id="v-drange">1.5</span></div>
     <div class="row"><label>Intensidade</label><input type="range" id="d-blur" min="0.5" max="12" step="0.5" value="6"><span class="val" id="v-dblur">6.0</span></div>
+
+    <h3>Aberração cromática</h3>
+    <button class="panel-btn" id="ca-toggle">▶ Aberração cromática</button>
+    <div class="row"><label>Intensidade</label><input type="range" id="ca-amt" min="0" max="0.3" step="0.005" value="0.06"><span class="val" id="v-caamt">0.060</span></div>
+    <p class="note">Dispersão por cor: tons quentes deslocam para fora e frios para dentro, crescendo nas bordas do quadro.</p>
   </div>
 
   <!-- ========== ILUMINAÇÃO / COR ========== -->
@@ -356,6 +371,13 @@
     <div class="row"><label>Intensidade</label><input type="range" id="pl-str" min="0" max="5" step="0.05" value="1.5"><span class="val" id="v-plstr">1.50</span></div>
     <div class="row"><label>Alcance</label><input type="range" id="pl-radius" min="0.1" max="2" step="0.02" value="1"><span class="val" id="v-plradius">1.00</span></div>
     <div class="row"><label>Cor</label><input type="color" id="pl-color" value="#ffd9a0" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
+    <div class="axis-row"><span class="lbl">🎧 Áudio</span>
+      <button class="ax-btn on" id="pl-auoff">—</button>
+      <button class="ax-btn" id="pl-aub0">G</button>
+      <button class="ax-btn" id="pl-aub1">M</button>
+      <button class="ax-btn" id="pl-aub2">A</button>
+    </div>
+    <div class="row"><label>Reação</label><input type="range" id="pl-aug" min="0" max="3" step="0.05" value="1"><span class="val" id="v-plaug">1.00</span></div>
     <p class="note">Com a luz ligada aparece uma esfera com gizmo na cena — arraste para posicionar. A dureza da sombra usa o slider "Sombra" do Relight.</p>
 
     <h3>Relight (2 luzes + sombra)</h3>
@@ -441,61 +463,24 @@
     <h3>Paint (pincel)</h3>
     <button class="panel-btn" id="pt-toggle">🖌 Modo pincel</button>
     <div class="row"><label>Cor</label><input type="color" id="pt-color" value="#9933b3" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
-    <div class="row"><label>Tamanho</label><input type="range" id="pt-r" min="0.01" max="1" step="0.01" value="0.1"><span class="val" id="v-ptr">10%</span></div>
+    <div class="row"><label>Tamanho</label><input type="range" id="pt-r" min="0.005" max="1" step="0.002" value="0.15"><span class="val" id="v-ptr">10%</span></div>
     <div class="row"><label>Força</label><input type="range" id="pt-str" min="0" max="1" step="0.05" value="0.8"><span class="val" id="v-ptstr">0.80</span></div>
     <button class="panel-btn" id="pt-clear">Limpar pinceladas</button>
     <p class="note">Com o modo pincel ligado, clique e arraste sobre a cena para pintar (a órbita do mouse fica pausada). Até 64 pinceladas.</p>
 
     <h3>🎵 Audio reactive</h3>
+    <button class="panel-btn" id="au-file">🎵 Importar áudio</button>
     <div class="btn-pair">
-      <button class="panel-btn" id="au-file">🎵 Carregar áudio</button>
+      <button class="panel-btn" id="au-play">▶ Tocar / Pausar</button>
       <button class="panel-btn" id="au-mic">🎙 Microfone</button>
     </div>
-    <button class="panel-btn" id="au-play">▶ Tocar / Pausar</button>
     <input type="file" id="au-input" accept="audio/*" hidden>
-    <div class="row"><label>Graves</label><select class="au-sel" id="au-t0">
-        <option value="none">Nenhum</option>
-        <option value="wob">Wobble (amplitude)</option>
-        <option value="rip">Ripple (amplitude)</option>
-        <option value="wav">Waves (amplitude)</option>
-        <option value="twi">Twist (intensidade)</option>
-        <option value="ben">Bend (curvatura)</option>
-        <option value="tap">Taper (afunilar)</option>
-        <option value="bul" selected>Bulge (inflar)</option>
-        <option value="splat">Tamanho do splat</option>
-        <option value="plight">Luz pontual (intensidade)</option>
-      </select></div>
-    <div class="row"><label>Reação</label><input type="range" id="au-g0" min="0" max="3" step="0.05" value="1"><span class="val" id="v-aug0">1.00</span></div>
-    <div class="au-meter"><div class="au-fill" id="au-m0"></div></div>
-    <div class="row"><label>Médios</label><select class="au-sel" id="au-t1">
-        <option value="none">Nenhum</option>
-        <option value="wob">Wobble (amplitude)</option>
-        <option value="rip">Ripple (amplitude)</option>
-        <option value="wav" selected>Waves (amplitude)</option>
-        <option value="twi">Twist (intensidade)</option>
-        <option value="ben">Bend (curvatura)</option>
-        <option value="tap">Taper (afunilar)</option>
-        <option value="bul">Bulge (inflar)</option>
-        <option value="splat">Tamanho do splat</option>
-        <option value="plight">Luz pontual (intensidade)</option>
-      </select></div>
-    <div class="row"><label>Reação</label><input type="range" id="au-g1" min="0" max="3" step="0.05" value="1"><span class="val" id="v-aug1">1.00</span></div>
-    <div class="au-meter"><div class="au-fill" id="au-m1"></div></div>
-    <div class="row"><label>Agudos</label><select class="au-sel" id="au-t2">
-        <option value="none">Nenhum</option>
-        <option value="wob">Wobble (amplitude)</option>
-        <option value="rip">Ripple (amplitude)</option>
-        <option value="wav">Waves (amplitude)</option>
-        <option value="twi">Twist (intensidade)</option>
-        <option value="ben">Bend (curvatura)</option>
-        <option value="tap">Taper (afunilar)</option>
-        <option value="bul">Bulge (inflar)</option>
-        <option value="splat" selected>Tamanho do splat</option>
-        <option value="plight">Luz pontual (intensidade)</option>
-      </select></div>
-    <div class="row"><label>Reação</label><input type="range" id="au-g2" min="0" max="3" step="0.05" value="1"><span class="val" id="v-aug2">1.00</span></div>
-    <div class="au-meter"><div class="au-fill" id="au-m2"></div></div>
-    <p class="note">O som modula a amplitude do efeito escolhido. Para as distorções, ligue o efeito na aba 🌀 Distorção (o áudio controla a força dele). A "Reação" é o ganho de cada banda.</p>
+    <div class="row"><label>Trim início</label><input type="range" id="au-trim0" min="0" max="1" step="0.001" value="0"><span class="val" id="v-autrim0">0.0%</span></div>
+    <div class="row"><label>Trim fim</label><input type="range" id="au-trim1" min="0" max="1" step="0.001" value="1"><span class="val" id="v-autrim1">100%</span></div>
+    <div class="row"><label>Graves</label><div class="au-meter" style="flex:1; margin:0;"><div class="au-fill" id="au-m0"></div></div></div>
+    <div class="row"><label>Médios</label><div class="au-meter" style="flex:1; margin:0;"><div class="au-fill" id="au-m1"></div></div></div>
+    <div class="row"><label>Agudos</label><div class="au-meter" style="flex:1; margin:0;"><div class="au-fill" id="au-m2"></div></div></div>
+    <p class="note">O áudio toca em loop entre o trim de início e fim. Cada efeito tem a linha <b>🎧 Áudio</b> para reagir a uma banda (G = graves, M = médios, A = agudos) com o ganho "Reação" — nas distorções, no tamanho do splat (aba Editar) e na luz pontual (aba Luz/Cor).</p>
 
     <h3>Time Slice (4D)</h3>
     <button class="panel-btn" id="ts-toggle">▶ Time Slice</button>
@@ -506,6 +491,11 @@
   </div>
 
   <h3>Gravação</h3>
+  <div class="row"><label>Resolução</label><select class="au-sel" id="rec-res">
+    <option value="win">Janela</option>
+    <option value="720">720p</option>
+    <option value="1080" selected>1080p (Full HD)</option>
+  </select></div>
   <div class="row"><label>Duração</label><input type="range" id="rec-dur" min="2" max="30" step="1" value="8"><span class="val" id="v-recdur">8s</span></div>
   <div class="row"><label>Bitrate</label><input type="range" id="rec-bps" min="10" max="120" step="5" value="50"><span class="val" id="v-recbps">50M</span></div>
   <button class="panel-btn" id="rec-orbit">⏺ Gravar órbita (MP4)</button>
@@ -778,16 +768,21 @@ uniform float uBxTime;
 uniform vec3 uBxAnchor;
 uniform float uBxCropR;
 // --- distorções (0 wobble, 1 ripple, 2 waves, 3 twist, 4 bend, 5 taper, 6 bulge) ---
-uniform float uBxDOn[7];
-uniform vec3  uBxDAxis[7];
-uniform float uBxDAmp[7];
-uniform float uBxDFreq[7];
-uniform float uBxDSpeed[7];
-uniform float uBxDRadius[7];
-uniform float uBxDBoxOn[7];
-uniform vec3  uBxDBoxPos[7];
-uniform vec3  uBxDBoxInvHalf[7];
-uniform mat3  uBxDBoxRot[7];
+uniform float uBxDOn[8];
+uniform vec3  uBxDAxis[8];
+uniform float uBxDAmp[8];
+uniform float uBxDFreq[8];
+uniform float uBxDSpeed[8];
+uniform float uBxDRadius[8];
+uniform float uBxDBoxOn[8];
+uniform vec3  uBxDBoxPos[8];
+uniform vec3  uBxDBoxInvHalf[8];
+uniform mat3  uBxDBoxRot[8];
+uniform float uBxDLow;
+uniform float uBxDHigh;
+uniform float uBxTrail;
+uniform float uBxCAOn;
+uniform float uBxCAAmt;
 // --- crop box (ao vivo) ---
 uniform float uBxCropBoxOn;
 uniform vec3  uBxCropBoxPos;
@@ -856,6 +851,15 @@ uniform float uBxSliceInvert;
 uniform float uBxSliceShift;
 float bxFade = 1.0;
 float bxHash(vec3 p){ return fract(sin(dot(p, vec3(127.1,311.7,74.7)))*43758.5453); }
+float bxVN(vec3 p){
+  vec3 i = floor(p), f = fract(p);
+  f = f*f*(3.0-2.0*f);
+  return mix(
+    mix(mix(bxHash(i), bxHash(i+vec3(1.,0.,0.)), f.x),
+        mix(bxHash(i+vec3(0.,1.,0.)), bxHash(i+vec3(1.,1.,0.)), f.x), f.y),
+    mix(mix(bxHash(i+vec3(0.,0.,1.)), bxHash(i+vec3(1.,0.,1.)), f.x),
+        mix(bxHash(i+vec3(0.,1.,1.)), bxHash(i+vec3(1.,1.,1.)), f.x), f.y), f.z);
+}
 vec3 bxRotAx(vec3 v, vec3 n, float a){ float c=cos(a), s=sin(a); return v*c + cross(n,v)*s + n*dot(n,v)*(1.0-c); }
 vec3 bxAxisN(vec3 a){ return dot(a,a) < 0.25 ? vec3(0.0,1.0,0.0) : normalize(a); }
 // máscara por efeito: esfera de raio no pivô × box orientado (bordas suaves)
@@ -870,10 +874,12 @@ float bxDMask(int i, vec3 p){
   return m;
 }
 vec3 bruxosPos(vec3 p){
+  // rastro: cada splat responde com um atraso aleatório (eco no movimento)
+  float bxTT = uBxTime - (uBxTrail > 0.001 ? bxHash(p*3.17) * uBxTrail : 0.0);
   // 0 — WOBBLE: oscilação de escala nos eixos escolhidos
   if (uBxDOn[0] > 0.5) {
     float m = bxDMask(0, p);
-    float o = sin(uBxTime * max(uBxDSpeed[0], 0.001) * 3.0 + dot(p - uBxAnchor, vec3(1.0)) * uBxDFreq[0] * 0.3);
+    float o = sin(bxTT * max(uBxDSpeed[0], 0.001) * 3.0 + dot(p - uBxAnchor, vec3(1.0)) * uBxDFreq[0] * 0.3);
     p += (p - uBxAnchor) * uBxDAxis[0] * (uBxDAmp[0] * 0.5 * o * m);
   }
   // 1 — RIPPLE: ondas radiais a partir do pivô, deslocando ao longo do eixo
@@ -882,12 +888,12 @@ vec3 bruxosPos(vec3 p){
     vec3 n = bxAxisN(uBxDAxis[1]);
     vec3 rel = p - uBxAnchor;
     float d = length(rel - n * dot(rel, n));
-    p += n * (uBxDAmp[1] * sin(d * uBxDFreq[1] - uBxTime * uBxDSpeed[1] * 3.0) * m);
+    p += n * (uBxDAmp[1] * sin(d * uBxDFreq[1] - bxTT * uBxDSpeed[1] * 3.0) * m);
   }
   // 2 — WAVES: distorção ondulante nos eixos escolhidos
   if (uBxDOn[2] > 0.5) {
     float m = bxDMask(2, p);
-    float t2 = uBxTime * uBxDSpeed[2];
+    float t2 = bxTT * uBxDSpeed[2];
     p += m * uBxDAmp[2] * uBxDAxis[2] * vec3(
       sin(p.y * uBxDFreq[2] + t2),
       sin(p.z * uBxDFreq[2] * 0.8 + t2 * 1.13),
@@ -898,7 +904,7 @@ vec3 bruxosPos(vec3 p){
     float m = bxDMask(3, p);
     vec3 n = bxAxisN(uBxDAxis[3]);
     vec3 rel = p - uBxAnchor;
-    float osc = uBxDSpeed[3] > 0.001 ? sin(uBxTime * uBxDSpeed[3]) : 1.0;
+    float osc = uBxDSpeed[3] > 0.001 ? sin(bxTT * uBxDSpeed[3]) : 1.0;
     float ang = uBxDAmp[3] * uBxDFreq[3] * dot(rel, n) * osc * m;
     p = uBxAnchor + bxRotAx(rel, n, ang);
   }
@@ -909,7 +915,7 @@ vec3 bruxosPos(vec3 p){
     vec3 h = abs(n.y) > 0.9 ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 0.0);
     vec3 b = normalize(cross(n, h));
     vec3 rel = p - uBxAnchor;
-    float osc = uBxDSpeed[4] > 0.001 ? sin(uBxTime * uBxDSpeed[4]) : 1.0;
+    float osc = uBxDSpeed[4] > 0.001 ? sin(bxTT * uBxDSpeed[4]) : 1.0;
     float ang = uBxDAmp[4] * uBxDFreq[4] * dot(rel, n) * osc * m;
     p = uBxAnchor + bxRotAx(rel, b, ang);
   }
@@ -920,7 +926,7 @@ vec3 bruxosPos(vec3 p){
     vec3 rel = p - uBxAnchor;
     float span = dot(abs(n), max(uBxBBMax - uBxBBMin, vec3(0.0001)));
     float tt = clamp(dot(rel, n) * uBxDFreq[5] / span + 0.5, 0.0, 1.0);
-    float amp5 = uBxDSpeed[5] > 0.001 ? mix(1.0, uBxDAmp[5], 0.5 + 0.5 * sin(uBxTime * uBxDSpeed[5])) : uBxDAmp[5];
+    float amp5 = uBxDSpeed[5] > 0.001 ? mix(1.0, uBxDAmp[5], 0.5 + 0.5 * sin(bxTT * uBxDSpeed[5])) : uBxDAmp[5];
     float f = mix(1.0, amp5, tt * m);
     vec3 along = n * dot(rel, n);
     p = uBxAnchor + along + (rel - along) * f;
@@ -931,9 +937,18 @@ vec3 bruxosPos(vec3 p){
     vec3 rel = p - uBxAnchor;
     float d = length(rel) + 0.0001;
     float r6 = uBxDRadius[6] > 0.0 ? uBxDRadius[6] : uBxRevealMax * 0.3;
-    float osc = uBxDSpeed[6] > 0.001 ? sin(uBxTime * uBxDSpeed[6]) : 1.0;
+    float osc = uBxDSpeed[6] > 0.001 ? sin(bxTT * uBxDSpeed[6]) : 1.0;
     float f = uBxDAmp[6] * exp(-(d*d) / (r6*r6*0.35)) * osc * m;
     p += (rel * uBxDAxis[6]) / d * (f * r6 * 0.5);
+  }
+  // 7 — TURBULÊNCIA (turbulent displace): ruído suave com contraste de baixas/altas
+  if (uBxDOn[7] > 0.5) {
+    float m = bxDMask(7, p);
+    vec3 q = p * uBxDFreq[7] + vec3(bxTT * uBxDSpeed[7] * 0.4, bxTT * uBxDSpeed[7] * 0.27, bxTT * uBxDSpeed[7] * 0.19);
+    vec3 nl = vec3(bxVN(q), bxVN(q + 31.7), bxVN(q + 71.3)) - 0.5;
+    vec3 q2 = q * 3.7;
+    vec3 nh = vec3(bxVN(q2 + 13.1), bxVN(q2 + 47.9), bxVN(q2 + 91.4)) - 0.5;
+    p += (nl * uBxDLow + nh * uBxDHigh) * uBxDAxis[7] * (uBxDAmp[7] * 1.5 * m);
   }
   // fumaça (difusão global do centro para fora)
   if (uBxSmoke > 0.001) {
@@ -1042,6 +1057,19 @@ if (uBxTimeSliceOn > 0.5 && sceneCount > 1) {
   int bxFrame = int(clamp(bxFIdx, 0.0, float(sceneCount) - 1.0));
   if (int(sceneIndex) != bxFrame) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; }
 }
+// Aberração cromática: dispersão radial por cor (R para fora, B para dentro)
+if (uBxCAOn > 0.5) {
+  vec4 bxCol0 = uintToRGBAVec(sampledCenterColor.r);
+  float bxW = bxCol0.r - bxCol0.b;
+  if (abs(bxW) > 0.01) {
+    vec4 bxVC0 = transformModelViewMatrix * vec4(splatCenter, 1.0);
+    float bxRL = length(bxVC0.xy);
+    if (bxRL > 0.0001) {
+      vec3 bxShiftV = vec3(bxVC0.xy / bxRL * (bxW * uBxCAAmt * bxRL * 0.15), 0.0);
+      splatCenter += inverse(mat3(transformModelViewMatrix)) * bxShiftV;
+    }
+  }
+}
 // Crop box (ao vivo): descarta o que fica fora da caixa orientada
 if (uBxCropBoxOn > 0.5) {
   vec3 bxQc = abs(uBxCropBoxRot * (splatCenter - uBxCropBoxPos)) * uBxCropBoxInvHalf;
@@ -1086,16 +1114,21 @@ function bxPatchShader(mesh) {
     uBxAnchor:        { value: v3() },
     uBxCropR:         { value: 0 },
     // distorções (arrays de 7)
-    uBxDOn:        { value: new Array(7).fill(0) },
-    uBxDAxis:      { value: Array.from({length:7}, () => v3(0,1,0)) },
-    uBxDAmp:       { value: new Array(7).fill(0) },
-    uBxDFreq:      { value: new Array(7).fill(1) },
-    uBxDSpeed:     { value: new Array(7).fill(0) },
-    uBxDRadius:    { value: new Array(7).fill(0) },
-    uBxDBoxOn:     { value: new Array(7).fill(0) },
-    uBxDBoxPos:    { value: Array.from({length:7}, () => v3()) },
-    uBxDBoxInvHalf:{ value: Array.from({length:7}, () => v3(1,1,1)) },
-    uBxDBoxRot:    { value: Array.from({length:7}, () => new THREE.Matrix3()) },
+    uBxDOn:        { value: new Array(8).fill(0) },
+    uBxDAxis:      { value: Array.from({length:8}, () => v3(0,1,0)) },
+    uBxDAmp:       { value: new Array(8).fill(0) },
+    uBxDFreq:      { value: new Array(8).fill(1) },
+    uBxDSpeed:     { value: new Array(8).fill(0) },
+    uBxDRadius:    { value: new Array(8).fill(0) },
+    uBxDBoxOn:     { value: new Array(8).fill(0) },
+    uBxDBoxPos:    { value: Array.from({length:8}, () => v3()) },
+    uBxDBoxInvHalf:{ value: Array.from({length:8}, () => v3(1,1,1)) },
+    uBxDBoxRot:    { value: Array.from({length:8}, () => new THREE.Matrix3()) },
+    uBxDLow:       { value: 1.0 },
+    uBxDHigh:      { value: 0.5 },
+    uBxTrail:      { value: 0 },
+    uBxCAOn:       { value: 0 },
+    uBxCAAmt:      { value: 0.06 },
     // crop box
     uBxCropBoxOn:      { value: 0 },
     uBxCropBoxPos:     { value: v3() },
@@ -1200,7 +1233,7 @@ let seq = null;             // sequência 4DGS: {count, current, playing, fps, t
 const anim = {
   dissolve: null, splatScale: 1, userScale: {x:1,y:1,z:1}, rotY: 0, pos: {x:0,y:0,z:0},
   relight: false, light2: false, plight: false, smoke: null, smokeVal: 0, fxTime: 0,
-  dof: false, reveal: null, revealVal: 1, pb: false, depthCol: false, anchorCrop: false,
+  dof: false, ca: false, reveal: null, revealVal: 1, pb: false, depthCol: false, anchorCrop: false,
   timeSlice: false, sliceInvert: false, sliceAnim: 0,
   grade: false, fog: false, weather: null, paintMode: false, plGizmo: false,
   disVal: 0, disAnim: null, recOrbit: false,
@@ -1625,14 +1658,14 @@ function syncFxUniforms() {
     const dAxis = bxU('uBxDAxis'), dAmp = bxU('uBxDAmp'), dFreq = bxU('uBxDFreq'),
           dSpd = bxU('uBxDSpeed'), dRad = bxU('uBxDRadius'), dbOn = bxU('uBxDBoxOn'),
           dbPos = bxU('uBxDBoxPos'), dbInv = bxU('uBxDBoxInvHalf'), dbRot = bxU('uBxDBoxRot');
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 8; i++) {
       const s = dfxState[i];
       dOn.value[i] = s.on ? 1 : 0;
       dAxis.value[i].set(s.ax[0], s.ax[1], s.ax[2]);
       dAmp.value[i] = s.amp;
       dFreq.value[i] = s.freq;
       dSpd.value[i] = s.speed;
-      dRad.value[i] = s.radius >= 0.99 ? 0 : diag * 0.6 * s.radius;
+      dRad.value[i] = s.radius >= 0.99 ? 0 : diag * 0.6 * Math.pow(s.radius, 2.5);
       dbOn.value[i] = s.boxOn ? 1 : 0;
       const w = boxToWorld(s.box);
       dbPos.value[i].copy(w.pos);
@@ -1640,6 +1673,11 @@ function syncFxUniforms() {
       dbRot.value[i].setFromMatrix4(new THREE.Matrix4().makeRotationFromEuler(w.eul)).transpose();
     }
   }
+  set('uBxDLow', parseFloat($('tur-low') ? $('tur-low').value : 1));
+  set('uBxDHigh', parseFloat($('tur-high') ? $('tur-high').value : 0.5));
+  set('uBxTrail', parseFloat($('tr-amt').value));
+  set('uBxCAOn', anim.ca ? 1 : 0);
+  set('uBxCAAmt', parseFloat($('ca-amt').value));
   // --- crop box (ao vivo) ---
   set('uBxCropBoxOn', anim.cropBox.on ? 1 : 0);
   {
@@ -2141,9 +2179,10 @@ const DFX = [
   { id:'ben', name:'Bend',   multi:false, amp:0.3,  ampMin:-2, ampMax:2, freq:1, freqMax:5,  speed:0,   ax:[0,1,0] },
   { id:'tap', name:'Taper',  multi:false, amp:0.5,  ampMin:0,  ampMax:2, freq:1, freqMax:5,  speed:0,   ax:[0,1,0] },
   { id:'bul', name:'Bulge',  multi:true,  amp:0.5,  ampMin:-2, ampMax:2, freq:1, freqMax:5,  speed:0,   ax:[1,1,1] },
+  { id:'tur', name:'Turbulência', multi:true, amp:0.3, ampMin:0, ampMax:2, freq:1.5, freqMax:10, speed:1, ax:[1,1,1] },
 ];
 const dfxState = DFX.map(d => ({
-  on:false, ax:[...d.ax], amp:d.amp, freq:d.freq, speed:d.speed, radius:1,
+  on:false, ax:[...d.ax], amp:d.amp, freq:d.freq, speed:d.speed, radius:1, auBand:-1, auGain:1,
   boxOn:false, showBox:false, box:{ px:.5, py:.5, pz:.5, sx:.5, sy:.5, sz:.5, rx:0, ry:0, rz:0 }
 }));
 (function buildDistortUI(){
@@ -2162,10 +2201,18 @@ const dfxState = DFX.map(d => ({
         <button class="ax-btn" id="${p}-aY">Y</button>
         <button class="ax-btn" id="${p}-aZ">Z</button>
       </div>
-      <div class="row"><label>Amplitude</label><input type="range" id="${p}-amp" min="${d.ampMin}" max="${d.ampMax}" step="0.01" value="${d.amp}"><span class="val" id="v-${p}amp">${d.amp.toFixed(2)}</span></div>
+      <div class="row"><label>Amplitude</label><input type="range" id="${p}-amp" min="${d.ampMin}" max="${d.ampMax}" step="0.001" value="${d.amp}"><span class="val" id="v-${p}amp">${d.amp.toFixed(2)}</span></div>
       <div class="row"><label>Freq.</label><input type="range" id="${p}-freq" min="0" max="${d.freqMax}" step="0.1" value="${d.freq}"><span class="val" id="v-${p}freq">${d.freq.toFixed(1)}</span></div>
       <div class="row"><label>Velocidade</label><input type="range" id="${p}-spd" min="0" max="8" step="0.1" value="${d.speed}"><span class="val" id="v-${p}spd">${d.speed.toFixed(1)}</span></div>
-      <div class="row"><label>Raio</label><input type="range" id="${p}-rad" min="0.05" max="1" step="0.01" value="1"><span class="val" id="v-${p}rad">livre</span></div>
+      <div class="row"><label>Raio</label><input type="range" id="${p}-rad" min="0.005" max="1" step="0.001" value="1"><span class="val" id="v-${p}rad">livre</span></div>
+      ${d.id === 'tur' ? '<div class="row"><label>Baixas</label><input type="range" id="tur-low" min="0" max="2" step="0.05" value="1"><span class="val" id="v-turlow">1.00</span></div><div class="row"><label>Altas</label><input type="range" id="tur-high" min="0" max="2" step="0.05" value="0.5"><span class="val" id="v-turhigh">0.50</span></div>' : ''}
+      <div class="axis-row"><span class="lbl">🎧 Áudio</span>
+        <button class="ax-btn on" id="${p}-auoff">—</button>
+        <button class="ax-btn" id="${p}-aub0">G</button>
+        <button class="ax-btn" id="${p}-aub1">M</button>
+        <button class="ax-btn" id="${p}-aub2">A</button>
+      </div>
+      <div class="row"><label>Reação</label><input type="range" id="${p}-aug" min="0" max="3" step="0.05" value="1"><span class="val" id="v-${p}aug">1.00</span></div>
       <button class="panel-btn" id="${p}-boxon">▶ Limitar por box</button>
       <div class="sub" id="${p}-boxui" style="display:none">
         <button class="panel-btn" id="${p}-boxshow">👁 Mostrar box</button>
@@ -2193,7 +2240,7 @@ const dfxState = DFX.map(d => ({
     bindSlider(`${p}-amp`, `v-${p}amp`, v => v.toFixed(2), v => { st.amp = v; syncFxUniforms(); });
     bindSlider(`${p}-freq`, `v-${p}freq`, v => v.toFixed(1), v => { st.freq = v; syncFxUniforms(); });
     bindSlider(`${p}-spd`, `v-${p}spd`, v => v.toFixed(1), v => { st.speed = v; syncFxUniforms(); });
-    bindSlider(`${p}-rad`, `v-${p}rad`, v => v >= 0.99 ? 'livre' : Math.round(v*100)+'%', v => { st.radius = v; syncFxUniforms(); });
+    bindSlider(`${p}-rad`, `v-${p}rad`, v => v >= 0.99 ? 'livre' : (Math.pow(v, 2.5)*100).toFixed(3)+'%', v => { st.radius = v; syncFxUniforms(); });
     $(`${p}-boxon`).addEventListener('click', () => {
       st.boxOn = !st.boxOn;
       $(`${p}-boxon`).classList.toggle('on', st.boxOn);
@@ -2212,8 +2259,18 @@ const dfxState = DFX.map(d => ({
     ['px','py','pz'].forEach(k => bindSlider(`${p}-b${k}`, `v-${p}b${k}`, v => (v*100).toFixed(1)+'%', v => { st.box[k] = v; syncFxUniforms(); }));
     ['sx','sy','sz'].forEach(k => bindSlider(`${p}-b${k}`, `v-${p}b${k}`, v => v.toFixed(4), v => { st.box[k] = v; syncFxUniforms(); }));
     ['rx','ry','rz'].forEach(k => bindSlider(`${p}-b${k}`, `v-${p}b${k}`, v => v.toFixed(0)+'°', v => { st.box[k] = v; syncFxUniforms(); }));
+    const auBtns = ['auoff','aub0','aub1','aub2'];
+    auBtns.forEach((bk, bi) => $(`${p}-${bk}`).addEventListener('click', () => {
+      st.auBand = bi - 1;
+      auBtns.forEach((bk2, bj) => $(`${p}-${bk2}`).classList.toggle('on', bj - 1 === st.auBand));
+    }));
+    bindSlider(`${p}-aug`, `v-${p}aug`, v => v.toFixed(2), v => { st.auGain = v; });
   });
 })();
+
+bindSlider('tur-low', 'v-turlow', v => v.toFixed(2), () => syncFxUniforms());
+bindSlider('tur-high', 'v-turhigh', v => v.toFixed(2), () => syncFxUniforms());
+bindSlider('tr-amt', 'v-tramt', v => v.toFixed(2) + 's', () => syncFxUniforms());
 
 // ============================================================
 // EFEITOS DE CÂMERA (aplicados no tick)
@@ -2399,6 +2456,13 @@ $('d-toggle').addEventListener('click', () => {
   $('d-toggle').textContent = anim.dof ? '⏸ Desfoque (ligado)' : '▶ Desfoque';
   syncFxUniforms();
 });
+bindSlider('ca-amt', 'v-caamt', v => v.toFixed(3), () => syncFxUniforms());
+$('ca-toggle').addEventListener('click', () => {
+  anim.ca = !anim.ca;
+  $('ca-toggle').classList.toggle('on', anim.ca);
+  $('ca-toggle').textContent = anim.ca ? '⏸ Aberração (ligada)' : '▶ Aberração cromática';
+  syncFxUniforms();
+});
 // --- color grading ---
 ['cg-exp','cg-con','cg-sat','cg-temp','cg-tint'].forEach((id, i) => {
   const vids = ['v-cgexp','v-cgcon','v-cgsat','v-cgtemp','v-cgtint'];
@@ -2472,7 +2536,7 @@ $('pt-toggle').addEventListener('click', () => {
   if (viewer?.controls) viewer.controls.enabled = !anim.paintMode;
   $('viewer-container').style.cursor = anim.paintMode ? 'crosshair' : '';
 });
-bindSlider('pt-r', 'v-ptr', v => Math.round(v*100)+'%', () => {});
+bindSlider('pt-r', 'v-ptr', v => (Math.pow(v, 2.5)*100).toFixed(3)+'%', () => {});
 bindSlider('pt-str', 'v-ptstr', v => v.toFixed(2), () => syncFxUniforms());
 $('pt-color').addEventListener('input', () => {});
 $('pt-clear').addEventListener('click', () => {
@@ -2495,7 +2559,7 @@ function bxAddStroke(e) {
   const pt = new THREE.Vector3();
   if (!ray.ray.intersectPlane(plane, pt)) return;
   viewer.splatMesh.worldToLocal(pt); // pinta no espaço dos dados (acompanha escala/rotação)
-  const r = bxDiag() * 0.06 * Math.pow(parseFloat($('pt-r').value), 1.35);
+  const r = bxDiag() * 0.06 * Math.pow(parseFloat($('pt-r').value), 2.5);
   if (bxLastStroke && bxLastStroke.distanceTo(pt) < r * 0.35) return;
   paintStrokes.push({ p: pt.clone(), r, c: new THREE.Color($('pt-color').value) });
   bxLastStroke = pt.clone();
@@ -2528,7 +2592,7 @@ let weatherPts = null;
 bindSlider('wx-amt', 'v-wxamt', v => (v/1000)+'k', () => { if (anim.weather) startWeather(anim.weather); });
 bindSlider('wx-size', 'v-wxsize', v => v.toFixed(1), () => { if (anim.weather) startWeather(anim.weather); });
 function clearWeather() {
-  if (weatherPts && viewer?.threeScene) viewer.threeScene.remove(weatherPts);
+  if (weatherPts) weatherPts.parent?.remove(weatherPts);
   if (weatherPts) { weatherPts.geometry.dispose(); weatherPts.material.dispose(); }
   weatherPts = null;
 }
@@ -2536,7 +2600,8 @@ function startWeather(kind) {
   clearWeather();
   anim.weather = kind;
   if (!viewer) return;
-  const scene = viewer.threeScene || viewer.scene;
+  // filho do splatMesh: renderiza no mesmo passe dos splats (senão fica atrás deles)
+  const scene = viewer.splatMesh || viewer.threeScene || viewer.scene;
   if (!scene) return;
   const N = parseInt($('wx-amt').value);
   let ext = 8, cx = 0, cy = 0, cz = 0;
@@ -2566,6 +2631,8 @@ function startWeather(kind) {
 }
 function tickWeather(dt) {
   if (!weatherPts) return;
+  // cena recarregada → reanexa as partículas ao splatMesh novo
+  if (viewer?.splatMesh && weatherPts.parent !== viewer.splatMesh) viewer.splatMesh.add(weatherPts);
   const u = weatherPts.userData;
   const p = weatherPts.geometry.attributes.position.array;
   const drop = u.speed * dt * (u.ext * 0.15);
@@ -2631,7 +2698,24 @@ $('ts-toggle').addEventListener('click', () => {
 // (graves / médios / agudos), cada uma roteada para um efeito.
 // ============================================================
 const audioFx = { ctx:null, analyser:null, data:null, el:null, elSrc:null, mic:null, micSrc:null,
-                  active:false, bands:[0,0,0], splatWas:false };
+                  active:false, bands:[0,0,0], trim:[0,1], splatWas:false, recDest:null };
+const auSplat = { band:-1, gain:0.8 };
+const auPl = { band:-1, gain:1 };
+function bindAudioRow(prefix, obj) {
+  const btns = ['auoff','aub0','aub1','aub2'];
+  btns.forEach((bk, bi) => $(`${prefix}-${bk}`).addEventListener('click', () => {
+    obj.band = bi - 1;
+    btns.forEach((bk2, bj) => $(`${prefix}-${bk2}`).classList.toggle('on', bj - 1 === obj.band));
+  }));
+  bindSlider(`${prefix}-aug`, `v-${prefix}aug`, v => v.toFixed(2), v => { obj.gain = v; });
+}
+bindAudioRow('spl', auSplat);
+bindAudioRow('pl', auPl);
+function auApplyTrim() {
+  if (audioFx.el && audioFx.el.duration) audioFx.el.currentTime = audioFx.el.duration * audioFx.trim[0];
+}
+bindSlider('au-trim0', 'v-autrim0', v => (v*100).toFixed(1)+'%', v => { audioFx.trim[0] = v; auApplyTrim(); });
+bindSlider('au-trim1', 'v-autrim1', v => (v*100).toFixed(1)+'%', v => { audioFx.trim[1] = v; });
 function auCtx() {
   if (!audioFx.ctx) {
     audioFx.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2671,7 +2755,16 @@ $('au-input').addEventListener('change', () => {
     audioFx.el = new Audio();
     audioFx.el.loop = true;
     audioFx.elSrc = ctx.createMediaElementSource(audioFx.el);
+    // loop respeitando o trim (início/fim)
+    audioFx.el.addEventListener('timeupdate', () => {
+      const el = audioFx.el, d = el.duration;
+      if (!d) return;
+      const t0 = d * audioFx.trim[0];
+      const t1 = d * Math.max(audioFx.trim[1], audioFx.trim[0] + 0.01);
+      if (el.currentTime > t1 || el.currentTime < t0 - 0.3) el.currentTime = t0;
+    });
   }
+  audioFx.el.addEventListener('loadedmetadata', auApplyTrim, { once: true });
   audioFx.el.src = URL.createObjectURL(f);
   auConnect(audioFx.elSrc, true);
   audioFx.el.play();
@@ -2705,41 +2798,37 @@ $('au-mic').addEventListener('click', async () => {
     $('au-mic').textContent = '🎙 Microfone (ligado)';
   } catch (e) { showError('Microfone indisponível: ' + (e.message || e)); }
 });
-['au-g0','au-g1','au-g2'].forEach((id, i) => bindSlider(id, 'v-aug' + i, v => v.toFixed(2), () => {}));
-const AU_DFX = { wob:0, rip:1, wav:2, twi:3, ben:4, tap:5, bul:6 };
 function tickAudio() {
   if (!audioFx.active || !audioFx.analyser) return;
   audioFx.analyser.getByteFrequencyData(audioFx.data);
   const d = audioFx.data, nb = d.length;
   const avg = (a, b) => { let t = 0; for (let i = a; i < b; i++) t += d[i]; return t / ((b - a) * 255); };
-  const raw = [avg(0, 4), avg(4, 24), avg(24, Math.min(nb, 96))]; // ~graves / médios / agudos
+  const raw = [avg(0, 4), avg(4, 24), avg(24, Math.min(nb, 96))]; // graves / médios / agudos
   for (let i = 0; i < 3; i++) {
     const k = raw[i] > audioFx.bands[i] ? 0.55 : 0.12; // ataque rápido, queda suave
     audioFx.bands[i] += (raw[i] - audioFx.bands[i]) * k;
     const m = $('au-m' + i);
     if (m) m.style.width = Math.round(audioFx.bands[i] * 100) + '%';
   }
-  // base de todos os alvos a cada frame, depois aplica as modulações
+  // cada efeito com 🎧 ligado tem a amplitude modulada pela banda escolhida
   const dAmp = bxU('uBxDAmp');
-  if (dAmp) for (let i = 0; i < 7; i++) dAmp.value[i] = dfxState[i].amp;
-  const uPl = bxU('uBxPLStr');
-  if (uPl) uPl.value = parseFloat($('pl-str').value);
-  let splatMod = null;
-  for (let i = 0; i < 3; i++) {
-    const t = $('au-t' + i).value, g = parseFloat($('au-g' + i).value), e = audioFx.bands[i];
-    if (t === 'none' || g <= 0) continue;
-    if (t in AU_DFX) {
-      const fi = AU_DFX[t];
-      if (dAmp) dAmp.value[fi] = dfxState[fi].amp * (1 + g * 3 * e);
-    } else if (t === 'splat') {
-      splatMod = (splatMod ?? 1) * (1 + g * 0.8 * e);
-    } else if (t === 'plight' && uPl) {
-      uPl.value = parseFloat($('pl-str').value) * (1 + g * 2.5 * e);
-    }
+  if (dAmp) for (let i = 0; i < 8; i++) {
+    const st = dfxState[i];
+    dAmp.value[i] = st.auBand >= 0
+      ? st.amp * (1 + st.auGain * 3 * audioFx.bands[st.auBand])
+      : st.amp;
   }
+  const uPl = bxU('uBxPLStr');
+  if (uPl) uPl.value = parseFloat($('pl-str').value) *
+    (auPl.band >= 0 ? (1 + auPl.gain * 2.5 * audioFx.bands[auPl.band]) : 1);
   if (viewer?.splatMesh && !anim.dissolve) {
-    if (splatMod !== null) { viewer.splatMesh.setSplatScale(anim.splatScale * splatMod); audioFx.splatWas = true; }
-    else if (audioFx.splatWas) { viewer.splatMesh.setSplatScale(anim.splatScale); audioFx.splatWas = false; }
+    if (auSplat.band >= 0) {
+      viewer.splatMesh.setSplatScale(anim.splatScale * (1 + auSplat.gain * 0.8 * audioFx.bands[auSplat.band]));
+      audioFx.splatWas = true;
+    } else if (audioFx.splatWas) {
+      viewer.splatMesh.setSplatScale(anim.splatScale);
+      audioFx.splatWas = false;
+    }
   }
 }
 
@@ -2815,14 +2904,15 @@ requestAnimationFrame(tick);
 // ===== Gravação MP4 =====
 bindSlider('rec-dur', 'v-recdur', v => v.toFixed(0) + 's', () => {});
 let recorder = null;
+let recRestore = null;
 
 bindSlider('rec-bps', 'v-recbps', v => v.toFixed(0) + 'M', () => {});
-function pickMime() {
-  const c = ['video/mp4;codecs=avc1.640033',   // H264 High profile
-             'video/mp4;codecs=avc1',
-             'video/mp4',
-             'video/webm;codecs=vp9',
-             'video/webm'];
+function pickMime(withAudio) {
+  const c = withAudio
+    ? ['video/mp4;codecs=avc1.640033,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4',
+       'video/webm;codecs=vp9,opus', 'video/webm']
+    : ['video/mp4;codecs=avc1.640033', 'video/mp4;codecs=avc1', 'video/mp4',
+       'video/webm;codecs=vp9', 'video/webm'];
   for (const m of c) if (MediaRecorder.isTypeSupported(m)) return m;
   return '';
 }
@@ -2833,9 +2923,29 @@ function record(durationMs, withOrbit) {
   const canvas = $('viewer-container').querySelector('canvas');
   if (!canvas) { showError('Canvas não encontrado.'); return; }
 
-  const mime = pickMime();
+  // resolução de saída: 720p/1080p renderizam o canvas no tamanho exato do vídeo
+  const resSel = $('rec-res') ? $('rec-res').value : 'win';
+  if (resSel !== 'win' && viewer?.renderer && viewer?.camera) {
+    const W = resSel === '1080' ? 1920 : 1280, H = resSel === '1080' ? 1080 : 720;
+    recRestore = { pr: viewer.renderer.getPixelRatio() };
+    viewer.renderer.setPixelRatio(1);
+    viewer.renderer.setSize(W, H, false); // buffer no tamanho do vídeo, tela continua igual
+    viewer.camera.aspect = W / H;
+    viewer.camera.updateProjectionMatrix();
+  }
+  const wantAudio = !!(audioFx.ctx && audioFx.analyser && audioFx.active);
+  const mime = pickMime(wantAudio);
   const ext = mime.includes('mp4') ? 'mp4' : 'webm';
   const stream = canvas.captureStream(60);
+  // injeta a trilha de áudio (arquivo ou microfone) na gravação
+  if (wantAudio) {
+    try {
+      if (!audioFx.recDest) audioFx.recDest = audioFx.ctx.createMediaStreamDestination();
+      audioFx.analyser.connect(audioFx.recDest);
+      const tr = audioFx.recDest.stream.getAudioTracks()[0];
+      if (tr) stream.addTrack(tr);
+    } catch (e) { console.warn('não deu para incluir o áudio na gravação:', e); }
+  }
   const bps = parseFloat($('rec-bps').value) * 1_000_000;
   recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bps });
   const chunks = [];
@@ -2848,6 +2958,15 @@ function record(durationMs, withOrbit) {
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     recorder = null;
+    // restaura o tamanho da janela e desconecta o áudio da gravação
+    if (recRestore && viewer?.renderer && viewer?.camera) {
+      viewer.renderer.setPixelRatio(recRestore.pr);
+      viewer.renderer.setSize(window.innerWidth, window.innerHeight);
+      viewer.camera.aspect = window.innerWidth / window.innerHeight;
+      viewer.camera.updateProjectionMatrix();
+      recRestore = null;
+    }
+    try { if (audioFx.recDest) audioFx.analyser.disconnect(audioFx.recDest); } catch(e){}
     $('btn-rec').classList.remove('recording');
     $('btn-rec').textContent = '⏺ Gravar MP4';
     if (withOrbit) anim.recOrbit = false;

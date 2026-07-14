@@ -91,7 +91,7 @@
   /* ================= PAINEL DE EDIÇÃO ================= */
   #panel {
     position: fixed; top: 56px; right: 12px; z-index: 22;
-    width: 290px; max-height: calc(100vh - 140px); overflow-y: auto;
+    width: 322px; max-height: calc(100vh - 140px); overflow-y: auto;
     background: var(--panel); border: 1px solid rgba(255,255,255,.12);
     border-radius: 14px; padding: 14px 16px; display: none;
     backdrop-filter: blur(8px);
@@ -128,6 +128,31 @@
   .note { font-size: .68rem; color: #777; line-height: 1.4; margin: 4px 0; }
   .btn-pair { display: flex; gap: 6px; }
   .btn-pair .panel-btn { flex: 1; }
+
+  /* ===== Abas do painel ===== */
+  .fx-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+  .fx-tab {
+    flex: 1 1 31%; padding: 7px 2px; font-size: .64rem; border-radius: 8px; cursor: pointer;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); color: #ccc;
+    text-align: center; white-space: nowrap;
+  }
+  .fx-tab:hover { border-color: var(--verde); }
+  .fx-tab.active { background: var(--roxo); border-color: var(--roxo-claro); color: #fff; }
+  .tab-page { display: none; }
+  .tab-page.visible { display: block; }
+  .axis-row { display: flex; gap: 6px; margin: 6px 0; align-items: center; }
+  .axis-row .lbl { font-size: .78rem; color: #bbb; width: 74px; flex-shrink: 0; }
+  .ax-btn {
+    flex: 1; padding: 5px 0; border-radius: 6px; cursor: pointer; font-size: .75rem; font-weight: 700;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); color: #aaa;
+  }
+  .ax-btn.on { background: var(--verde); border-color: var(--verde); color: #0d0a12; }
+  .sub {
+    margin: 6px 0; padding: 4px 8px 6px; border-left: 2px solid rgba(150,201,61,.35);
+    background: rgba(255,255,255,.03); border-radius: 6px;
+  }
+  .fxsec { border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 8px 10px; margin: 10px 0; }
+  .fxsec h4 { font-size: .72rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--verde); margin-bottom: 4px; }
 
   /* ================= LOADING / ERRO ================= */
   #loading {
@@ -180,173 +205,233 @@
   <button class="tb-btn" id="btn-new">Importar outro</button>
 </div>
 
+
 <!-- ===== PAINEL ===== -->
 <div id="panel">
-  <h3>Splats</h3>
-  <div class="row"><label>Tamanho</label><input type="range" id="p-splatscale" min="0.05" max="3" step="0.05" value="1"><span class="val" id="v-splatscale">1.00</span></div>
-
-  <h3>Distorcer / Esticar</h3>
-  <div class="row"><label>Escala X</label><input type="range" id="p-sx" min="0.1" max="3" step="0.05" value="1"><span class="val" id="v-sx">1.00</span></div>
-  <div class="row"><label>Escala Y</label><input type="range" id="p-sy" min="0.1" max="3" step="0.05" value="1"><span class="val" id="v-sy">1.00</span></div>
-  <div class="row"><label>Escala Z</label><input type="range" id="p-sz" min="0.1" max="3" step="0.05" value="1"><span class="val" id="v-sz">1.00</span></div>
-  <div class="row"><label>Rotação Y</label><input type="range" id="p-ry" min="-180" max="180" step="1" value="0"><span class="val" id="v-ry">0°</span></div>
-  <div class="row"><label>Twist</label><input type="range" id="p-twist" min="-45" max="45" step="1" value="0"><span class="val" id="v-twist">0°</span></div>
-  <button class="panel-btn" id="p-reset-transform">Resetar transformações</button>
-
-  <h3>Crop</h3>
-  <div class="row"><label>X min</label><input type="range" id="c-xmin" min="0" max="1" step="0.01" value="0"><span class="val" id="v-xmin">0%</span></div>
-  <div class="row"><label>X max</label><input type="range" id="c-xmax" min="0" max="1" step="0.01" value="1"><span class="val" id="v-xmax">100%</span></div>
-  <div class="row"><label>Y min</label><input type="range" id="c-ymin" min="0" max="1" step="0.01" value="0"><span class="val" id="v-ymin">0%</span></div>
-  <div class="row"><label>Y max</label><input type="range" id="c-ymax" min="0" max="1" step="0.01" value="1"><span class="val" id="v-ymax">100%</span></div>
-  <div class="row"><label>Z min</label><input type="range" id="c-zmin" min="0" max="1" step="0.01" value="0"><span class="val" id="v-zmin">0%</span></div>
-  <div class="row"><label>Z max</label><input type="range" id="c-zmax" min="0" max="1" step="0.01" value="1"><span class="val" id="v-zmax">100%</span></div>
-  <div class="btn-pair">
-    <button class="panel-btn" id="c-apply">Aplicar crop</button>
-    <button class="panel-btn" id="c-reset">Resetar</button>
-  </div>
-  <p class="note" id="crop-note">Crop disponível para <b>.splat</b> e <b>.ply</b> binário padrão.</p>
-
-  <h3>Câmera / Lente</h3>
-  <div class="row"><label>FOV</label><input type="range" id="cam-fov" min="15" max="120" step="1" value="60"><span class="val" id="v-fov">60°</span></div>
-  <p class="note" id="v-mm">Equivalente a ~21mm (full frame)</p>
-
-  <h3>Anchor / Pivô</h3>
-  <div class="row"><label>Pivô X</label><input type="range" id="a-x" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-ax">50%</span></div>
-  <div class="row"><label>Pivô Y</label><input type="range" id="a-y" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-ay">50%</span></div>
-  <div class="row"><label>Pivô Z</label><input type="range" id="a-z" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-az2">50%</span></div>
-  <button class="panel-btn" id="ac-toggle">▶ Crop radial no pivô</button>
-  <div class="row"><label>Raio</label><input type="range" id="a-r" min="0.05" max="1" step="0.01" value="0.5"><span class="val" id="v-ar">50%</span></div>
-  <button class="panel-btn" id="a-epi">Usar pivô como epicentro do reveal</button>
-  <p class="note">O pivô é o centro da escala, rotação e do crop radial (esfera).</p>
-
-  <h3>Animar Câmera</h3>
-  <button class="panel-btn" id="a-orbit">▶ Órbita (turntable)</button>
-  <div class="row"><label>Velocidade</label><input type="range" id="a-orbitspeed" min="-10" max="10" step="0.5" value="2"><span class="val" id="v-orbitspeed">2.0</span></div>
-
-  <h3>Animar Distorção</h3>
-  <button class="panel-btn" id="a-wobble">▶ Wobble</button>
-  <div class="row"><label>Amplitude</label><input type="range" id="a-wamp" min="0" max="0.5" step="0.01" value="0.15"><span class="val" id="v-wamp">0.15</span></div>
-  <div class="row"><label>Freq.</label><input type="range" id="a-wfreq" min="0.2" max="5" step="0.1" value="1.5"><span class="val" id="v-wfreq">1.5</span></div>
-
-  <h3>Efeitos</h3>
-  <div class="btn-pair">
-    <button class="panel-btn" id="fx-dissolve-out">Dissolve ✕</button>
-    <button class="panel-btn" id="fx-dissolve-in">Dissolve ✓</button>
-  </div>
-  <div class="row"><label>Duração</label><input type="range" id="fx-dur" min="0.5" max="8" step="0.5" value="2"><span class="val" id="v-fxdur">2.0s</span></div>
-
-  <h3>Waves (distorção)</h3>
-  <button class="panel-btn" id="w-toggle">▶ Waves</button>
-  <div class="row"><label>Amplitude</label><input type="range" id="w-amp" min="0" max="0.5" step="0.01" value="0.08"><span class="val" id="v-wamp2">0.08</span></div>
-  <div class="row"><label>Frequência</label><input type="range" id="w-freq" min="0.5" max="10" step="0.1" value="3"><span class="val" id="v-wfreq2">3.0</span></div>
-  <div class="row"><label>Velocidade</label><input type="range" id="w-speed" min="0" max="5" step="0.1" value="1.5"><span class="val" id="v-wspeed">1.5</span></div>
-
-  <h3>Twist FX (animado)</h3>
-  <button class="panel-btn" id="tw-toggle">▶ Twist</button>
-  <div class="row"><label>Intensidade</label><input type="range" id="tw-amt" min="-3" max="3" step="0.05" value="0.5"><span class="val" id="v-twamt">0.50</span></div>
-  <div class="row"><label>Velocidade</label><input type="range" id="tw-speed" min="0" max="6" step="0.1" value="1.5"><span class="val" id="v-twspeed">1.5</span></div>
-  <p class="note">Velocidade 0 = twist fixo; maior que 0 = oscila como o wave.</p>
-
-  <h3>Bend / Taper</h3>
-  <button class="panel-btn" id="bd-toggle">▶ Bend</button>
-  <div class="row"><label>Curvatura</label><input type="range" id="bd-amt" min="-2" max="2" step="0.05" value="0.3"><span class="val" id="v-bdamt">0.30</span></div>
-  <button class="panel-btn" id="tp-toggle">▶ Taper</button>
-  <div class="row"><label>Afunilar</label><input type="range" id="tp-amt" min="0" max="2" step="0.05" value="0.5"><span class="val" id="v-tpamt">0.50</span></div>
-
-  <h3>Área do efeito</h3>
-  <button class="panel-btn" id="fa-toggle">▶ Limitar efeitos à esfera do pivô</button>
-  <div class="row"><label>Raio</label><input type="range" id="fa-r" min="0.05" max="1" step="0.01" value="0.5"><span class="val" id="v-far">50%</span></div>
-  <p class="note">Waves, Twist, Bend e Taper só atuam dentro da esfera centrada no pivô (borda suave).</p>
-
-  <h3>Time Slice (4D)</h3>
-  <button class="panel-btn" id="ts-toggle">▶ Time Slice</button>
-  <div class="row"><label>Eixo</label><input type="range" id="ts-axis" min="0" max="2" step="1" value="0"><span class="val" id="v-tsaxis">X</span></div>
-  <div class="row"><label>Deslocar</label><input type="range" id="ts-shift" min="0" max="1" step="0.01" value="0"><span class="val" id="v-tsshift">0%</span></div>
-  <button class="panel-btn" id="ts-invert">Inverter direção</button>
-  <p class="note">Só em sequências 4D: cada fatia do espaço mostra um frame do tempo (slit-scan). Com play ligado, a fatia varre a cena.</p>
-
-  <h3>Fumaça (difusão)</h3>
-  <div class="btn-pair">
-    <button class="panel-btn" id="s-out">▶ Dissipar</button>
-    <button class="panel-btn" id="s-in">◀ Reverter</button>
-  </div>
-  <div class="row"><label>Distância</label><input type="range" id="s-dist" min="0.5" max="10" step="0.1" value="3"><span class="val" id="v-sdist">3.0</span></div>
-  <div class="row"><label>Duração</label><input type="range" id="s-dur" min="0.5" max="10" step="0.5" value="3"><span class="val" id="v-sdur">3.0s</span></div>
-
-  <h3>Relight (2 luzes + sombra)</h3>
-  <button class="panel-btn" id="l-toggle">▶ Relight</button>
-  <div class="row"><label>Sombra</label><input type="range" id="l-shadow" min="0.3" max="5" step="0.1" value="1"><span class="val" id="v-lshadow">1.0</span></div>
-  <div class="row"><label>Ambiente</label><input type="range" id="l-amb" min="0" max="1" step="0.05" value="0.35"><span class="val" id="v-lamb">0.35</span></div>
-  <p class="note"><b>Luz 1</b></p>
-  <div class="row"><label>Azimute</label><input type="range" id="l-az" min="-180" max="180" step="1" value="45"><span class="val" id="v-laz">45°</span></div>
-  <div class="row"><label>Altura</label><input type="range" id="l-el" min="-90" max="90" step="1" value="30"><span class="val" id="v-lel">30°</span></div>
-  <div class="row"><label>Intensidade</label><input type="range" id="l-str" min="0" max="3" step="0.05" value="1.2"><span class="val" id="v-lstr">1.20</span></div>
-  <div class="row"><label>Cor</label><input type="color" id="l-color" value="#ffffff" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
-  <button class="panel-btn" id="l2-toggle">+ Luz 2 (desligada)</button>
-  <div class="row"><label>Azimute 2</label><input type="range" id="l2-az" min="-180" max="180" step="1" value="-120"><span class="val" id="v-l2az">-120°</span></div>
-  <div class="row"><label>Altura 2</label><input type="range" id="l2-el" min="-90" max="90" step="1" value="10"><span class="val" id="v-l2el">10°</span></div>
-  <div class="row"><label>Intens. 2</label><input type="range" id="l2-str" min="0" max="3" step="0.05" value="0.8"><span class="val" id="v-l2str">0.80</span></div>
-  <div class="row"><label>Cor 2</label><input type="color" id="l2-color" value="#aaccff" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
-  <p class="note">Relight aproximado (sem normais reais — usa direção radial). "Sombra" controla a dureza do sombreado.</p>
-
-  <h3>Desfoque de fundo (DoF)</h3>
-  <button class="panel-btn" id="d-toggle">▶ Desfoque</button>
-  <div class="row"><label>Foco (dist.)</label><input type="range" id="d-dist" min="0.1" max="20" step="0.1" value="3"><span class="val" id="v-ddist">3.0</span></div>
-  <div class="row"><label>Faixa nítida</label><input type="range" id="d-range" min="0.1" max="10" step="0.1" value="1.5"><span class="val" id="v-drange">1.5</span></div>
-  <div class="row"><label>Intensidade</label><input type="range" id="d-blur" min="0.5" max="12" step="0.5" value="6"><span class="val" id="v-dblur">6.0</span></div>
-  <p class="note">Mantém nítido o que está à distância de foco da câmera; o resto desfoca.</p>
-
-  <h3>Reveal (epicentro)</h3>
-  <div class="btn-pair">
-    <button class="panel-btn" id="r-play">▶ Revelar</button>
-    <button class="panel-btn" id="r-hide">◀ Esconder</button>
-  </div>
-  <div class="row"><label>Duração</label><input type="range" id="r-dur" min="0.5" max="10" step="0.5" value="3"><span class="val" id="v-rdur">3.0s</span></div>
-  <div class="row"><label>Epicentro X</label><input type="range" id="r-x" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-rx">50%</span></div>
-  <div class="row"><label>Epicentro Y</label><input type="range" id="r-y" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-ry2">50%</span></div>
-  <div class="row"><label>Epicentro Z</label><input type="range" id="r-z" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-rz">50%</span></div>
-  <p class="note">Os pontos aparecem do epicentro para as bordas.</p>
-
-  <h3>Color Grading (LUT)</h3>
-  <button class="panel-btn" id="cg-toggle">▶ Grading</button>
-  <div class="row"><label>Exposição</label><input type="range" id="cg-exp" min="0.2" max="2.5" step="0.02" value="1"><span class="val" id="v-cgexp">1.00</span></div>
-  <div class="row"><label>Contraste</label><input type="range" id="cg-con" min="0.5" max="2" step="0.02" value="1"><span class="val" id="v-cgcon">1.00</span></div>
-  <div class="row"><label>Saturação</label><input type="range" id="cg-sat" min="0" max="2" step="0.02" value="1"><span class="val" id="v-cgsat">1.00</span></div>
-  <div class="row"><label>Temperatura</label><input type="range" id="cg-temp" min="-0.5" max="0.5" step="0.01" value="0"><span class="val" id="v-cgtemp">0.00</span></div>
-  <div class="row"><label>Tint</label><input type="range" id="cg-tint" min="-0.5" max="0.5" step="0.01" value="0"><span class="val" id="v-cgtint">0.00</span></div>
-  <div class="btn-pair">
-    <button class="panel-btn" id="cg-cine">🎬 Cine</button>
-    <button class="panel-btn" id="cg-reset">Resetar</button>
+  <div class="fx-tabs">
+    <button class="fx-tab active" data-tab="tab-edit">✂️ Editar</button>
+    <button class="fx-tab" data-tab="tab-dist">🌀 Distorção</button>
+    <button class="fx-tab" data-tab="tab-cam">🎥 Câmera</button>
+    <button class="fx-tab" data-tab="tab-luz">💡 Luz/Cor</button>
+    <button class="fx-tab" data-tab="tab-trans">✨ Transição</button>
+    <button class="fx-tab" data-tab="tab-misc">🧪 Diversos</button>
   </div>
 
-  <h3>Paint (pintar no pivô)</h3>
-  <button class="panel-btn" id="pt-toggle">▶ Paint</button>
-  <div class="row"><label>Cor</label><input type="color" id="pt-color" value="#9933b3" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
-  <div class="row"><label>Raio</label><input type="range" id="pt-r" min="0.05" max="1" step="0.01" value="0.4"><span class="val" id="v-ptr">40%</span></div>
-  <div class="row"><label>Força</label><input type="range" id="pt-str" min="0" max="1" step="0.05" value="0.8"><span class="val" id="v-ptstr">0.80</span></div>
-  <p class="note">Pinta os splats dentro da esfera do pivô. Mova o pivô (Anchor) para pintar outras áreas.</p>
+  <!-- ========== EDITAR GAUSSIANS ========== -->
+  <div class="tab-page visible" id="tab-edit">
+    <h3>Tamanho do splat</h3>
+    <div class="row"><label>Tamanho</label><input type="range" id="p-splatscale" min="0.05" max="3" step="0.05" value="1"><span class="val" id="v-splatscale">1.00</span></div>
 
-  <h3>Weather (clima)</h3>
-  <button class="panel-btn" id="fog-toggle">▶ Névoa</button>
-  <div class="row"><label>Cor</label><input type="color" id="fog-color" value="#b3bfd9" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
-  <div class="row"><label>Início</label><input type="range" id="fog-near" min="0" max="15" step="0.1" value="2"><span class="val" id="v-fognear">2.0</span></div>
-  <div class="row"><label>Fim</label><input type="range" id="fog-far" min="1" max="30" step="0.5" value="12"><span class="val" id="v-fogfar">12</span></div>
-  <div class="btn-pair">
-    <button class="panel-btn" id="wx-snow">❄ Neve</button>
-    <button class="panel-btn" id="wx-rain">🌧 Chuva</button>
+    <h3>Posição dos Gaussians</h3>
+    <div class="row"><label>Pos X</label><input type="range" id="p-px" min="-1" max="1" step="0.01" value="0"><span class="val" id="v-px">0.00</span></div>
+    <div class="row"><label>Pos Y</label><input type="range" id="p-py" min="-1" max="1" step="0.01" value="0"><span class="val" id="v-py">0.00</span></div>
+    <div class="row"><label>Pos Z</label><input type="range" id="p-pz" min="-1" max="1" step="0.01" value="0"><span class="val" id="v-pz">0.00</span></div>
+
+    <h3>Escala / Rotação (no pivô)</h3>
+    <div class="row"><label>Escala X</label><input type="range" id="p-sx" min="0.1" max="3" step="0.05" value="1"><span class="val" id="v-sx">1.00</span></div>
+    <div class="row"><label>Escala Y</label><input type="range" id="p-sy" min="0.1" max="3" step="0.05" value="1"><span class="val" id="v-sy">1.00</span></div>
+    <div class="row"><label>Escala Z</label><input type="range" id="p-sz" min="0.1" max="3" step="0.05" value="1"><span class="val" id="v-sz">1.00</span></div>
+    <div class="row"><label>Rotação Y</label><input type="range" id="p-ry" min="-180" max="180" step="1" value="0"><span class="val" id="v-ry">0°</span></div>
+    <div class="row"><label>Rotação Z</label><input type="range" id="p-twist" min="-45" max="45" step="1" value="0"><span class="val" id="v-twist">0°</span></div>
+    <button class="panel-btn" id="p-reset-transform">Resetar transformações</button>
+
+    <h3>Anchor Point (pivô)</h3>
+    <div class="row"><label>Pivô X</label><input type="range" id="a-x" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-ax">50%</span></div>
+    <div class="row"><label>Pivô Y</label><input type="range" id="a-y" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-ay">50%</span></div>
+    <div class="row"><label>Pivô Z</label><input type="range" id="a-z" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-az2">50%</span></div>
+    <button class="panel-btn" id="ac-toggle">▶ Crop radial no pivô</button>
+    <div class="row"><label>Raio</label><input type="range" id="a-r" min="0.05" max="1" step="0.01" value="0.5"><span class="val" id="v-ar">50%</span></div>
+    <p class="note">O pivô é o centro de escala/rotação, das distorções, das transições e da luz pontual.</p>
+
+    <h3>Crop (box 3D)</h3>
+    <button class="panel-btn" id="cb-toggle">▶ Crop box (ao vivo)</button>
+    <div class="row"><label>Pos X</label><input type="range" id="cb-px" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-cbpx">50%</span></div>
+    <div class="row"><label>Pos Y</label><input type="range" id="cb-py" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-cbpy">50%</span></div>
+    <div class="row"><label>Pos Z</label><input type="range" id="cb-pz" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-cbpz">50%</span></div>
+    <div class="row"><label>Escala X</label><input type="range" id="cb-sx" min="0.02" max="1.2" step="0.01" value="1"><span class="val" id="v-cbsx">1.00</span></div>
+    <div class="row"><label>Escala Y</label><input type="range" id="cb-sy" min="0.02" max="1.2" step="0.01" value="1"><span class="val" id="v-cbsy">1.00</span></div>
+    <div class="row"><label>Escala Z</label><input type="range" id="cb-sz" min="0.02" max="1.2" step="0.01" value="1"><span class="val" id="v-cbsz">1.00</span></div>
+    <div class="row"><label>Rot X</label><input type="range" id="cb-rx" min="-180" max="180" step="1" value="0"><span class="val" id="v-cbrx">0°</span></div>
+    <div class="row"><label>Rot Y</label><input type="range" id="cb-ry" min="-180" max="180" step="1" value="0"><span class="val" id="v-cbry">0°</span></div>
+    <div class="row"><label>Rot Z</label><input type="range" id="cb-rz" min="-180" max="180" step="1" value="0"><span class="val" id="v-cbrz">0°</span></div>
+    <div class="btn-pair">
+      <button class="panel-btn" id="c-apply">Aplicar (permanente)</button>
+      <button class="panel-btn" id="c-reset">Resetar</button>
+    </div>
+    <p class="note" id="crop-note">O box verde mostra a área mantida. O crop ao vivo (GPU) funciona em qualquer formato; o permanente só em <b>.splat</b> e <b>.ply</b> binário de cena única.</p>
   </div>
-  <div class="row"><label>Quantidade</label><input type="range" id="wx-amt" min="500" max="12000" step="500" value="4000"><span class="val" id="v-wxamt">4k</span></div>
 
-  <h3>Pontos P&B</h3>
-  <button class="panel-btn" id="pb-toggle">▶ Modo pontos P&B</button>
-  <p class="note">Renderiza como nuvem de pontos em preto e branco. Use o slider "Tamanho" para o tamanho dos pontos.</p>
+  <!-- ========== EFEITOS DE DISTORÇÃO ========== -->
+  <div class="tab-page" id="tab-dist">
+    <p class="note">Todos animados, centrados no <b>Anchor Point</b>. "Raio" limita a uma esfera no pivô; o box (posição/escala/rotação) limita a uma caixa — o box roxo aparece com 👁.</p>
+    <div id="dist-container"></div>
+  </div>
+
+  <!-- ========== EFEITOS DE CÂMERA ========== -->
+  <div class="tab-page" id="tab-cam">
+    <h3>Lente</h3>
+    <div class="row"><label>FOV</label><input type="range" id="cam-fov" min="15" max="120" step="1" value="60"><span class="val" id="v-fov">60°</span></div>
+    <p class="note" id="v-mm">Equivalente a ~21mm (full frame)</p>
+
+    <h3>Órbita X / Y / Z</h3>
+    <button class="panel-btn" id="co-toggle">▶ Órbita</button>
+    <div class="row"><label>Vel X</label><input type="range" id="co-sx" min="-10" max="10" step="0.5" value="0"><span class="val" id="v-cosx">0.0</span></div>
+    <div class="row"><label>Vel Y</label><input type="range" id="a-orbitspeed" min="-10" max="10" step="0.5" value="2"><span class="val" id="v-orbitspeed">2.0</span></div>
+    <div class="row"><label>Vel Z</label><input type="range" id="co-sz" min="-10" max="10" step="0.5" value="0"><span class="val" id="v-cosz">0.0</span></div>
+
+    <h3>Vertigo (dolly zoom)</h3>
+    <button class="panel-btn" id="vt-toggle">▶ Vertigo</button>
+    <div class="row"><label>Velocidade</label><input type="range" id="vt-speed" min="-5" max="5" step="0.1" value="1"><span class="val" id="v-vtspeed">1.0</span></div>
+    <p class="note">A câmera avança/recua mirando o <b>Anchor Point</b> enquanto o FOV compensa (efeito Hitchcock).</p>
+
+    <h3>Dolly</h3>
+    <button class="panel-btn" id="dl-toggle">▶ Dolly In/Out</button>
+    <div class="row"><label>Velocidade</label><input type="range" id="dl-speed" min="-5" max="5" step="0.1" value="1"><span class="val" id="v-dlspeed">1.0</span></div>
+    <button class="panel-btn" id="tk-toggle">▶ Dolly Left/Right</button>
+    <div class="row"><label>Velocidade</label><input type="range" id="tk-speed" min="-5" max="5" step="0.1" value="1"><span class="val" id="v-tkspeed">1.0</span></div>
+
+    <h3>Tilt</h3>
+    <button class="panel-btn" id="tl-toggle">▶ Tilt Up/Down</button>
+    <div class="row"><label>Velocidade</label><input type="range" id="tl-speed" min="-5" max="5" step="0.1" value="1"><span class="val" id="v-tlspeed">1.0</span></div>
+
+    <h3>Handheld (shake)</h3>
+    <button class="panel-btn" id="hh-toggle">▶ Camera shake</button>
+    <div class="row"><label>Intensidade</label><input type="range" id="hh-amp" min="0" max="3" step="0.05" value="0.6"><span class="val" id="v-hhamp">0.60</span></div>
+    <div class="row"><label>Frequência</label><input type="range" id="hh-freq" min="0.2" max="8" step="0.1" value="2"><span class="val" id="v-hhfreq">2.0</span></div>
+  </div>
+
+  <!-- ========== ILUMINAÇÃO / COR ========== -->
+  <div class="tab-page" id="tab-luz">
+    <h3>Correção de cor / LUT</h3>
+    <button class="panel-btn" id="cg-toggle">▶ Grading</button>
+    <div class="row"><label>Exposição</label><input type="range" id="cg-exp" min="0.2" max="2.5" step="0.02" value="1"><span class="val" id="v-cgexp">1.00</span></div>
+    <div class="row"><label>Contraste</label><input type="range" id="cg-con" min="0.5" max="2" step="0.02" value="1"><span class="val" id="v-cgcon">1.00</span></div>
+    <div class="row"><label>Saturação</label><input type="range" id="cg-sat" min="0" max="2" step="0.02" value="1"><span class="val" id="v-cgsat">1.00</span></div>
+    <div class="row"><label>Temperatura</label><input type="range" id="cg-temp" min="-0.5" max="0.5" step="0.01" value="0"><span class="val" id="v-cgtemp">0.00</span></div>
+    <div class="row"><label>Tint</label><input type="range" id="cg-tint" min="-0.5" max="0.5" step="0.01" value="0"><span class="val" id="v-cgtint">0.00</span></div>
+    <div class="btn-pair">
+      <button class="panel-btn" id="cg-cine">🎬 Cine</button>
+      <button class="panel-btn" id="cg-reset">Resetar</button>
+    </div>
+
+    <h3>Luz pontual (point light)</h3>
+    <button class="panel-btn" id="pl-toggle">▶ Luz pontual</button>
+    <div class="row"><label>Pos X</label><input type="range" id="pl-x" min="-0.5" max="1.5" step="0.01" value="0.5"><span class="val" id="v-plx">50%</span></div>
+    <div class="row"><label>Pos Y</label><input type="range" id="pl-y" min="-0.5" max="1.5" step="0.01" value="0.1"><span class="val" id="v-ply">10%</span></div>
+    <div class="row"><label>Pos Z</label><input type="range" id="pl-z" min="-0.5" max="1.5" step="0.01" value="0.5"><span class="val" id="v-plz">50%</span></div>
+    <div class="row"><label>Intensidade</label><input type="range" id="pl-str" min="0" max="5" step="0.05" value="1.5"><span class="val" id="v-plstr">1.50</span></div>
+    <div class="row"><label>Alcance</label><input type="range" id="pl-radius" min="0.1" max="2" step="0.02" value="1"><span class="val" id="v-plradius">1.00</span></div>
+    <div class="row"><label>Cor</label><input type="color" id="pl-color" value="#ffd9a0" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
+    <p class="note">Posição mapeada no volume da cena. A dureza da sombra usa o slider "Sombra" do Relight.</p>
+
+    <h3>Relight (2 luzes + sombra)</h3>
+    <button class="panel-btn" id="l-toggle">▶ Relight</button>
+    <div class="row"><label>Sombra</label><input type="range" id="l-shadow" min="0.3" max="5" step="0.1" value="1"><span class="val" id="v-lshadow">1.0</span></div>
+    <div class="row"><label>Ambiente</label><input type="range" id="l-amb" min="0" max="1" step="0.05" value="0.35"><span class="val" id="v-lamb">0.35</span></div>
+    <p class="note"><b>Luz 1</b></p>
+    <div class="row"><label>Azimute</label><input type="range" id="l-az" min="-180" max="180" step="1" value="45"><span class="val" id="v-laz">45°</span></div>
+    <div class="row"><label>Altura</label><input type="range" id="l-el" min="-90" max="90" step="1" value="30"><span class="val" id="v-lel">30°</span></div>
+    <div class="row"><label>Intensidade</label><input type="range" id="l-str" min="0" max="3" step="0.05" value="1.2"><span class="val" id="v-lstr">1.20</span></div>
+    <div class="row"><label>Cor</label><input type="color" id="l-color" value="#ffffff" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
+    <button class="panel-btn" id="l2-toggle">+ Luz 2 (desligada)</button>
+    <div class="row"><label>Azimute 2</label><input type="range" id="l2-az" min="-180" max="180" step="1" value="-120"><span class="val" id="v-l2az">-120°</span></div>
+    <div class="row"><label>Altura 2</label><input type="range" id="l2-el" min="-90" max="90" step="1" value="10"><span class="val" id="v-l2el">10°</span></div>
+    <div class="row"><label>Intens. 2</label><input type="range" id="l2-str" min="0" max="3" step="0.05" value="0.8"><span class="val" id="v-l2str">0.80</span></div>
+    <div class="row"><label>Cor 2</label><input type="color" id="l2-color" value="#aaccff" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
+    <p class="note">Relight aproximado (sem normais reais — usa direção radial).</p>
+
+    <h3>Desfoque de fundo (DoF)</h3>
+    <button class="panel-btn" id="d-toggle">▶ Desfoque</button>
+    <div class="row"><label>Foco (dist.)</label><input type="range" id="d-dist" min="0.1" max="20" step="0.1" value="3"><span class="val" id="v-ddist">3.0</span></div>
+    <div class="row"><label>Faixa nítida</label><input type="range" id="d-range" min="0.1" max="10" step="0.1" value="1.5"><span class="val" id="v-drange">1.5</span></div>
+    <div class="row"><label>Intensidade</label><input type="range" id="d-blur" min="0.5" max="12" step="0.5" value="6"><span class="val" id="v-dblur">6.0</span></div>
+  </div>
+
+  <!-- ========== EFEITOS DE TRANSIÇÃO ========== -->
+  <div class="tab-page" id="tab-trans">
+    <p class="note">Todas as transições partem do <b>Anchor Point</b> (aba Editar).</p>
+
+    <h3>Dissolve (difusão)</h3>
+    <div class="btn-pair">
+      <button class="panel-btn" id="dis-out">▶ Dissolver</button>
+      <button class="panel-btn" id="dis-in">◀ Voltar</button>
+    </div>
+    <div class="row"><label>Duração</label><input type="range" id="dis-dur" min="0.5" max="10" step="0.5" value="3"><span class="val" id="v-disdur">3.0s</span></div>
+    <p class="note">O raio cresce a partir do pivô e os splats vão se difundindo e sumindo.</p>
+
+    <h3>Reveal</h3>
+    <div class="btn-pair">
+      <button class="panel-btn" id="r-play">▶ Revelar</button>
+      <button class="panel-btn" id="r-hide">◀ Esconder</button>
+    </div>
+    <div class="row"><label>Duração</label><input type="range" id="r-dur" min="0.5" max="10" step="0.5" value="3"><span class="val" id="v-rdur">3.0s</span></div>
+    <p class="note">O raio cresce a partir do pivô e a cena vai aparecendo.</p>
+
+    <h3>Fumaça (difusão global)</h3>
+    <div class="btn-pair">
+      <button class="panel-btn" id="s-out">▶ Dissipar</button>
+      <button class="panel-btn" id="s-in">◀ Reverter</button>
+    </div>
+    <div class="row"><label>Distância</label><input type="range" id="s-dist" min="0.5" max="10" step="0.1" value="3"><span class="val" id="v-sdist">3.0</span></div>
+    <div class="row"><label>Duração</label><input type="range" id="s-dur" min="0.5" max="10" step="0.5" value="3"><span class="val" id="v-sdur">3.0s</span></div>
+
+    <h3>Dissolve (escala)</h3>
+    <div class="btn-pair">
+      <button class="panel-btn" id="fx-dissolve-out">Dissolve ✕</button>
+      <button class="panel-btn" id="fx-dissolve-in">Dissolve ✓</button>
+    </div>
+    <div class="row"><label>Duração</label><input type="range" id="fx-dur" min="0.5" max="8" step="0.5" value="2"><span class="val" id="v-fxdur">2.0s</span></div>
+  </div>
+
+  <!-- ========== EFEITOS DIVERSOS ========== -->
+  <div class="tab-page" id="tab-misc">
+    <h3>Weather (clima)</h3>
+    <button class="panel-btn" id="fog-toggle">▶ Névoa</button>
+    <div class="row"><label>Cor</label><input type="color" id="fog-color" value="#b3bfd9" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
+    <div class="row"><label>Início</label><input type="range" id="fog-near" min="0" max="15" step="0.1" value="2"><span class="val" id="v-fognear">2.0</span></div>
+    <div class="row"><label>Fim</label><input type="range" id="fog-far" min="1" max="30" step="0.5" value="12"><span class="val" id="v-fogfar">12</span></div>
+    <div class="btn-pair">
+      <button class="panel-btn" id="wx-snow">❄ Neve</button>
+      <button class="panel-btn" id="wx-rain">🌧 Chuva</button>
+    </div>
+    <div class="row"><label>Quantidade</label><input type="range" id="wx-amt" min="500" max="12000" step="500" value="4000"><span class="val" id="v-wxamt">4k</span></div>
+    <div class="row"><label>Tamanho</label><input type="range" id="wx-size" min="0.2" max="4" step="0.1" value="1"><span class="val" id="v-wxsize">1.0</span></div>
+
+    <h3>Pontos P&B</h3>
+    <button class="panel-btn" id="pb-toggle">▶ Modo pontos P&B</button>
+    <p class="note">Nuvem de pontos em preto e branco. Use "Tamanho do splat" para o tamanho dos pontos.</p>
+
+    <h3>Pontos por profundidade</h3>
+    <button class="panel-btn" id="dc-toggle">▶ Perto/Longe</button>
+    <div class="row"><label>Cor perto</label><input type="color" id="dc-cnear" value="#96c93d" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
+    <div class="row"><label>Cor longe</label><input type="color" id="dc-cfar" value="#7b2d8e" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
+    <div class="row"><label>Início</label><input type="range" id="dc-n" min="0" max="15" step="0.1" value="1"><span class="val" id="v-dcn">1.0</span></div>
+    <div class="row"><label>Fim</label><input type="range" id="dc-f" min="0.5" max="30" step="0.5" value="8"><span class="val" id="v-dcf">8.0</span></div>
+    <p class="note">O que está perto da câmera fica verde e o que está longe fica roxo (cores ajustáveis).</p>
+
+    <h3>Paint (pincel)</h3>
+    <button class="panel-btn" id="pt-toggle">🖌 Modo pincel</button>
+    <div class="row"><label>Cor</label><input type="color" id="pt-color" value="#9933b3" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
+    <div class="row"><label>Tamanho</label><input type="range" id="pt-r" min="0.05" max="1" step="0.01" value="0.25"><span class="val" id="v-ptr">25%</span></div>
+    <div class="row"><label>Força</label><input type="range" id="pt-str" min="0" max="1" step="0.05" value="0.8"><span class="val" id="v-ptstr">0.80</span></div>
+    <button class="panel-btn" id="pt-clear">Limpar pinceladas</button>
+    <p class="note">Com o modo pincel ligado, clique e arraste sobre a cena para pintar (a órbita do mouse fica pausada). Até 64 pinceladas.</p>
+
+    <h3>Time Slice (4D)</h3>
+    <button class="panel-btn" id="ts-toggle">▶ Time Slice</button>
+    <div class="row"><label>Eixo</label><input type="range" id="ts-axis" min="0" max="2" step="1" value="0"><span class="val" id="v-tsaxis">X</span></div>
+    <div class="row"><label>Deslocar</label><input type="range" id="ts-shift" min="0" max="1" step="0.01" value="0"><span class="val" id="v-tsshift">0%</span></div>
+    <button class="panel-btn" id="ts-invert">Inverter direção</button>
+    <p class="note">Só em sequências 4D: cada fatia do espaço mostra um frame do tempo (slit-scan).</p>
+  </div>
 
   <h3>Gravação</h3>
   <div class="row"><label>Duração</label><input type="range" id="rec-dur" min="2" max="30" step="1" value="8"><span class="val" id="v-recdur">8s</span></div>
   <div class="row"><label>Bitrate</label><input type="range" id="rec-bps" min="10" max="120" step="5" value="50"><span class="val" id="v-recbps">50M</span></div>
   <button class="panel-btn" id="rec-orbit">⏺ Gravar órbita (MP4)</button>
-  <p class="note">Grava o canvas com a câmera orbitando. Chrome/Edge salvam MP4; outros navegadores salvam WebM.</p>
+  <p class="note">Grava o canvas. Chrome/Edge salvam MP4; outros navegadores salvam WebM.</p>
 </div>
+
 
 <!-- ===== LOADING / ERRO / HINT ===== -->
 <div id="loading"><div class="spinner"></div><div id="loading-text">Carregando splats…</div></div>
@@ -599,12 +684,30 @@ function decodeSplat4d(fileBuf, maxFrames) {
 // ============================================================
 const BX_UNIFORMS_GLSL = `
 uniform float uBxTime;
-uniform float uBxWaveOn;
-uniform float uBxWaveAmp;
-uniform float uBxWaveFreq;
-uniform float uBxWaveSpeed;
+uniform vec3 uBxAnchor;
+uniform float uBxCropR;
+// --- distorções (0 wobble, 1 ripple, 2 waves, 3 twist, 4 bend, 5 taper, 6 bulge) ---
+uniform float uBxDOn[7];
+uniform vec3  uBxDAxis[7];
+uniform float uBxDAmp[7];
+uniform float uBxDFreq[7];
+uniform float uBxDSpeed[7];
+uniform float uBxDRadius[7];
+uniform float uBxDBoxOn[7];
+uniform vec3  uBxDBoxPos[7];
+uniform vec3  uBxDBoxInvHalf[7];
+uniform mat3  uBxDBoxRot[7];
+// --- crop box (ao vivo) ---
+uniform float uBxCropBoxOn;
+uniform vec3  uBxCropBoxPos;
+uniform vec3  uBxCropBoxInvHalf;
+uniform mat3  uBxCropBoxRot;
+// --- fumaça / dissolve ---
 uniform float uBxSmoke;
 uniform float uBxSmokeDist;
+uniform float uBxDisT;
+uniform float uBxDisMax;
+// --- relight ---
 uniform float uBxLightOn;
 uniform vec3 uBxLightDir;
 uniform float uBxLightStrength;
@@ -615,39 +718,45 @@ uniform vec3 uBxLight2Dir;
 uniform float uBxLight2Strength;
 uniform vec3 uBxLight2Color;
 uniform float uBxShadowHard;
+// --- luz pontual ---
+uniform float uBxPLOn;
+uniform vec3 uBxPLPos;
+uniform vec3 uBxPLColor;
+uniform float uBxPLStr;
+uniform float uBxPLRadius;
+// --- DoF ---
 uniform float uBxDofOn;
 uniform float uBxFocusDist;
 uniform float uBxFocusRange;
 uniform float uBxBlurMax;
+// --- reveal ---
 uniform float uBxReveal;
 uniform vec3 uBxRevealCenter;
 uniform float uBxRevealMax;
-uniform float uBxMono;
-uniform vec3 uBxAnchor;
-uniform float uBxCropR;
+// --- grading ---
 uniform float uBxGradeOn;
 uniform float uBxExposure;
 uniform float uBxContrast;
 uniform float uBxSaturation;
 uniform float uBxTemp;
 uniform float uBxTint;
-uniform float uBxPaintOn;
-uniform vec3 uBxPaintColor;
-uniform float uBxPaintR;
+// --- paint (pincel: até 64 esferas) ---
+uniform float uBxPaintN;
+uniform vec4 uBxPaintPosR[64];
+uniform vec3 uBxPaintCol[64];
 uniform float uBxPaintStrength;
+// --- fog / profundidade / P&B ---
 uniform float uBxFogOn;
 uniform vec3 uBxFogColor;
 uniform float uBxFogNear;
 uniform float uBxFogFar;
-uniform float uBxFxAreaOn;
-uniform float uBxFxAreaR;
-uniform float uBxTwistOn;
-uniform float uBxTwistAmt;
-uniform float uBxTwistSpeed;
-uniform float uBxBendOn;
-uniform float uBxBendAmt;
-uniform float uBxTaperOn;
-uniform float uBxTaperAmt;
+uniform float uBxDepthOn;
+uniform vec3 uBxDepthNearCol;
+uniform vec3 uBxDepthFarCol;
+uniform float uBxDepthNear;
+uniform float uBxDepthFar;
+uniform float uBxMono;
+// --- bbox / time slice ---
 uniform vec3 uBxBBMin;
 uniform vec3 uBxBBMax;
 uniform float uBxTimeSliceOn;
@@ -656,42 +765,86 @@ uniform float uBxSliceInvert;
 uniform float uBxSliceShift;
 float bxFade = 1.0;
 float bxHash(vec3 p){ return fract(sin(dot(p, vec3(127.1,311.7,74.7)))*43758.5453); }
-// máscara da área do efeito: 1 dentro da esfera no pivô, 0 fora (borda suave)
-float bxMask(vec3 p){
-  if (uBxFxAreaOn < 0.5) return 1.0;
-  float d = length(p - uBxAnchor);
-  return 1.0 - smoothstep(uBxFxAreaR * 0.75, uBxFxAreaR, d);
+vec3 bxRotAx(vec3 v, vec3 n, float a){ float c=cos(a), s=sin(a); return v*c + cross(n,v)*s + n*dot(n,v)*(1.0-c); }
+vec3 bxAxisN(vec3 a){ return dot(a,a) < 0.25 ? vec3(0.0,1.0,0.0) : normalize(a); }
+// máscara por efeito: esfera de raio no pivô × box orientado (bordas suaves)
+float bxDMask(int i, vec3 p){
+  float m = 1.0;
+  float r = uBxDRadius[i];
+  if (r > 0.0) m *= 1.0 - smoothstep(r*0.7, r, length(p - uBxAnchor));
+  if (uBxDBoxOn[i] > 0.5) {
+    vec3 q = abs(uBxDBoxRot[i] * (p - uBxDBoxPos[i])) * uBxDBoxInvHalf[i];
+    m *= 1.0 - smoothstep(0.85, 1.0, max(q.x, max(q.y, q.z)));
+  }
+  return m;
 }
 vec3 bruxosPos(vec3 p){
-  float m = bxMask(p);
-  if (uBxWaveOn > 0.5) {
-    p += m * uBxWaveAmp * vec3(
-      sin(p.y*uBxWaveFreq + uBxTime*uBxWaveSpeed),
-      sin(p.z*uBxWaveFreq*0.8 + uBxTime*uBxWaveSpeed*1.13),
-      sin(p.x*uBxWaveFreq*1.31 + uBxTime*uBxWaveSpeed*0.87));
+  // 0 — WOBBLE: oscilação de escala nos eixos escolhidos
+  if (uBxDOn[0] > 0.5) {
+    float m = bxDMask(0, p);
+    float o = sin(uBxTime * max(uBxDSpeed[0], 0.001) * 3.0 + dot(p - uBxAnchor, vec3(1.0)) * uBxDFreq[0] * 0.3);
+    p += (p - uBxAnchor) * uBxDAxis[0] * (uBxDAmp[0] * 0.5 * o * m);
   }
-  if (uBxTwistOn > 0.5) {
-    float osc = uBxTwistSpeed > 0.001 ? sin(uBxTime * uBxTwistSpeed) : 1.0;
-    float ang = uBxTwistAmt * (p.y - uBxAnchor.y) * osc * m;
-    float c = cos(ang), s = sin(ang);
-    vec2 q = p.xz - uBxAnchor.xz;
-    p.xz = uBxAnchor.xz + vec2(c*q.x - s*q.y, s*q.x + c*q.y);
+  // 1 — RIPPLE: ondas radiais a partir do pivô, deslocando ao longo do eixo
+  if (uBxDOn[1] > 0.5) {
+    float m = bxDMask(1, p);
+    vec3 n = bxAxisN(uBxDAxis[1]);
+    vec3 rel = p - uBxAnchor;
+    float d = length(rel - n * dot(rel, n));
+    p += n * (uBxDAmp[1] * sin(d * uBxDFreq[1] - uBxTime * uBxDSpeed[1] * 3.0) * m);
   }
-  if (uBxBendOn > 0.5) {
-    float t = p.y - uBxAnchor.y;
-    float ang = uBxBendAmt * t * m;
-    float c = cos(ang), s = sin(ang);
-    float qx = p.x - uBxAnchor.x;
-    p.x = uBxAnchor.x + c*qx - s*t;
-    p.y = uBxAnchor.y + s*qx + c*t;
+  // 2 — WAVES: distorção ondulante nos eixos escolhidos
+  if (uBxDOn[2] > 0.5) {
+    float m = bxDMask(2, p);
+    float t2 = uBxTime * uBxDSpeed[2];
+    p += m * uBxDAmp[2] * uBxDAxis[2] * vec3(
+      sin(p.y * uBxDFreq[2] + t2),
+      sin(p.z * uBxDFreq[2] * 0.8 + t2 * 1.13),
+      sin(p.x * uBxDFreq[2] * 1.31 + t2 * 0.87));
   }
-  if (uBxTaperOn > 0.5) {
-    vec3 span = max(uBxBBMax - uBxBBMin, vec3(0.0001));
-    float t = clamp((p.y - uBxBBMin.y) / span.y, 0.0, 1.0);
-    float f = mix(1.0, uBxTaperAmt, t * m);
-    p.x = uBxAnchor.x + (p.x - uBxAnchor.x) * f;
-    p.z = uBxAnchor.z + (p.z - uBxAnchor.z) * f;
+  // 3 — TWIST: torção em torno do eixo escolhido, no pivô
+  if (uBxDOn[3] > 0.5) {
+    float m = bxDMask(3, p);
+    vec3 n = bxAxisN(uBxDAxis[3]);
+    vec3 rel = p - uBxAnchor;
+    float osc = uBxDSpeed[3] > 0.001 ? sin(uBxTime * uBxDSpeed[3]) : 1.0;
+    float ang = uBxDAmp[3] * uBxDFreq[3] * dot(rel, n) * osc * m;
+    p = uBxAnchor + bxRotAx(rel, n, ang);
   }
+  // 4 — BEND: curvatura ao longo do eixo escolhido
+  if (uBxDOn[4] > 0.5) {
+    float m = bxDMask(4, p);
+    vec3 n = bxAxisN(uBxDAxis[4]);
+    vec3 h = abs(n.y) > 0.9 ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 0.0);
+    vec3 b = normalize(cross(n, h));
+    vec3 rel = p - uBxAnchor;
+    float osc = uBxDSpeed[4] > 0.001 ? sin(uBxTime * uBxDSpeed[4]) : 1.0;
+    float ang = uBxDAmp[4] * uBxDFreq[4] * dot(rel, n) * osc * m;
+    p = uBxAnchor + bxRotAx(rel, b, ang);
+  }
+  // 5 — TAPER: afunila perpendicular ao eixo escolhido
+  if (uBxDOn[5] > 0.5) {
+    float m = bxDMask(5, p);
+    vec3 n = bxAxisN(uBxDAxis[5]);
+    vec3 rel = p - uBxAnchor;
+    float span = dot(abs(n), max(uBxBBMax - uBxBBMin, vec3(0.0001)));
+    float tt = clamp(dot(rel, n) * uBxDFreq[5] / span + 0.5, 0.0, 1.0);
+    float amp5 = uBxDSpeed[5] > 0.001 ? mix(1.0, uBxDAmp[5], 0.5 + 0.5 * sin(uBxTime * uBxDSpeed[5])) : uBxDAmp[5];
+    float f = mix(1.0, amp5, tt * m);
+    vec3 along = n * dot(rel, n);
+    p = uBxAnchor + along + (rel - along) * f;
+  }
+  // 6 — BULGE: inflar/encolher radial no pivô (gaussiano)
+  if (uBxDOn[6] > 0.5) {
+    float m = bxDMask(6, p);
+    vec3 rel = p - uBxAnchor;
+    float d = length(rel) + 0.0001;
+    float r6 = uBxDRadius[6] > 0.0 ? uBxDRadius[6] : uBxRevealMax * 0.3;
+    float osc = uBxDSpeed[6] > 0.001 ? sin(uBxTime * uBxDSpeed[6]) : 1.0;
+    float f = uBxDAmp[6] * exp(-(d*d) / (r6*r6*0.35)) * osc * m;
+    p += (rel * uBxDAxis[6]) / d * (f * r6 * 0.5);
+  }
+  // fumaça (difusão global do centro para fora)
   if (uBxSmoke > 0.001) {
     vec3 d = p - sceneCenter;
     float r = length(d) + 0.0001;
@@ -701,6 +854,18 @@ vec3 bruxosPos(vec3 p){
     float s = uBxSmoke*uBxSmoke;
     p += dir * s * uBxSmokeDist * (0.5 + n1) + turb * s * uBxSmokeDist * 0.35;
     p.y -= s * uBxSmokeDist * 0.5 * n1;
+  }
+  // dissolve (transição): raio cresce do pivô, splats difundem e somem
+  if (uBxDisT > 0.001) {
+    vec3 rel = p - uBxAnchor;
+    float d = length(rel) + 0.0001;
+    float edge = uBxDisT * uBxDisMax;
+    float k = 1.0 - smoothstep(edge * 0.55, edge, d);
+    if (k > 0.001) {
+      vec3 turb = vec3(bxHash(p*7.1)-0.5, bxHash(p*9.3)-0.5, bxHash(p*11.9)-0.5) * 2.0;
+      p += (rel / d + turb * 0.8) * (k * uBxDisT * uBxDisMax * 0.3);
+      bxFade *= 1.0 - k * clamp(uBxDisT * 1.5, 0.0, 1.0);
+    }
   }
   return p;
 }
@@ -716,13 +881,32 @@ if (uBxLightOn > 0.5) {
   }
   vColor.rgb *= bxLight;
 }
-// Paint: pinta uma cor dentro da esfera do pivô (borda suave)
-if (uBxPaintOn > 0.5) {
-  float pd = length(splatCenter - uBxAnchor);
-  float pm = 1.0 - smoothstep(uBxPaintR * 0.7, uBxPaintR, pd);
-  vColor.rgb = mix(vColor.rgb, uBxPaintColor, pm * uBxPaintStrength);
+// Luz pontual: posição no volume da cena, com atenuação por distância
+if (uBxPLOn > 0.5) {
+  vec3 bxN2 = normalize(splatCenter - sceneCenter);
+  vec3 bxLd = uBxPLPos - splatCenter;
+  float bxDist = length(bxLd);
+  float bxAtt = clamp(1.0 - bxDist / max(uBxPLRadius, 0.001), 0.0, 1.0);
+  float bxLam = pow(max(dot(bxN2, bxLd / max(bxDist, 0.001)), 0.0), uBxShadowHard);
+  vColor.rgb *= vec3(uBxAmbient) + bxLam * bxAtt * uBxPLStr * uBxPLColor;
 }
-// Color grading (estilo LUT): exposição, temperatura, tint, contraste, saturação
+// Paint (pincel): esferas pintadas acumuladas
+if (uBxPaintN > 0.5) {
+  for (int bi = 0; bi < 64; bi++) {
+    if (float(bi) >= uBxPaintN) break;
+    vec4 bs = uBxPaintPosR[bi];
+    float bpd = length(splatCenter - bs.xyz);
+    float bpm = 1.0 - smoothstep(bs.w * 0.7, bs.w, bpd);
+    vColor.rgb = mix(vColor.rgb, uBxPaintCol[bi], bpm * uBxPaintStrength);
+  }
+}
+// Pontos por profundidade: perto = verde, longe = roxo (ajustável)
+if (uBxDepthOn > 0.5) {
+  float bxDz = -viewCenter.z;
+  float bxDt = clamp((bxDz - uBxDepthNear) / max(uBxDepthFar - uBxDepthNear, 0.001), 0.0, 1.0);
+  vColor.rgb = mix(uBxDepthNearCol, uBxDepthFarCol, bxDt);
+}
+// Color grading (estilo LUT)
 if (uBxGradeOn > 0.5) {
   vec3 c = vColor.rgb * uBxExposure;
   c.r *= (1.0 + uBxTemp); c.b *= (1.0 - uBxTemp);
@@ -767,10 +951,16 @@ if (uBxTimeSliceOn > 0.5 && sceneCount > 1) {
   int bxFrame = int(clamp(bxFIdx, 0.0, float(sceneCount) - 1.0));
   if (int(sceneIndex) != bxFrame) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; }
 }
-splatCenter = bruxosPos(splatCenter);
+// Crop box (ao vivo): descarta o que fica fora da caixa orientada
+if (uBxCropBoxOn > 0.5) {
+  vec3 bxQc = abs(uBxCropBoxRot * (splatCenter - uBxCropBoxPos)) * uBxCropBoxInvHalf;
+  if (max(bxQc.x, max(bxQc.y, bxQc.z)) > 1.0) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; }
+}
+// Crop radial (esfera no pivô)
 if (uBxCropR > 0.0 && length(splatCenter - uBxAnchor) > uBxCropR) {
   gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return;
 }
+splatCenter = bruxosPos(splatCenter);
 if (uBxReveal < 0.999) {
   float bxRd = length(splatCenter - uBxRevealCenter);
   float bxEdge = uBxReveal * uBxRevealMax;
@@ -799,59 +989,84 @@ function bxPatchShader(mesh) {
   const aBasis = 'vec2 ndcOffset = vec2(vPosition.x * basisVector1 + vPosition.y * basisVector2)';
   if (vs.includes(aBasis)) vs = vs.replace(aBasis, BX_DOF_GLSL + '\n            ' + aBasis);
   mat.vertexShader = vs;
+  const v3 = (x=0,y=0,z=0) => new THREE.Vector3(x,y,z);
   Object.assign(mat.uniforms, {
     uBxTime:          { value: 0 },
-    uBxWaveOn:        { value: 0 },
-    uBxWaveAmp:       { value: 0.08 },
-    uBxWaveFreq:      { value: 3.0 },
-    uBxWaveSpeed:     { value: 1.5 },
+    uBxAnchor:        { value: v3() },
+    uBxCropR:         { value: 0 },
+    // distorções (arrays de 7)
+    uBxDOn:        { value: new Array(7).fill(0) },
+    uBxDAxis:      { value: Array.from({length:7}, () => v3(0,1,0)) },
+    uBxDAmp:       { value: new Array(7).fill(0) },
+    uBxDFreq:      { value: new Array(7).fill(1) },
+    uBxDSpeed:     { value: new Array(7).fill(0) },
+    uBxDRadius:    { value: new Array(7).fill(0) },
+    uBxDBoxOn:     { value: new Array(7).fill(0) },
+    uBxDBoxPos:    { value: Array.from({length:7}, () => v3()) },
+    uBxDBoxInvHalf:{ value: Array.from({length:7}, () => v3(1,1,1)) },
+    uBxDBoxRot:    { value: Array.from({length:7}, () => new THREE.Matrix3()) },
+    // crop box
+    uBxCropBoxOn:      { value: 0 },
+    uBxCropBoxPos:     { value: v3() },
+    uBxCropBoxInvHalf: { value: v3(1,1,1) },
+    uBxCropBoxRot:     { value: new THREE.Matrix3() },
+    // fumaça / dissolve
     uBxSmoke:         { value: 0 },
     uBxSmokeDist:     { value: 3.0 },
+    uBxDisT:          { value: 0 },
+    uBxDisMax:        { value: 10.0 },
+    // relight
     uBxLightOn:       { value: 0 },
-    uBxLightDir:      { value: new THREE.Vector3(-0.5, -0.5, -0.7).normalize() },
+    uBxLightDir:      { value: v3(-0.5, -0.5, -0.7).normalize() },
     uBxLightStrength: { value: 1.2 },
     uBxAmbient:       { value: 0.35 },
     uBxLightColor:    { value: new THREE.Color(1, 1, 1) },
     uBxLight2On:      { value: 0 },
-    uBxLight2Dir:     { value: new THREE.Vector3(0.5, -0.5, 0.7).normalize() },
+    uBxLight2Dir:     { value: v3(0.5, -0.5, 0.7).normalize() },
     uBxLight2Strength:{ value: 0.8 },
     uBxLight2Color:   { value: new THREE.Color(1, 1, 1) },
     uBxShadowHard:    { value: 1.0 },
+    // luz pontual
+    uBxPLOn:          { value: 0 },
+    uBxPLPos:         { value: v3() },
+    uBxPLColor:       { value: new THREE.Color(1, 0.85, 0.63) },
+    uBxPLStr:         { value: 1.5 },
+    uBxPLRadius:      { value: 5.0 },
+    // DoF
     uBxDofOn:         { value: 0 },
     uBxFocusDist:     { value: 3.0 },
     uBxFocusRange:    { value: 1.5 },
     uBxBlurMax:       { value: 6.0 },
+    // reveal
     uBxReveal:        { value: 1.0 },
-    uBxRevealCenter:  { value: new THREE.Vector3(0, 0, 0) },
+    uBxRevealCenter:  { value: v3() },
     uBxRevealMax:     { value: 10.0 },
-    uBxMono:          { value: 0 },
-    uBxAnchor:        { value: new THREE.Vector3(0, 0, 0) },
-    uBxCropR:         { value: 0 },
+    // grading
     uBxGradeOn:       { value: 0 },
     uBxExposure:      { value: 1.0 },
     uBxContrast:      { value: 1.0 },
     uBxSaturation:    { value: 1.0 },
     uBxTemp:          { value: 0.0 },
     uBxTint:          { value: 0.0 },
-    uBxPaintOn:       { value: 0 },
-    uBxPaintColor:    { value: new THREE.Color(0.6, 0.2, 0.7) },
-    uBxPaintR:        { value: 1.0 },
+    // paint (pincel)
+    uBxPaintN:        { value: 0 },
+    uBxPaintPosR:     { value: Array.from({length:64}, () => new THREE.Vector4(0,0,0,0)) },
+    uBxPaintCol:      { value: Array.from({length:64}, () => new THREE.Color(1,1,1)) },
     uBxPaintStrength: { value: 0.8 },
+    // fog / profundidade / P&B
     uBxFogOn:         { value: 0 },
     uBxFogColor:      { value: new THREE.Color(0.7, 0.75, 0.85) },
     uBxFogNear:       { value: 2.0 },
     uBxFogFar:        { value: 12.0 },
-    uBxFxAreaOn:      { value: 0 },
-    uBxFxAreaR:       { value: 1.0 },
-    uBxTwistOn:       { value: 0 },
-    uBxTwistAmt:      { value: 0.5 },
-    uBxTwistSpeed:    { value: 0 },
-    uBxBendOn:        { value: 0 },
-    uBxBendAmt:       { value: 0.3 },
-    uBxTaperOn:       { value: 0 },
-    uBxTaperAmt:      { value: 0.5 },
-    uBxBBMin:         { value: new THREE.Vector3(-1, -1, -1) },
-    uBxBBMax:         { value: new THREE.Vector3(1, 1, 1) },
+    uBxDepthOn:       { value: 0 },
+    uBxDepthNearCol:  { value: new THREE.Color(0x96c93d) },
+    uBxDepthFarCol:   { value: new THREE.Color(0x7b2d8e) },
+    uBxDepthNear:     { value: 1.0 },
+    uBxDepthFar:      { value: 8.0 },
+    uBxMono:          { value: 0 },
+    // bbox / time slice
+    uBxBBMin:         { value: v3(-1, -1, -1) },
+    uBxBBMax:         { value: v3(1, 1, 1) },
     uBxTimeSliceOn:   { value: 0 },
     uBxSliceAxis:     { value: 0 },
     uBxSliceInvert:   { value: 0 },
@@ -890,14 +1105,20 @@ let currentName = '';
 let bbox = null;            // bounding box do .splat original
 let seq = null;             // sequência 4DGS: {count, current, playing, fps, timer}
 
-// estado de animação
-const anim = { orbit: false, wobble: false, wobbleT: 0, dissolve: null, splatScale: 1, userScale: {x:1,y:1,z:1}, rotY: 0,
-               waves: false, relight: false, smoke: null, smokeVal: 0, fxTime: 0,
-               light2: false, dof: false, reveal: null, revealVal: 1, pb: false, anchorCrop: false,
-               twistFx: false, bendFx: false, taperFx: false, fxArea: false,
-               timeSlice: false, sliceInvert: false, sliceAnim: 0,
-               grade: false, paint: false, fog: false, weather: null };
+// estado de animação / efeitos
+const anim = {
+  dissolve: null, splatScale: 1, userScale: {x:1,y:1,z:1}, rotY: 0, pos: {x:0,y:0,z:0},
+  relight: false, light2: false, plight: false, smoke: null, smokeVal: 0, fxTime: 0,
+  dof: false, reveal: null, revealVal: 1, pb: false, depthCol: false, anchorCrop: false,
+  timeSlice: false, sliceInvert: false, sliceAnim: 0,
+  grade: false, fog: false, weather: null, paintMode: false,
+  disVal: 0, disAnim: null, recOrbit: false,
+  cropBox: { on:false, px:.5, py:.5, pz:.5, sx:1, sy:1, sz:1, rx:0, ry:0, rz:0 },
+  cam: { orbit:false, vertigo:false, vertigoK:1, dolly:false, truck:false, tilt:false, shake:false,
+         shakePrev: new THREE.Vector3() }
+};
 let lastTime = performance.now();
+
 
 function showError(msg) {
   errBox.textContent = msg; errBox.style.display = 'block';
@@ -1046,14 +1267,89 @@ async function loadScene(buffer, format, name) {
   centerControls();
 }
 
+// ===== helpers de geometria (bbox, boxes, wireframes) =====
+function bxDiag() {
+  if (!bbox) return 10;
+  const dx = bbox.max[0]-bbox.min[0], dy = bbox.max[1]-bbox.min[1], dz = bbox.max[2]-bbox.min[2];
+  return Math.sqrt(dx*dx + dy*dy + dz*dz);
+}
+function bxMap01(k, t) {
+  return bbox ? bbox.min[k] + (bbox.max[k] - bbox.min[k]) * t : (t - 0.5) * 10;
+}
+// converte o estado de um box (frações do bbox + graus) para posição/meia-medida/euler no espaço da cena
+function boxToWorld(b) {
+  const ex = bbox ? [bbox.max[0]-bbox.min[0], bbox.max[1]-bbox.min[1], bbox.max[2]-bbox.min[2]] : [5,5,5];
+  return {
+    pos: new THREE.Vector3(bxMap01(0, b.px), bxMap01(1, b.py), bxMap01(2, b.pz)),
+    half: new THREE.Vector3(
+      Math.max(ex[0]*b.sx, 1e-4)/2, Math.max(ex[1]*b.sy, 1e-4)/2, Math.max(ex[2]*b.sz, 1e-4)/2),
+    eul: new THREE.Euler(b.rx*Math.PI/180, b.ry*Math.PI/180, b.rz*Math.PI/180)
+  };
+}
+// wireframes: verde = crop box, roxo = box do efeito de distorção em edição
+const bxHelpers = { crop: null, fx: null };
+function makeBoxHelper(color) {
+  const g = new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1));
+  return new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9, depthTest: false }));
+}
+function updateBoxHelpers() {
+  const mesh = viewer?.splatMesh;
+  if (!mesh) return;
+  const place = (key, color, b, show) => {
+    let h = bxHelpers[key];
+    if (!h) h = bxHelpers[key] = makeBoxHelper(color);
+    if (h.parent !== mesh) { try { h.parent?.remove(h); } catch(e){} mesh.add(h); }
+    h.visible = !!(show && b);
+    if (b) {
+      const w = boxToWorld(b);
+      h.position.copy(w.pos);
+      h.rotation.copy(w.eul);
+      h.scale.set(w.half.x*2, w.half.y*2, w.half.z*2);
+    }
+  };
+  place('crop', 0x96c93d, anim.cropBox, anim.cropBox.on);
+  const iFx = dfxState.findIndex(s => s.showBox);
+  place('fx', 0xb064c4, iFx >= 0 ? dfxState[iFx].box : null, iFx >= 0);
+}
+
 // sincroniza sliders do painel → uniforms do shader
 function syncFxUniforms() {
   const set = (n, v) => { const u = bxU(n); if (u) u.value = v; };
-  set('uBxWaveOn', anim.waves ? 1 : 0);
-  set('uBxWaveAmp', parseFloat($('w-amp').value));
-  set('uBxWaveFreq', parseFloat($('w-freq').value));
-  set('uBxWaveSpeed', parseFloat($('w-speed').value));
+  const diag = bxDiag();
+  // --- distorções ---
+  const dOn = bxU('uBxDOn');
+  if (dOn) {
+    const dAxis = bxU('uBxDAxis'), dAmp = bxU('uBxDAmp'), dFreq = bxU('uBxDFreq'),
+          dSpd = bxU('uBxDSpeed'), dRad = bxU('uBxDRadius'), dbOn = bxU('uBxDBoxOn'),
+          dbPos = bxU('uBxDBoxPos'), dbInv = bxU('uBxDBoxInvHalf'), dbRot = bxU('uBxDBoxRot');
+    for (let i = 0; i < 7; i++) {
+      const s = dfxState[i];
+      dOn.value[i] = s.on ? 1 : 0;
+      dAxis.value[i].set(s.ax[0], s.ax[1], s.ax[2]);
+      dAmp.value[i] = s.amp;
+      dFreq.value[i] = s.freq;
+      dSpd.value[i] = s.speed;
+      dRad.value[i] = s.radius >= 0.99 ? 0 : diag * 0.6 * s.radius;
+      dbOn.value[i] = s.boxOn ? 1 : 0;
+      const w = boxToWorld(s.box);
+      dbPos.value[i].copy(w.pos);
+      dbInv.value[i].set(1/w.half.x, 1/w.half.y, 1/w.half.z);
+      dbRot.value[i].setFromMatrix4(new THREE.Matrix4().makeRotationFromEuler(w.eul)).transpose();
+    }
+  }
+  // --- crop box (ao vivo) ---
+  set('uBxCropBoxOn', anim.cropBox.on ? 1 : 0);
+  {
+    const w = boxToWorld(anim.cropBox);
+    const cp = bxU('uBxCropBoxPos'), ci = bxU('uBxCropBoxInvHalf'), cr = bxU('uBxCropBoxRot');
+    if (cp) cp.value.copy(w.pos);
+    if (ci) ci.value.set(1/w.half.x, 1/w.half.y, 1/w.half.z);
+    if (cr) cr.value.setFromMatrix4(new THREE.Matrix4().makeRotationFromEuler(w.eul)).transpose();
+  }
+  // --- fumaça / dissolve ---
   set('uBxSmokeDist', parseFloat($('s-dist').value));
+  set('uBxDisMax', diag * 0.75);
+  // --- relight ---
   set('uBxLightOn', anim.relight ? 1 : 0);
   set('uBxLightStrength', parseFloat($('l-str').value));
   set('uBxAmbient', parseFloat($('l-amb').value));
@@ -1063,7 +1359,6 @@ function syncFxUniforms() {
     if (!u) return;
     const az = parseFloat($(azId).value) * Math.PI / 180;
     const el = parseFloat($(elId).value) * Math.PI / 180;
-    // direção DA luz (de onde ela vem, apontando para a cena); y invertido (cameraUp = -Y)
     u.value.set(-Math.cos(el) * Math.sin(az), Math.sin(el), -Math.cos(el) * Math.cos(az)).normalize();
   };
   setDir('uBxLightDir', 'l-az', 'l-el');
@@ -1072,79 +1367,73 @@ function syncFxUniforms() {
   set('uBxLight2On', anim.light2 ? 1 : 0);
   set('uBxLight2Strength', parseFloat($('l2-str').value));
   const l2c = bxU('uBxLight2Color'); if (l2c) l2c.value.set($('l2-color').value);
-  // DoF
+  // --- luz pontual ---
+  set('uBxPLOn', anim.plight ? 1 : 0);
+  const plp = bxU('uBxPLPos');
+  if (plp) plp.value.set(bxMap01(0, parseFloat($('pl-x').value)), bxMap01(1, parseFloat($('pl-y').value)), bxMap01(2, parseFloat($('pl-z').value)));
+  set('uBxPLStr', parseFloat($('pl-str').value));
+  set('uBxPLRadius', diag * parseFloat($('pl-radius').value));
+  const plc = bxU('uBxPLColor'); if (plc) plc.value.set($('pl-color').value);
+  // --- DoF ---
   set('uBxDofOn', anim.dof ? 1 : 0);
   set('uBxFocusDist', parseFloat($('d-dist').value));
   set('uBxFocusRange', parseFloat($('d-range').value));
   set('uBxBlurMax', parseFloat($('d-blur').value));
-  // Reveal: epicentro mapeado no bounding box (se houver)
+  // --- reveal (epicentro = pivô) ---
   const rc = bxU('uBxRevealCenter'), rm = bxU('uBxRevealMax');
   if (rc && rm) {
-    if (bbox) {
-      const map = (k, id) => bbox.min[k] + (bbox.max[k] - bbox.min[k]) * parseFloat($(id).value);
-      rc.value.set(map(0, 'r-x'), map(1, 'r-y'), map(2, 'r-z'));
-      const dx = bbox.max[0]-bbox.min[0], dy = bbox.max[1]-bbox.min[1], dz = bbox.max[2]-bbox.min[2];
-      rm.value = Math.sqrt(dx*dx + dy*dy + dz*dz) * 1.05;
-    } else {
-      rc.value.set(0, 0, 0);
-      rm.value = 15;
-    }
+    rc.value.copy(getAnchor());
+    rm.value = diag * 1.05 || 15;
   }
   set('uBxReveal', anim.revealVal);
-  // Anchor: crop radial (esfera em torno do pivô)
+  // --- anchor / crop radial ---
   const ua = bxU('uBxAnchor');
   if (ua) ua.value.copy(getAnchor());
-  if (anim.anchorCrop && bbox) {
-    const dx = bbox.max[0]-bbox.min[0], dy = bbox.max[1]-bbox.min[1], dz = bbox.max[2]-bbox.min[2];
-    set('uBxCropR', Math.sqrt(dx*dx + dy*dy + dz*dz) * 0.6 * parseFloat($('a-r').value));
-  } else {
-    set('uBxCropR', 0);
-  }
-  // Deformers: twist / bend / taper + área do efeito
-  set('uBxTwistOn', anim.twistFx ? 1 : 0);
-  set('uBxTwistAmt', parseFloat($('tw-amt').value));
-  set('uBxTwistSpeed', parseFloat($('tw-speed').value));
-  set('uBxBendOn', anim.bendFx ? 1 : 0);
-  set('uBxBendAmt', parseFloat($('bd-amt').value));
-  set('uBxTaperOn', anim.taperFx ? 1 : 0);
-  set('uBxTaperAmt', parseFloat($('tp-amt').value));
-  set('uBxFxAreaOn', anim.fxArea ? 1 : 0);
+  set('uBxCropR', (anim.anchorCrop && bbox) ? diag * 0.6 * parseFloat($('a-r').value) : 0);
+  // --- bbox ---
   if (bbox) {
-    const dx = bbox.max[0]-bbox.min[0], dy = bbox.max[1]-bbox.min[1], dz = bbox.max[2]-bbox.min[2];
-    set('uBxFxAreaR', Math.sqrt(dx*dx + dy*dy + dz*dz) * 0.6 * parseFloat($('fa-r').value));
     const bmin = bxU('uBxBBMin'), bmax = bxU('uBxBBMax');
     if (bmin) bmin.value.set(bbox.min[0], bbox.min[1], bbox.min[2]);
     if (bmax) bmax.value.set(bbox.max[0], bbox.max[1], bbox.max[2]);
   }
-  // Time Slice (4D)
+  // --- time slice (4D) ---
   set('uBxTimeSliceOn', (anim.timeSlice && seq) ? 1 : 0);
   set('uBxSliceAxis', parseFloat($('ts-axis').value));
   set('uBxSliceInvert', anim.sliceInvert ? 1 : 0);
   set('uBxSliceShift', parseFloat($('ts-shift').value) + anim.sliceAnim);
-  // Color grading
+  // --- color grading ---
   set('uBxGradeOn', anim.grade ? 1 : 0);
   set('uBxExposure', parseFloat($('cg-exp').value));
   set('uBxContrast', parseFloat($('cg-con').value));
   set('uBxSaturation', parseFloat($('cg-sat').value));
   set('uBxTemp', parseFloat($('cg-temp').value));
   set('uBxTint', parseFloat($('cg-tint').value));
-  // Paint
-  set('uBxPaintOn', anim.paint ? 1 : 0);
-  const pc2 = bxU('uBxPaintColor'); if (pc2) pc2.value.set($('pt-color').value);
-  set('uBxPaintStrength', parseFloat($('pt-str').value));
-  if (bbox) {
-    const dx = bbox.max[0]-bbox.min[0], dy = bbox.max[1]-bbox.min[1], dz = bbox.max[2]-bbox.min[2];
-    set('uBxPaintR', Math.sqrt(dx*dx + dy*dy + dz*dz) * 0.6 * parseFloat($('pt-r').value));
+  // --- paint (pincel) ---
+  set('uBxPaintN', Math.min(paintStrokes.length, 64));
+  const pp = bxU('uBxPaintPosR'), pcArr = bxU('uBxPaintCol');
+  if (pp) for (let i = 0; i < paintStrokes.length && i < 64; i++) {
+    const st = paintStrokes[i];
+    pp.value[i].set(st.p.x, st.p.y, st.p.z, st.r);
+    pcArr.value[i].copy(st.c);
   }
-  // Weather: névoa
+  set('uBxPaintStrength', parseFloat($('pt-str').value));
+  // --- fog ---
   set('uBxFogOn', anim.fog ? 1 : 0);
   const fc = bxU('uBxFogColor'); if (fc) fc.value.set($('fog-color').value);
   set('uBxFogNear', parseFloat($('fog-near').value));
   set('uBxFogFar', parseFloat($('fog-far').value));
-  // Pontos P&B (usa o point cloud mode nativo da lib + dessaturação)
+  // --- profundidade (perto/longe) ---
+  set('uBxDepthOn', anim.depthCol ? 1 : 0);
+  const dcn = bxU('uBxDepthNearCol'); if (dcn) dcn.value.set($('dc-cnear').value);
+  const dcf = bxU('uBxDepthFarCol'); if (dcf) dcf.value.set($('dc-cfar').value);
+  set('uBxDepthNear', parseFloat($('dc-n').value));
+  set('uBxDepthFar', parseFloat($('dc-f').value));
+  // --- pontos P&B / point cloud ---
   set('uBxMono', anim.pb ? 1 : 0);
   const pc = viewer?.splatMesh?.material?.uniforms?.pointCloudModeEnabled;
-  if (pc) pc.value = anim.pb ? 1 : 0;
+  if (pc) pc.value = (anim.pb || anim.depthCol) ? 1 : 0;
+  // wireframes dos boxes
+  updateBoxHelpers();
 }
 
 async function loadFile(file) {
@@ -1159,7 +1448,7 @@ async function loadFile(file) {
     currentName = file.name;
     const g = analyzeGeom(currentBuffer, format);
     bbox = g ? computeGeomBBox(currentBuffer, g) : null;
-    $('crop-note').innerHTML = bbox ? 'Ajuste os limites e clique em <b>Aplicar crop</b>.' : 'Crop indisponível para este arquivo (suportado: <b>.splat</b> e <b>.ply</b> binário padrão).';
+    $('crop-note').innerHTML = bbox ? 'Ajuste o box 3D (verde) e aplique ao vivo ou permanente.' : 'Crop indisponível para este arquivo (suportado: <b>.splat</b> e <b>.ply</b> binário padrão).';
     topbar.classList.add('visible');
     cornerLogo.classList.add('visible');
     hint.classList.add('visible');
@@ -1232,7 +1521,7 @@ async function loadSequence(files) {
   cornerLogo.classList.add('visible');
   hint.classList.add('visible');
   $('seqbar').classList.add('visible');
-  $('crop-note').innerHTML = 'Crop indisponível no modo sequência.';
+  $('crop-note').innerHTML = 'Crop permanente indisponível em sequência — use o Crop box ao vivo (GPU).';
 }
 
 function setSeqFrame(i) {
@@ -1273,11 +1562,15 @@ fileInput.addEventListener('change', () => { handleFiles(fileInput.files); fileI
 ['dragleave','drop'].forEach(ev => window.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
 window.addEventListener('drop', e => { if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
 
-// ===== Painel =====
+// ===== Painel / abas =====
 $('btn-panel').addEventListener('click', () => {
   panel.classList.toggle('visible');
   $('btn-panel').classList.toggle('active');
 });
+document.querySelectorAll('.fx-tab').forEach(bt => bt.addEventListener('click', () => {
+  document.querySelectorAll('.fx-tab').forEach(b => b.classList.toggle('active', b === bt));
+  document.querySelectorAll('.tab-page').forEach(pg => pg.classList.toggle('visible', pg.id === bt.dataset.tab));
+}));
 
 function bindSlider(id, valId, fmt, cb) {
   const s = $(id), v = $(valId);
@@ -1297,23 +1590,27 @@ function getAnchor() {
   return new THREE.Vector3(m(0, 'a-x'), m(1, 'a-y'), m(2, 'a-z'));
 }
 
-// --- distorcer / esticar (escala e rotação em torno do pivô) ---
+// --- posição / escala / rotação (em torno do pivô) ---
 function applyTransforms() {
   if (!viewer?.splatMesh) return;
   const m = viewer.splatMesh;
-  let wob = 0;
-  if (anim.wobble) {
-    const a = parseFloat($('a-wamp').value), f = parseFloat($('a-wfreq').value);
-    wob = a * Math.sin(anim.wobbleT * f * Math.PI * 2);
-  }
-  m.scale.set(anim.userScale.x * (1 + wob), anim.userScale.y * (1 - wob), anim.userScale.z * (1 + wob * 0.5));
+  m.scale.set(anim.userScale.x, anim.userScale.y, anim.userScale.z);
   const twist = parseFloat($('p-twist').value) * Math.PI / 180;
   m.rotation.set(0, anim.rotY * Math.PI / 180, twist);
-  // compensa a posição para girar/escalar em torno do pivô: pos = P - R*S*P
+  // compensa a posição para girar/escalar em torno do pivô: pos = P - R*S*P (+ offset do usuário)
   const P = getAnchor();
   const v = new THREE.Vector3(P.x * m.scale.x, P.y * m.scale.y, P.z * m.scale.z).applyEuler(m.rotation);
-  m.position.set(P.x - v.x, P.y - v.y, P.z - v.z);
+  const ex = bbox
+    ? [(bbox.max[0]-bbox.min[0])/2 || 1, (bbox.max[1]-bbox.min[1])/2 || 1, (bbox.max[2]-bbox.min[2])/2 || 1]
+    : [2, 2, 2];
+  m.position.set(
+    P.x - v.x + anim.pos.x * ex[0],
+    P.y - v.y + anim.pos.y * ex[1],
+    P.z - v.z + anim.pos.z * ex[2]);
 }
+bindSlider('p-px', 'v-px', v => v.toFixed(2), v => { anim.pos.x = v; applyTransforms(); });
+bindSlider('p-py', 'v-py', v => v.toFixed(2), v => { anim.pos.y = v; applyTransforms(); });
+bindSlider('p-pz', 'v-pz', v => v.toFixed(2), v => { anim.pos.z = v; applyTransforms(); });
 bindSlider('p-sx', 'v-sx', v => v.toFixed(2), v => { anim.userScale.x = v; applyTransforms(); });
 bindSlider('p-sy', 'v-sy', v => v.toFixed(2), v => { anim.userScale.y = v; applyTransforms(); });
 bindSlider('p-sz', 'v-sz', v => v.toFixed(2), v => { anim.userScale.z = v; applyTransforms(); });
@@ -1322,9 +1619,11 @@ bindSlider('p-twist', 'v-twist', v => v.toFixed(0) + '°', () => applyTransforms
 $('p-reset-transform').addEventListener('click', () => {
   ['p-sx','p-sy','p-sz'].forEach(id => { $(id).value = 1; });
   ['v-sx','v-sy','v-sz'].forEach(id => { $(id).textContent = '1.00'; });
+  ['p-px','p-py','p-pz'].forEach(id => { $(id).value = 0; });
+  ['v-px','v-py','v-pz'].forEach(id => { $(id).textContent = '0.00'; });
   $('p-ry').value = 0; $('v-ry').textContent = '0°';
   $('p-twist').value = 0; $('v-twist').textContent = '0°';
-  anim.userScale = {x:1,y:1,z:1}; anim.rotY = 0;
+  anim.userScale = {x:1,y:1,z:1}; anim.rotY = 0; anim.pos = {x:0,y:0,z:0};
   applyTransforms();
 });
 
@@ -1417,35 +1716,88 @@ function cropGeom(buf, g, lims) {
   });
   return { buffer: out.buffer, kept: keep.length };
 }
-['xmin','xmax','ymin','ymax','zmin','zmax'].forEach(k => {
-  bindSlider('c-' + k, 'v-' + k, v => Math.round(v*100) + '%', () => {});
-});
-$('c-apply').addEventListener('click', async () => {
-  const g = analyzeGeom(currentBuffer, currentFormat);
-  if (!g || !bbox) { showError('Crop disponível para .splat e .ply binário padrão.'); return; }
-  const lim = axis => [
-    bbox.min[axis] + (bbox.max[axis]-bbox.min[axis]) * parseFloat($('c-' + 'xyz'[axis] + 'min').value),
-    bbox.min[axis] + (bbox.max[axis]-bbox.min[axis]) * parseFloat($('c-' + 'xyz'[axis] + 'max').value)
-  ];
-  const result = cropGeom(currentBuffer, g, [lim(0), lim(1), lim(2)]);
-  if (!result) { showError('Crop removeria todos os splats.'); return; }
-  loading.classList.add('visible');
-  loadingText.textContent = `Aplicando crop (${result.kept.toLocaleString()} splats)…`;
-  try { await loadScene(result.buffer, currentFormat, currentName); }
-  catch(e) { showError('Erro no crop: ' + (e.message || e)); }
-  loading.classList.remove('visible');
-});
-$('c-reset').addEventListener('click', async () => {
-  ['c-xmin','c-ymin','c-zmin'].forEach(id => $(id).value = 0);
-  ['c-xmax','c-ymax','c-zmax'].forEach(id => $(id).value = 1);
-  ['v-xmin','v-ymin','v-zmin'].forEach(id => $(id).textContent = '0%');
-  ['v-xmax','v-ymax','v-zmax'].forEach(id => $(id).textContent = '100%');
-  if (currentBuffer) {
-    loading.classList.add('visible'); loadingText.textContent = 'Restaurando…';
-    try { await loadScene(currentBuffer, currentFormat, currentName); } catch(e){ showError(String(e)); }
-    loading.classList.remove('visible');
+// --- crop box: ao vivo (GPU, qualquer formato) + permanente (regrava o buffer) ---
+function cropGeomBox(buf, g, w, invRot) {
+  const dv = new DataView(buf);
+  const u8 = new Uint8Array(buf);
+  const keep = [];
+  const e = invRot.elements; // column-major
+  for (let i = 0; i < g.count; i++) {
+    const base = g.dataStart + i * g.stride;
+    const x = dv.getFloat32(base + g.posOff[0], true) - w.pos.x;
+    const y = dv.getFloat32(base + g.posOff[1], true) - w.pos.y;
+    const z = dv.getFloat32(base + g.posOff[2], true) - w.pos.z;
+    const qx = e[0]*x + e[3]*y + e[6]*z;
+    const qy = e[1]*x + e[4]*y + e[7]*z;
+    const qz = e[2]*x + e[5]*y + e[8]*z;
+    if (Math.abs(qx) <= w.half.x && Math.abs(qy) <= w.half.y && Math.abs(qz) <= w.half.z) keep.push(i);
   }
-});
+  if (keep.length === 0) return null;
+  let headerBytes = new Uint8Array(0);
+  if (g.type === 'ply') {
+    const newHeader = g.header.replace(/element\s+vertex\s+\d+/, 'element vertex ' + keep.length);
+    headerBytes = new TextEncoder().encode(newHeader);
+  }
+  const out = new Uint8Array(headerBytes.length + keep.length * g.stride);
+  out.set(headerBytes, 0);
+  keep.forEach((idx, j) => {
+    const src = g.dataStart + idx * g.stride;
+    out.set(u8.subarray(src, src + g.stride), headerBytes.length + j * g.stride);
+  });
+  return { buffer: out.buffer, kept: keep.length };
+}
+{
+  const CB = anim.cropBox;
+  const cbFmtPct = v => Math.round(v*100) + '%';
+  bindSlider('cb-px', 'v-cbpx', cbFmtPct, v => { CB.px = v; syncFxUniforms(); });
+  bindSlider('cb-py', 'v-cbpy', cbFmtPct, v => { CB.py = v; syncFxUniforms(); });
+  bindSlider('cb-pz', 'v-cbpz', cbFmtPct, v => { CB.pz = v; syncFxUniforms(); });
+  bindSlider('cb-sx', 'v-cbsx', v => v.toFixed(2), v => { CB.sx = v; syncFxUniforms(); });
+  bindSlider('cb-sy', 'v-cbsy', v => v.toFixed(2), v => { CB.sy = v; syncFxUniforms(); });
+  bindSlider('cb-sz', 'v-cbsz', v => v.toFixed(2), v => { CB.sz = v; syncFxUniforms(); });
+  bindSlider('cb-rx', 'v-cbrx', v => v.toFixed(0) + '°', v => { CB.rx = v; syncFxUniforms(); });
+  bindSlider('cb-ry', 'v-cbry', v => v.toFixed(0) + '°', v => { CB.ry = v; syncFxUniforms(); });
+  bindSlider('cb-rz', 'v-cbrz', v => v.toFixed(0) + '°', v => { CB.rz = v; syncFxUniforms(); });
+  $('cb-toggle').addEventListener('click', () => {
+    CB.on = !CB.on;
+    $('cb-toggle').classList.toggle('on', CB.on);
+    $('cb-toggle').textContent = CB.on ? '⏸ Crop box (ligado)' : '▶ Crop box (ao vivo)';
+    syncFxUniforms();
+  });
+  $('c-apply').addEventListener('click', async () => {
+    const g = currentBuffer ? analyzeGeom(currentBuffer, currentFormat) : null;
+    if (!g || !bbox) { showError('Crop permanente disponível só para .splat e .ply binário (cena única). Use o crop ao vivo (▶) para os demais.'); return; }
+    const w = boxToWorld(CB);
+    const invRot = new THREE.Matrix3()
+      .setFromMatrix4(new THREE.Matrix4().makeRotationFromEuler(w.eul)).transpose();
+    const result = cropGeomBox(currentBuffer, g, w, invRot);
+    if (!result) { showError('Crop removeria todos os splats.'); return; }
+    loading.classList.add('visible');
+    loadingText.textContent = `Aplicando crop (${result.kept.toLocaleString()} splats)…`;
+    CB.on = false;
+    $('cb-toggle').classList.remove('on');
+    $('cb-toggle').textContent = '▶ Crop box (ao vivo)';
+    try { await loadScene(result.buffer, currentFormat, currentName); }
+    catch(e) { showError('Erro no crop: ' + (e.message || e)); }
+    loading.classList.remove('visible');
+  });
+  $('c-reset').addEventListener('click', async () => {
+    Object.assign(CB, { on:false, px:.5, py:.5, pz:.5, sx:1, sy:1, sz:1, rx:0, ry:0, rz:0 });
+    [['cb-px',.5],['cb-py',.5],['cb-pz',.5],['cb-sx',1],['cb-sy',1],['cb-sz',1],['cb-rx',0],['cb-ry',0],['cb-rz',0]]
+      .forEach(([id, v]) => { $(id).value = v; });
+    ['v-cbpx','v-cbpy','v-cbpz'].forEach(id => $(id).textContent = '50%');
+    ['v-cbsx','v-cbsy','v-cbsz'].forEach(id => $(id).textContent = '1.00');
+    ['v-cbrx','v-cbry','v-cbrz'].forEach(id => $(id).textContent = '0°');
+    $('cb-toggle').classList.remove('on');
+    $('cb-toggle').textContent = '▶ Crop box (ao vivo)';
+    syncFxUniforms();
+    if (currentBuffer && !seq) {
+      loading.classList.add('visible'); loadingText.textContent = 'Restaurando…';
+      try { await loadScene(currentBuffer, currentFormat, currentName); } catch(e){ showError(String(e)); }
+      loading.classList.remove('visible');
+    }
+  });
+}
 
 // --- câmera / lente (FOV) ---
 function applyFov() {
@@ -1471,68 +1823,197 @@ $('ac-toggle').addEventListener('click', () => {
   $('ac-toggle').textContent = anim.anchorCrop ? '⏸ Crop radial (ligado)' : '▶ Crop radial no pivô';
   syncFxUniforms();
 });
-$('a-epi').addEventListener('click', () => {
-  // copia o pivô para o epicentro do reveal
-  ['x','y','z'].forEach(k => {
-    $('r-' + k).value = $('a-' + k).value;
-    $('v-r' + (k === 'y' ? 'y2' : k)).textContent = Math.round(parseFloat($('a-' + k).value)*100)+'%';
+
+// ============================================================
+// EFEITOS DE DISTORÇÃO — 7 efeitos gerados programaticamente.
+// Cada um: eixos X/Y/Z, amplitude, freq., velocidade, raio (esfera
+// no pivô) e box de máscara com posição/escala/rotação.
+// ============================================================
+const DFX = [
+  { id:'wob', name:'Wobble', multi:true,  amp:0.15, ampMin:0,  ampMax:1, freq:2, freqMax:10, speed:2,   ax:[0,1,0] },
+  { id:'rip', name:'Ripple', multi:false, amp:0.10, ampMin:0,  ampMax:1, freq:6, freqMax:30, speed:2,   ax:[0,1,0] },
+  { id:'wav', name:'Waves',  multi:true,  amp:0.08, ampMin:0,  ampMax:1, freq:3, freqMax:15, speed:1.5, ax:[1,1,1] },
+  { id:'twi', name:'Twist',  multi:false, amp:0.5,  ampMin:-3, ampMax:3, freq:1, freqMax:5,  speed:0,   ax:[0,1,0] },
+  { id:'ben', name:'Bend',   multi:false, amp:0.3,  ampMin:-2, ampMax:2, freq:1, freqMax:5,  speed:0,   ax:[0,1,0] },
+  { id:'tap', name:'Taper',  multi:false, amp:0.5,  ampMin:0,  ampMax:2, freq:1, freqMax:5,  speed:0,   ax:[0,1,0] },
+  { id:'bul', name:'Bulge',  multi:true,  amp:0.5,  ampMin:-2, ampMax:2, freq:1, freqMax:5,  speed:0,   ax:[1,1,1] },
+];
+const dfxState = DFX.map(d => ({
+  on:false, ax:[...d.ax], amp:d.amp, freq:d.freq, speed:d.speed, radius:1,
+  boxOn:false, showBox:false, box:{ px:.5, py:.5, pz:.5, sx:.5, sy:.5, sz:.5, rx:0, ry:0, rz:0 }
+}));
+(function buildDistortUI(){
+  const cont = $('dist-container');
+  DFX.forEach((d, i) => {
+    const st = dfxState[i], p = d.id;
+    const sec = document.createElement('div');
+    sec.className = 'fxsec';
+    const boxRow = (k, lbl, min, max, step, val, disp) =>
+      `<div class="row"><label>${lbl}</label><input type="range" id="${p}-b${k}" min="${min}" max="${max}" step="${step}" value="${val}"><span class="val" id="v-${p}b${k}">${disp}</span></div>`;
+    sec.innerHTML = `
+      <h4>${d.name}</h4>
+      <button class="panel-btn" id="${p}-on">▶ ${d.name}</button>
+      <div class="axis-row"><span class="lbl">Eixos</span>
+        <button class="ax-btn" id="${p}-aX">X</button>
+        <button class="ax-btn" id="${p}-aY">Y</button>
+        <button class="ax-btn" id="${p}-aZ">Z</button>
+      </div>
+      <div class="row"><label>Amplitude</label><input type="range" id="${p}-amp" min="${d.ampMin}" max="${d.ampMax}" step="0.01" value="${d.amp}"><span class="val" id="v-${p}amp">${d.amp.toFixed(2)}</span></div>
+      <div class="row"><label>Freq.</label><input type="range" id="${p}-freq" min="0" max="${d.freqMax}" step="0.1" value="${d.freq}"><span class="val" id="v-${p}freq">${d.freq.toFixed(1)}</span></div>
+      <div class="row"><label>Velocidade</label><input type="range" id="${p}-spd" min="0" max="8" step="0.1" value="${d.speed}"><span class="val" id="v-${p}spd">${d.speed.toFixed(1)}</span></div>
+      <div class="row"><label>Raio</label><input type="range" id="${p}-rad" min="0.05" max="1" step="0.01" value="1"><span class="val" id="v-${p}rad">livre</span></div>
+      <button class="panel-btn" id="${p}-boxon">▶ Limitar por box</button>
+      <div class="sub" id="${p}-boxui" style="display:none">
+        <button class="panel-btn" id="${p}-boxshow">👁 Mostrar box</button>
+        ${boxRow('px','Pos X',0,1,0.01,0.5,'50%')}${boxRow('py','Pos Y',0,1,0.01,0.5,'50%')}${boxRow('pz','Pos Z',0,1,0.01,0.5,'50%')}
+        ${boxRow('sx','Escala X',0.02,1.2,0.01,0.5,'0.50')}${boxRow('sy','Escala Y',0.02,1.2,0.01,0.5,'0.50')}${boxRow('sz','Escala Z',0.02,1.2,0.01,0.5,'0.50')}
+        ${boxRow('rx','Rot X',-180,180,1,0,'0°')}${boxRow('ry','Rot Y',-180,180,1,0,'0°')}${boxRow('rz','Rot Z',-180,180,1,0,'0°')}
+      </div>`;
+    cont.appendChild(sec);
+    $(`${p}-on`).addEventListener('click', () => {
+      st.on = !st.on;
+      $(`${p}-on`).classList.toggle('on', st.on);
+      $(`${p}-on`).textContent = st.on ? `⏸ ${d.name} (ligado)` : `▶ ${d.name}`;
+      syncFxUniforms();
+    });
+    ['X','Y','Z'].forEach((k, j) => {
+      const bt = $(`${p}-a${k}`);
+      bt.classList.toggle('on', !!st.ax[j]);
+      bt.addEventListener('click', () => {
+        if (d.multi) st.ax[j] = st.ax[j] ? 0 : 1;
+        else { st.ax = [0,0,0]; st.ax[j] = 1; }
+        ['X','Y','Z'].forEach((kk, jj) => $(`${p}-a${kk}`).classList.toggle('on', !!st.ax[jj]));
+        syncFxUniforms();
+      });
+    });
+    bindSlider(`${p}-amp`, `v-${p}amp`, v => v.toFixed(2), v => { st.amp = v; syncFxUniforms(); });
+    bindSlider(`${p}-freq`, `v-${p}freq`, v => v.toFixed(1), v => { st.freq = v; syncFxUniforms(); });
+    bindSlider(`${p}-spd`, `v-${p}spd`, v => v.toFixed(1), v => { st.speed = v; syncFxUniforms(); });
+    bindSlider(`${p}-rad`, `v-${p}rad`, v => v >= 0.99 ? 'livre' : Math.round(v*100)+'%', v => { st.radius = v; syncFxUniforms(); });
+    $(`${p}-boxon`).addEventListener('click', () => {
+      st.boxOn = !st.boxOn;
+      $(`${p}-boxon`).classList.toggle('on', st.boxOn);
+      $(`${p}-boxon`).textContent = st.boxOn ? '⏸ Box (ligado)' : '▶ Limitar por box';
+      $(`${p}-boxui`).style.display = st.boxOn ? 'block' : 'none';
+      if (!st.boxOn) { st.showBox = false; $(`${p}-boxshow`).classList.remove('on'); }
+      syncFxUniforms();
+    });
+    $(`${p}-boxshow`).addEventListener('click', () => {
+      const turnOn = !st.showBox;
+      dfxState.forEach(o => o.showBox = false);
+      st.showBox = turnOn;
+      DFX.forEach((dd, k) => $(`${dd.id}-boxshow`).classList.toggle('on', dfxState[k].showBox));
+      syncFxUniforms();
+    });
+    ['px','py','pz'].forEach(k => bindSlider(`${p}-b${k}`, `v-${p}b${k}`, v => Math.round(v*100)+'%', v => { st.box[k] = v; syncFxUniforms(); }));
+    ['sx','sy','sz'].forEach(k => bindSlider(`${p}-b${k}`, `v-${p}b${k}`, v => v.toFixed(2), v => { st.box[k] = v; syncFxUniforms(); }));
+    ['rx','ry','rz'].forEach(k => bindSlider(`${p}-b${k}`, `v-${p}b${k}`, v => v.toFixed(0)+'°', v => { st.box[k] = v; syncFxUniforms(); }));
   });
-  syncFxUniforms();
-});
+})();
 
-// --- animar câmera (órbita) ---
-bindSlider('a-orbitspeed', 'v-orbitspeed', v => v.toFixed(1), v => {
-  if (viewer?.controls) viewer.controls.autoRotateSpeed = v;
+// ============================================================
+// EFEITOS DE CÂMERA (aplicados no tick)
+// ============================================================
+function anchorWorld() {
+  const a = getAnchor().clone();
+  if (viewer?.splatMesh) viewer.splatMesh.localToWorld(a);
+  else if (viewer?.controls) a.copy(viewer.controls.target);
+  return a;
+}
+function camToggle(btnId, key, labelOn, labelOff, onStart) {
+  $(btnId).addEventListener('click', () => {
+    anim.cam[key] = !anim.cam[key];
+    $(btnId).classList.toggle('on', anim.cam[key]);
+    $(btnId).textContent = anim.cam[key] ? labelOn : labelOff;
+    if (anim.cam[key] && onStart) onStart();
+  });
+}
+bindSlider('a-orbitspeed', 'v-orbitspeed', v => v.toFixed(1), () => {});
+bindSlider('co-sx', 'v-cosx', v => v.toFixed(1), () => {});
+bindSlider('co-sz', 'v-cosz', v => v.toFixed(1), () => {});
+camToggle('co-toggle', 'orbit', '⏸ Órbita (ligada)', '▶ Órbita');
+bindSlider('vt-speed', 'v-vtspeed', v => v.toFixed(1), () => {});
+camToggle('vt-toggle', 'vertigo', '⏸ Vertigo (ligado)', '▶ Vertigo', () => {
+  if (!viewer?.camera) return;
+  const dist = viewer.camera.position.distanceTo(anchorWorld());
+  anim.cam.vertigoK = Math.max(dist, 0.05) * Math.tan(viewer.camera.fov * Math.PI / 360);
 });
-$('a-orbit').addEventListener('click', () => {
-  anim.orbit = !anim.orbit;
-  $('a-orbit').classList.toggle('on', anim.orbit);
-  $('a-orbit').textContent = anim.orbit ? '⏸ Órbita (ligada)' : '▶ Órbita (turntable)';
-  if (viewer?.controls) {
-    viewer.controls.autoRotate = anim.orbit;
-    viewer.controls.autoRotateSpeed = parseFloat($('a-orbitspeed').value);
+bindSlider('dl-speed', 'v-dlspeed', v => v.toFixed(1), () => {});
+camToggle('dl-toggle', 'dolly', '⏸ Dolly In/Out (ligado)', '▶ Dolly In/Out');
+bindSlider('tk-speed', 'v-tkspeed', v => v.toFixed(1), () => {});
+camToggle('tk-toggle', 'truck', '⏸ Dolly Left/Right (ligado)', '▶ Dolly Left/Right');
+bindSlider('tl-speed', 'v-tlspeed', v => v.toFixed(1), () => {});
+camToggle('tl-toggle', 'tilt', '⏸ Tilt (ligado)', '▶ Tilt Up/Down');
+bindSlider('hh-amp', 'v-hhamp', v => v.toFixed(2), () => {});
+bindSlider('hh-freq', 'v-hhfreq', v => v.toFixed(1), () => {});
+camToggle('hh-toggle', 'shake', '⏸ Camera shake (ligado)', '▶ Camera shake');
+
+// executa os efeitos de câmera ativos (chamado no tick)
+function tickCamera(dt) {
+  if (!viewer?.camera || !viewer?.controls) return;
+  const cam = viewer.camera, ctr = viewer.controls;
+  const ext = bxDiag();
+  const C = anim.cam;
+  if (C.orbit || anim.recOrbit) {
+    let sy = parseFloat($('a-orbitspeed').value);
+    if (anim.recOrbit && !C.orbit && Math.abs(sy) < 0.01) sy = 2;
+    const applyAxis = (ax, ay, az, s) => {
+      if (Math.abs(s) < 0.01) return;
+      const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(ax, ay, az), s * dt * 0.25);
+      cam.position.sub(ctr.target).applyQuaternion(q).add(ctr.target);
+      cam.up.applyQuaternion(q);
+    };
+    applyAxis(1, 0, 0, parseFloat($('co-sx').value));
+    applyAxis(0, 1, 0, sy);
+    applyAxis(0, 0, 1, parseFloat($('co-sz').value));
+    cam.lookAt(ctr.target);
   }
-});
-
-// --- animar distorção (wobble) ---
-bindSlider('a-wamp', 'v-wamp', v => v.toFixed(2), () => {});
-bindSlider('a-wfreq', 'v-wfreq', v => v.toFixed(1), () => {});
-$('a-wobble').addEventListener('click', () => {
-  anim.wobble = !anim.wobble;
-  $('a-wobble').classList.toggle('on', anim.wobble);
-  $('a-wobble').textContent = anim.wobble ? '⏸ Wobble (ligado)' : '▶ Wobble';
-  if (!anim.wobble) applyTransforms();
-});
-
-// --- dissolve ---
-bindSlider('fx-dur', 'v-fxdur', v => v.toFixed(1) + 's', () => {});
-function startDissolve(dir) {
-  const dur = parseFloat($('fx-dur').value) * 1000;
-  anim.dissolve = { dir, start: performance.now(), dur };
+  if (C.vertigo) {
+    const A = anchorWorld();
+    const dir = new THREE.Vector3().subVectors(A, cam.position);
+    const dist = dir.length();
+    if (dist > 0.05) {
+      dir.normalize();
+      cam.position.addScaledVector(dir, parseFloat($('vt-speed').value) * dt * dist * 0.4);
+      const nd = Math.max(cam.position.distanceTo(A), 0.05);
+      const fov = Math.max(12, Math.min(125, 2 * Math.atan(C.vertigoK / nd) * 180 / Math.PI));
+      cam.fov = fov; cam.updateProjectionMatrix();
+      $('cam-fov').value = fov; $('v-fov').textContent = fov.toFixed(0) + '°';
+    }
+  }
+  const fwd = new THREE.Vector3(); cam.getWorldDirection(fwd);
+  if (C.dolly) {
+    const s = parseFloat($('dl-speed').value) * dt * ext * 0.08;
+    cam.position.addScaledVector(fwd, s); ctr.target.addScaledVector(fwd, s);
+  }
+  if (C.truck) {
+    const right = new THREE.Vector3().crossVectors(fwd, cam.up).normalize();
+    const s = parseFloat($('tk-speed').value) * dt * ext * 0.08;
+    cam.position.addScaledVector(right, s); ctr.target.addScaledVector(right, s);
+  }
+  if (C.tilt) {
+    const right = new THREE.Vector3().crossVectors(fwd, cam.up).normalize();
+    const rel = new THREE.Vector3().subVectors(ctr.target, cam.position)
+      .applyAxisAngle(right, parseFloat($('tl-speed').value) * dt * 0.15);
+    ctr.target.copy(cam.position).add(rel);
+  }
+  if (C.shake) {
+    const amp = parseFloat($('hh-amp').value) * ext * 0.012;
+    const f = parseFloat($('hh-freq').value);
+    const t = anim.fxTime * f;
+    const n = (a, b, c) => Math.sin(t*1.1+a)*0.5 + Math.sin(t*2.3+b)*0.35 + Math.sin(t*4.7+c)*0.15;
+    const off = new THREE.Vector3(n(1.7,4.2,9.1), n(2.9,0.6,5.3), n(7.7,3.1,1.9)).multiplyScalar(amp);
+    const d = new THREE.Vector3().subVectors(off, C.shakePrev);
+    cam.position.add(d); ctr.target.add(d);
+    C.shakePrev.copy(off);
+  } else if (C.shakePrev.lengthSq() > 0) {
+    cam.position.sub(C.shakePrev); ctr.target.sub(C.shakePrev); C.shakePrev.set(0, 0, 0);
+  }
 }
-$('fx-dissolve-out').addEventListener('click', () => startDissolve('out'));
-$('fx-dissolve-in').addEventListener('click', () => startDissolve('in'));
 
-// --- waves (distorção GPU) ---
-bindSlider('w-amp', 'v-wamp2', v => v.toFixed(2), () => syncFxUniforms());
-bindSlider('w-freq', 'v-wfreq2', v => v.toFixed(1), () => syncFxUniforms());
-bindSlider('w-speed', 'v-wspeed', v => v.toFixed(1), () => syncFxUniforms());
-$('w-toggle').addEventListener('click', () => {
-  anim.waves = !anim.waves;
-  $('w-toggle').classList.toggle('on', anim.waves);
-  $('w-toggle').textContent = anim.waves ? '⏸ Waves (ligado)' : '▶ Waves';
-  syncFxUniforms();
-});
-
-// --- fumaça (difusão GPU do centro para fora) ---
-bindSlider('s-dist', 'v-sdist', v => v.toFixed(1), () => syncFxUniforms());
-bindSlider('s-dur', 'v-sdur', v => v.toFixed(1) + 's', () => {});
-function startSmoke(dir) {
-  anim.smoke = { dir, start: performance.now(), dur: parseFloat($('s-dur').value) * 1000, from: anim.smokeVal };
-}
-$('s-out').addEventListener('click', () => startSmoke('out'));
-$('s-in').addEventListener('click', () => startSmoke('in'));
-
+// ============================================================
+// ILUMINAÇÃO / COR
+// ============================================================
 // --- relight ---
 ['l-az','l-el','l-str','l-amb'].forEach((id, i) => {
   const vids = ['v-laz','v-lel','v-lstr','v-lamb'];
@@ -1547,7 +2028,6 @@ $('l-toggle').addEventListener('click', () => {
   syncFxUniforms();
 });
 bindSlider('l-shadow', 'v-lshadow', v => v.toFixed(1), () => syncFxUniforms());
-
 // --- luz 2 ---
 ['l2-az','l2-el','l2-str'].forEach((id, i) => {
   const vids = ['v-l2az','v-l2el','v-l2str'];
@@ -1561,7 +2041,19 @@ $('l2-toggle').addEventListener('click', () => {
   $('l2-toggle').textContent = anim.light2 ? '− Luz 2 (ligada)' : '+ Luz 2 (desligada)';
   syncFxUniforms();
 });
-
+// --- luz pontual ---
+bindSlider('pl-x', 'v-plx', v => Math.round(v*100)+'%', () => syncFxUniforms());
+bindSlider('pl-y', 'v-ply', v => Math.round(v*100)+'%', () => syncFxUniforms());
+bindSlider('pl-z', 'v-plz', v => Math.round(v*100)+'%', () => syncFxUniforms());
+bindSlider('pl-str', 'v-plstr', v => v.toFixed(2), () => syncFxUniforms());
+bindSlider('pl-radius', 'v-plradius', v => v.toFixed(2), () => syncFxUniforms());
+$('pl-color').addEventListener('input', () => syncFxUniforms());
+$('pl-toggle').addEventListener('click', () => {
+  anim.plight = !anim.plight;
+  $('pl-toggle').classList.toggle('on', anim.plight);
+  $('pl-toggle').textContent = anim.plight ? '⏸ Luz pontual (ligada)' : '▶ Luz pontual';
+  syncFxUniforms();
+});
 // --- desfoque de fundo (DoF) ---
 bindSlider('d-dist', 'v-ddist', v => v.toFixed(1), () => syncFxUniforms());
 bindSlider('d-range', 'v-drange', v => v.toFixed(1), () => syncFxUniforms());
@@ -1572,58 +2064,8 @@ $('d-toggle').addEventListener('click', () => {
   $('d-toggle').textContent = anim.dof ? '⏸ Desfoque (ligado)' : '▶ Desfoque';
   syncFxUniforms();
 });
-
-// --- reveal por epicentro ---
-bindSlider('r-dur', 'v-rdur', v => v.toFixed(1) + 's', () => {});
-bindSlider('r-x', 'v-rx', v => Math.round(v*100)+'%', () => syncFxUniforms());
-bindSlider('r-y', 'v-ry2', v => Math.round(v*100)+'%', () => syncFxUniforms());
-bindSlider('r-z', 'v-rz', v => Math.round(v*100)+'%', () => syncFxUniforms());
-function startReveal(dir) {
-  if (dir === 'in' && anim.revealVal >= 0.999) anim.revealVal = 0; // revelar do zero
-  anim.reveal = { dir, start: performance.now(), dur: parseFloat($('r-dur').value) * 1000, from: anim.revealVal };
-}
-$('r-play').addEventListener('click', () => startReveal('in'));
-$('r-hide').addEventListener('click', () => startReveal('out'));
-
-// --- twist / bend / taper / área do efeito ---
-function fxToggle(btnId, key, labelOn, labelOff) {
-  $(btnId).addEventListener('click', () => {
-    anim[key] = !anim[key];
-    $(btnId).classList.toggle('on', anim[key]);
-    $(btnId).textContent = anim[key] ? labelOn : labelOff;
-    syncFxUniforms();
-  });
-}
-bindSlider('tw-amt', 'v-twamt', v => v.toFixed(2), () => syncFxUniforms());
-bindSlider('tw-speed', 'v-twspeed', v => v.toFixed(1), () => syncFxUniforms());
-bindSlider('bd-amt', 'v-bdamt', v => v.toFixed(2), () => syncFxUniforms());
-bindSlider('tp-amt', 'v-tpamt', v => v.toFixed(2), () => syncFxUniforms());
-bindSlider('fa-r', 'v-far', v => Math.round(v*100)+'%', () => syncFxUniforms());
-fxToggle('tw-toggle', 'twistFx', '⏸ Twist (ligado)', '▶ Twist');
-fxToggle('bd-toggle', 'bendFx', '⏸ Bend (ligado)', '▶ Bend');
-fxToggle('tp-toggle', 'taperFx', '⏸ Taper (ligado)', '▶ Taper');
-fxToggle('fa-toggle', 'fxArea', '⏸ Área limitada (ligada)', '▶ Limitar efeitos à esfera do pivô');
-
-// --- time slice (4D) ---
-bindSlider('ts-axis', 'v-tsaxis', v => 'XYZ'[Math.round(v)], () => syncFxUniforms());
-bindSlider('ts-shift', 'v-tsshift', v => Math.round(v*100)+'%', () => syncFxUniforms());
-$('ts-invert').addEventListener('click', () => {
-  anim.sliceInvert = !anim.sliceInvert;
-  $('ts-invert').classList.toggle('on', anim.sliceInvert);
-  syncFxUniforms();
-});
-$('ts-toggle').addEventListener('click', () => {
-  if (!seq) { showError('Time Slice só funciona com uma sequência 4D carregada.'); return; }
-  anim.timeSlice = !anim.timeSlice;
-  $('ts-toggle').classList.toggle('on', anim.timeSlice);
-  $('ts-toggle').textContent = anim.timeSlice ? '⏸ Time Slice (ligado)' : '▶ Time Slice';
-  anim.sliceAnim = 0;
-  setSeqFrame(seq.current); // atualiza visibilidade das cenas
-  syncFxUniforms();
-});
-
 // --- color grading ---
-['cg-exp','cg-con','cg-sat','cg-temp','cg-tint'].forEach((id,i) => {
+['cg-exp','cg-con','cg-sat','cg-temp','cg-tint'].forEach((id, i) => {
   const vids = ['v-cgexp','v-cgcon','v-cgsat','v-cgtemp','v-cgtint'];
   bindSlider(id, vids[i], v => v.toFixed(2), () => syncFxUniforms());
 });
@@ -1634,10 +2076,9 @@ $('cg-toggle').addEventListener('click', () => {
   syncFxUniforms();
 });
 $('cg-cine').addEventListener('click', () => {
-  // preset cinematográfico: leve teal-orange, contraste, dessaturado
   $('cg-exp').value = 1.05; $('cg-con').value = 1.2; $('cg-sat').value = 0.85;
   $('cg-temp').value = 0.08; $('cg-tint').value = -0.03;
-  ['v-cgexp','v-cgcon','v-cgsat','v-cgtemp','v-cgtint'].forEach((v,i) =>
+  ['v-cgexp','v-cgcon','v-cgsat','v-cgtemp','v-cgtint'].forEach((v, i) =>
     $(v).textContent = [1.05,1.2,0.85,0.08,-0.03][i].toFixed(2));
   if (!anim.grade) $('cg-toggle').click(); else syncFxUniforms();
 });
@@ -1649,17 +2090,94 @@ $('cg-reset').addEventListener('click', () => {
   syncFxUniforms();
 });
 
-// --- paint ---
-bindSlider('pt-r', 'v-ptr', v => Math.round(v*100)+'%', () => syncFxUniforms());
-bindSlider('pt-str', 'v-ptstr', v => v.toFixed(2), () => syncFxUniforms());
-$('pt-color').addEventListener('input', () => syncFxUniforms());
+// ============================================================
+// EFEITOS DE TRANSIÇÃO (todos partem do Anchor Point)
+// ============================================================
+// --- dissolve (difusão a partir do pivô) ---
+bindSlider('dis-dur', 'v-disdur', v => v.toFixed(1) + 's', () => {});
+function startDisTransition(dir) {
+  anim.disAnim = { dir, start: performance.now(), dur: parseFloat($('dis-dur').value) * 1000, from: anim.disVal };
+}
+$('dis-out').addEventListener('click', () => startDisTransition('out'));
+$('dis-in').addEventListener('click', () => startDisTransition('in'));
+// --- reveal (epicentro = pivô) ---
+bindSlider('r-dur', 'v-rdur', v => v.toFixed(1) + 's', () => {});
+function startReveal(dir) {
+  if (dir === 'in' && anim.revealVal >= 0.999) anim.revealVal = 0; // revelar do zero
+  anim.reveal = { dir, start: performance.now(), dur: parseFloat($('r-dur').value) * 1000, from: anim.revealVal };
+}
+$('r-play').addEventListener('click', () => startReveal('in'));
+$('r-hide').addEventListener('click', () => startReveal('out'));
+// --- fumaça (difusão global) ---
+bindSlider('s-dist', 'v-sdist', v => v.toFixed(1), () => syncFxUniforms());
+bindSlider('s-dur', 'v-sdur', v => v.toFixed(1) + 's', () => {});
+function startSmoke(dir) {
+  anim.smoke = { dir, start: performance.now(), dur: parseFloat($('s-dur').value) * 1000, from: anim.smokeVal };
+}
+$('s-out').addEventListener('click', () => startSmoke('out'));
+$('s-in').addEventListener('click', () => startSmoke('in'));
+// --- dissolve por escala ---
+bindSlider('fx-dur', 'v-fxdur', v => v.toFixed(1) + 's', () => {});
+function startDissolve(dir) {
+  const dur = parseFloat($('fx-dur').value) * 1000;
+  anim.dissolve = { dir, start: performance.now(), dur };
+}
+$('fx-dissolve-out').addEventListener('click', () => startDissolve('out'));
+$('fx-dissolve-in').addEventListener('click', () => startDissolve('in'));
+
+// ============================================================
+// PAINT — pincel de verdade: clique e arraste sobre a cena
+// ============================================================
+const paintStrokes = [];
+let bxPainting = false, bxLastStroke = null;
 $('pt-toggle').addEventListener('click', () => {
-  anim.paint = !anim.paint;
-  $('pt-toggle').classList.toggle('on', anim.paint);
-  $('pt-toggle').textContent = anim.paint ? '⏸ Paint (ligado)' : '▶ Paint';
+  anim.paintMode = !anim.paintMode;
+  $('pt-toggle').classList.toggle('on', anim.paintMode);
+  $('pt-toggle').textContent = anim.paintMode ? '🖌 Pincel (ligado)' : '🖌 Modo pincel';
+  if (viewer?.controls) viewer.controls.enabled = !anim.paintMode;
+  $('viewer-container').style.cursor = anim.paintMode ? 'crosshair' : '';
+});
+bindSlider('pt-r', 'v-ptr', v => Math.round(v*100)+'%', () => {});
+bindSlider('pt-str', 'v-ptstr', v => v.toFixed(2), () => syncFxUniforms());
+$('pt-color').addEventListener('input', () => {});
+$('pt-clear').addEventListener('click', () => {
+  paintStrokes.length = 0; bxLastStroke = null;
   syncFxUniforms();
 });
+function bxAddStroke(e) {
+  if (!viewer?.camera || !viewer?.controls || !viewer?.splatMesh) return;
+  if (paintStrokes.length >= 64) { showError('Limite de 64 pinceladas — use "Limpar pinceladas".'); return; }
+  const vc = $('viewer-container');
+  const rect = vc.getBoundingClientRect();
+  const ndc = new THREE.Vector2(
+    ((e.clientX - rect.left) / rect.width) * 2 - 1,
+    -(((e.clientY - rect.top) / rect.height) * 2 - 1));
+  const ray = new THREE.Raycaster();
+  ray.setFromCamera(ndc, viewer.camera);
+  const n = new THREE.Vector3();
+  viewer.camera.getWorldDirection(n);
+  const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(n, viewer.controls.target);
+  const pt = new THREE.Vector3();
+  if (!ray.ray.intersectPlane(plane, pt)) return;
+  viewer.splatMesh.worldToLocal(pt); // pinta no espaço dos dados (acompanha escala/rotação)
+  const r = bxDiag() * 0.12 * parseFloat($('pt-r').value);
+  if (bxLastStroke && bxLastStroke.distanceTo(pt) < r * 0.35) return;
+  paintStrokes.push({ p: pt.clone(), r, c: new THREE.Color($('pt-color').value) });
+  bxLastStroke = pt.clone();
+  syncFxUniforms();
+}
+$('viewer-container').addEventListener('pointerdown', e => {
+  if (!anim.paintMode) return;
+  bxPainting = true; bxLastStroke = null; bxAddStroke(e);
+});
+$('viewer-container').addEventListener('pointermove', e => {
+  if (bxPainting && anim.paintMode) bxAddStroke(e);
+});
+window.addEventListener('pointerup', () => { bxPainting = false; });
 
+// ============================================================
+// EFEITOS DIVERSOS
+// ============================================================
 // --- weather: névoa ---
 bindSlider('fog-near', 'v-fognear', v => v.toFixed(1), () => syncFxUniforms());
 bindSlider('fog-far', 'v-fogfar', v => v.toFixed(0), () => syncFxUniforms());
@@ -1670,10 +2188,10 @@ $('fog-toggle').addEventListener('click', () => {
   $('fog-toggle').textContent = anim.fog ? '⏸ Névoa (ligada)' : '▶ Névoa';
   syncFxUniforms();
 });
-
 // --- weather: partículas (neve/chuva) ---
 let weatherPts = null;
 bindSlider('wx-amt', 'v-wxamt', v => (v/1000)+'k', () => { if (anim.weather) startWeather(anim.weather); });
+bindSlider('wx-size', 'v-wxsize', v => v.toFixed(1), () => { if (anim.weather) startWeather(anim.weather); });
 function clearWeather() {
   if (weatherPts && viewer?.threeScene) viewer.threeScene.remove(weatherPts);
   if (weatherPts) { weatherPts.geometry.dispose(); weatherPts.material.dispose(); }
@@ -1700,9 +2218,10 @@ function startWeather(kind) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   const snow = kind === 'snow';
+  const szMul = parseFloat($('wx-size').value);
   const mat = new THREE.PointsMaterial({
     color: snow ? 0xffffff : 0x99bbdd,
-    size: snow ? ext*0.006 : ext*0.004,
+    size: (snow ? ext*0.006 : ext*0.004) * szMul,
     transparent: true, opacity: snow ? 0.9 : 0.5, depthWrite: false
   });
   weatherPts = new THREE.Points(geo, mat);
@@ -1733,7 +2252,6 @@ $('wx-rain').addEventListener('click', () => {
   else { startWeather('rain'); $('wx-rain').classList.add('on'); $('wx-snow').classList.remove('on');
          $('wx-rain').textContent = '🌧 Chuva (ligada)'; $('wx-snow').textContent = '❄ Neve'; }
 });
-
 // --- pontos P&B ---
 $('pb-toggle').addEventListener('click', () => {
   anim.pb = !anim.pb;
@@ -1741,8 +2259,37 @@ $('pb-toggle').addEventListener('click', () => {
   $('pb-toggle').textContent = anim.pb ? '⏸ Modo pontos P&B (ligado)' : '▶ Modo pontos P&B';
   syncFxUniforms();
 });
+// --- pontos por profundidade (perto verde / longe roxo) ---
+bindSlider('dc-n', 'v-dcn', v => v.toFixed(1), () => syncFxUniforms());
+bindSlider('dc-f', 'v-dcf', v => v.toFixed(1), () => syncFxUniforms());
+$('dc-cnear').addEventListener('input', () => syncFxUniforms());
+$('dc-cfar').addEventListener('input', () => syncFxUniforms());
+$('dc-toggle').addEventListener('click', () => {
+  anim.depthCol = !anim.depthCol;
+  $('dc-toggle').classList.toggle('on', anim.depthCol);
+  $('dc-toggle').textContent = anim.depthCol ? '⏸ Perto/Longe (ligado)' : '▶ Perto/Longe';
+  syncFxUniforms();
+});
+// --- time slice (4D) ---
+bindSlider('ts-axis', 'v-tsaxis', v => 'XYZ'[Math.round(v)], () => syncFxUniforms());
+bindSlider('ts-shift', 'v-tsshift', v => Math.round(v*100)+'%', () => syncFxUniforms());
+$('ts-invert').addEventListener('click', () => {
+  anim.sliceInvert = !anim.sliceInvert;
+  $('ts-invert').classList.toggle('on', anim.sliceInvert);
+  syncFxUniforms();
+});
+$('ts-toggle').addEventListener('click', () => {
+  if (!seq) { showError('Time Slice só funciona com uma sequência 4D carregada.'); return; }
+  anim.timeSlice = !anim.timeSlice;
+  $('ts-toggle').classList.toggle('on', anim.timeSlice);
+  $('ts-toggle').textContent = anim.timeSlice ? '⏸ Time Slice (ligado)' : '▶ Time Slice';
+  anim.sliceAnim = 0;
+  setSeqFrame(seq.current);
+  syncFxUniforms();
+});
 
-// --- loop de animação próprio (wobble + dissolve + efeitos GPU) ---
+
+
 function tick(now) {
   try { tickBody(now); }
   catch (e) { console.error('tick:', e); }
@@ -1750,7 +2297,9 @@ function tick(now) {
 }
 function tickBody(now) {
   const dt = (now - lastTime) / 1000; lastTime = now;
-  if (anim.wobble) { anim.wobbleT += dt; applyTransforms(); }
+  // efeitos de câmera (órbita XYZ, vertigo, dolly, truck, tilt, shake)
+  tickCamera(dt);
+  // dissolve por escala
   if (anim.dissolve && viewer?.splatMesh) {
     const d = anim.dissolve;
     let t = Math.min(1, (now - d.start) / d.dur);
@@ -1772,7 +2321,17 @@ function tickBody(now) {
     if (t >= 1) anim.smoke = null;
   }
   const uS = bxU('uBxSmoke'); if (uS) uS.value = anim.smokeVal;
-  // animação do reveal (epicentro → bordas)
+  // animação do dissolve (difusão a partir do pivô)
+  if (anim.disAnim) {
+    const s = anim.disAnim;
+    let t = Math.min(1, (now - s.start) / s.dur);
+    const ease = t*t*(3-2*t);
+    const target = s.dir === 'out' ? 1 : 0;
+    anim.disVal = s.from + (target - s.from) * ease;
+    if (t >= 1) anim.disAnim = null;
+  }
+  const uD = bxU('uBxDisT'); if (uD) uD.value = anim.disVal;
+  // animação do reveal (pivô → bordas)
   if (anim.reveal) {
     const r = anim.reveal;
     let t = Math.min(1, (now - r.start) / r.dur);
@@ -1786,7 +2345,6 @@ function tickBody(now) {
   // playback da sequência 4DGS
   if (seq && seq.playing) {
     if (anim.timeSlice) {
-      // com time slice, o play varre a fatia pela cena
       anim.sliceAnim += dt * seq.fps / seq.count;
       const uSh = bxU('uBxSliceShift');
       if (uSh) uSh.value = parseFloat($('ts-shift').value) + anim.sliceAnim;
@@ -1798,6 +2356,7 @@ function tickBody(now) {
   }
 }
 requestAnimationFrame(tick);
+
 
 // ===== Gravação MP4 =====
 bindSlider('rec-dur', 'v-recdur', v => v.toFixed(0) + 's', () => {});
@@ -1837,13 +2396,10 @@ function record(durationMs, withOrbit) {
     recorder = null;
     $('btn-rec').classList.remove('recording');
     $('btn-rec').textContent = '⏺ Gravar MP4';
-    if (withOrbit && !anim.orbit && viewer?.controls) viewer.controls.autoRotate = false;
+    if (withOrbit) anim.recOrbit = false;
   };
 
-  if (withOrbit && viewer?.controls) {
-    viewer.controls.autoRotate = true;
-    viewer.controls.autoRotateSpeed = parseFloat($('a-orbitspeed').value);
-  }
+  if (withOrbit) anim.recOrbit = true;
   recorder.start();
   $('btn-rec').classList.add('recording');
   $('btn-rec').textContent = '⏹ Parar gravação';

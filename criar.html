@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bruxos do VFX — Criar meu Splat</title>
+<style>
+  :root {
+    --roxo: #7b2d8e; --roxo-claro: #b064c4; --verde: #96c93d;
+    --bg: #0d0a12; --panel: rgba(20, 14, 28, .92);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { min-height: 100%; background: radial-gradient(ellipse at 50% 0%, #1c1226 0%, var(--bg) 60%); font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 28px 18px 60px; }
+  a.back { color: #888; text-decoration: none; font-size: .85rem; }
+  a.back:hover { color: var(--verde); }
+  h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin: 14px 0 6px; }
+  h1 .b { color: var(--verde); } h1 .v { color: var(--roxo-claro); }
+  .sub { color: #999; margin-bottom: 26px; font-size: .95rem; line-height: 1.5; }
+
+  /* cards de escolha */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--panel); border: 1px solid rgba(255,255,255,.12); border-radius: 16px;
+    padding: 20px 18px; cursor: pointer; transition: transform .15s, border-color .15s;
+  }
+  .card:hover { transform: translateY(-3px); border-color: var(--verde); }
+  .card .emo { font-size: 2rem; }
+  .card h2 { font-size: 1.05rem; margin: 10px 0 6px; }
+  .card p { font-size: .8rem; color: #aaa; line-height: 1.45; }
+  .card .tag { display: inline-block; margin-top: 10px; font-size: .68rem; padding: 3px 10px; border-radius: 999px; background: rgba(150,201,61,.15); color: var(--verde); }
+  .card .tag.roxo { background: rgba(176,100,196,.15); color: var(--roxo-claro); }
+
+  /* wizard */
+  #wizard { display: none; }
+  #wizard.visible { display: block; }
+  #cards-view.hidden { display: none; }
+  .step {
+    background: var(--panel); border: 1px solid rgba(255,255,255,.12); border-radius: 16px;
+    padding: 18px 20px; margin-bottom: 14px; position: relative;
+  }
+  .step .num {
+    position: absolute; top: -12px; left: 16px; background: var(--roxo); color: #fff;
+    font-weight: 800; font-size: .8rem; padding: 3px 12px; border-radius: 999px;
+  }
+  .step h3 { font-size: 1rem; margin: 6px 0 8px; color: var(--verde); }
+  .step p { font-size: .85rem; color: #bbb; line-height: 1.55; }
+  .step p b { color: #eee; }
+  .btn {
+    display: inline-block; background: linear-gradient(135deg, var(--roxo), #9b3db0);
+    border: none; color: #fff; font-size: .92rem; font-weight: 600; text-decoration: none;
+    padding: 11px 24px; border-radius: 999px; cursor: pointer; margin-top: 12px;
+    box-shadow: 0 4px 18px rgba(123,45,142,.45); transition: transform .15s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn.verde { background: linear-gradient(135deg, #7ba32e, var(--verde)); color: #0d0a12; box-shadow: 0 4px 18px rgba(150,201,61,.35); }
+  .btn.ghost { background: transparent; border: 2px solid rgba(255,255,255,.25); box-shadow: none; }
+  .btn.ghost:hover { border-color: var(--verde); }
+  .note { font-size: .74rem; color: #777; margin-top: 8px; line-height: 1.5; }
+
+  /* câmera */
+  #cam-box { display: none; margin-top: 14px; }
+  #cam-box.visible { display: block; }
+  #cam-video { width: 100%; max-height: 380px; border-radius: 12px; background: #000; object-fit: cover; }
+  .cam-controls { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .rec-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #d33; margin-right: 6px; animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: .2; } }
+  #cam-status { font-size: .8rem; color: var(--verde); margin-top: 8px; }
+  .colab-tip {
+    background: rgba(150,201,61,.08); border: 1px solid rgba(150,201,61,.3);
+    border-radius: 10px; padding: 10px 14px; margin-top: 10px; font-size: .82rem; color: #cde; line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← voltar ao viewer</a>
+  <h1><span class="b">Criar</span> meu <span class="v">Splat</span></h1>
+  <p class="sub">Escolha o tipo de captura. A página te guia do começo ao fim — a parte pesada roda de graça na nuvem (Google Colab), sem instalar nada.</p>
+
+  <!-- ===== ESCOLHA ===== -->
+  <div class="cards" id="cards-view">
+    <div class="card" data-flow="foto">
+      <div class="emo">🖼️</div>
+      <h2>Foto → 3D</h2>
+      <p>Uma única foto vira um splat 3D em segundos (Apple SHARP). O jeito mais fácil de começar.</p>
+      <span class="tag">Mais fácil · ~5 min no total</span>
+    </div>
+    <div class="card" data-flow="video">
+      <div class="emo">🎬</div>
+      <h2>Vídeo → 3D</h2>
+      <p>Filme orbitando um objeto ou lugar e gere um splat de alta qualidade com treino completo.</p>
+      <span class="tag roxo">Melhor qualidade · ~1h</span>
+    </div>
+    <div class="card" data-flow="light">
+      <div class="emo">🪶</div>
+      <h2>Vídeo → 3D compacto</h2>
+      <p>Igual ao anterior, mas com poda LightGaussian: arquivo ~3× menor com a mesma cara.</p>
+      <span class="tag roxo">Arquivo leve · ~1h</span>
+    </div>
+    <div class="card" data-flow="quatro">
+      <div class="emo">🎞️</div>
+      <h2>Vídeo → 4D</h2>
+      <p>Cada frame do vídeo vira um splat — uma cena que se move no tempo (.splat4d).</p>
+      <span class="tag">Experimental · ~30 min</span>
+    </div>
+  </div>
+
+  <!-- ===== WIZARD ===== -->
+  <div id="wizard">
+    <a class="back" href="#" id="wz-back">← escolher outro tipo</a>
+    <h1 id="wz-title" style="font-size:1.4rem; margin-top:10px;"></h1>
+
+    <div class="step">
+      <span class="num">PASSO 1</span>
+      <h3 id="wz-cap-title"></h3>
+      <p id="wz-cap-text"></p>
+      <button class="btn verde" id="wz-cam">📷 Usar a câmera daqui</button>
+      <button class="btn ghost" id="wz-skip">Já tenho o arquivo →</button>
+      <div id="cam-box">
+        <video id="cam-video" autoplay muted playsinline></video>
+        <div class="cam-controls">
+          <button class="btn verde" id="cam-shoot">📸 Tirar foto</button>
+          <button class="btn" id="cam-rec">⏺ Gravar</button>
+          <button class="btn ghost" id="cam-flip">🔄 Trocar câmera</button>
+        </div>
+        <p id="cam-status"></p>
+        <p class="note" id="wz-cap-tip"></p>
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="num">PASSO 2</span>
+      <h3>Abrir a "cozinha" na nuvem</h3>
+      <p>Clique abaixo para abrir o processador no Google Colab (grátis, precisa de conta Google).</p>
+      <a class="btn" id="wz-colab" href="#" target="_blank" rel="noopener">🚀 Abrir o processador</a>
+      <div class="colab-tip">
+        Lá dentro, faça só isto:<br>
+        <b>1.</b> Menu <b>Ambiente de execução → Alterar tipo</b> → escolha <b>GPU (T4)</b> e salve.<br>
+        <b>2.</b> Menu <b>Ambiente de execução → Executar tudo</b> (Ctrl+F9).<br>
+        <b>3.</b> Quando uma célula pedir, <b>envie o arquivo</b> do Passo 1.<br>
+        <b>4.</b> No final, o resultado baixa sozinho. Só esperar. ☕
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="num">PASSO 3</span>
+      <h3>Abrir no viewer e fazer mágica ✦</h3>
+      <p>Arraste o arquivo baixado (<b id="wz-ext">.ply</b>) para o viewer: distorça, ilumine, reaja ao som e exporte MP4 em 1080p.</p>
+      <a class="btn verde" href="index.html">✨ Abrir o viewer</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const FLOWS = {
+  foto: {
+    title: '🖼️ Foto → 3D',
+    capTitle: 'Consiga uma boa foto',
+    capText: 'Uma foto nítida e bem iluminada do objeto/cena. Pode tirar aqui pela câmera ou usar uma que você já tem.',
+    capTip: 'Dica: evite reflexos e fundos muito lisos.',
+    colab: 'https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_SHARP.ipynb',
+    ext: '.ply', mode: 'photo'
+  },
+  video: {
+    title: '🎬 Vídeo → 3D',
+    capTitle: 'Grave um vídeo orbitando',
+    capText: 'Ande devagar ao redor do objeto/lugar por 30-60s, sem movimentos bruscos, mantendo tudo em foco.',
+    capTip: 'Dica: dê a volta completa e varie um pouco a altura. Luz constante ajuda muito.',
+    colab: 'https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_3DGS.ipynb',
+    ext: '.ply', mode: 'video'
+  },
+  light: {
+    title: '🪶 Vídeo → 3D compacto (LightGaussian)',
+    capTitle: 'Grave um vídeo orbitando',
+    capText: 'Mesma captura do Vídeo → 3D. A diferença é o processamento: o resultado sai ~3× menor.',
+    capTip: 'Dica: dê a volta completa e varie um pouco a altura. Luz constante ajuda muito.',
+    colab: 'https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_LightGaussian.ipynb',
+    ext: '.ply', mode: 'video'
+  },
+  quatro: {
+    title: '🎞️ Vídeo → 4D',
+    capTitle: 'Grave a ação',
+    capText: 'Aqui o movimento fica na cena: grave alguém dançando, algo caindo, etc. Câmera o mais parada possível.',
+    capTip: 'Dica: até ~120 frames viram a sequência. Vídeos curtos (5-15s) funcionam melhor.',
+    colab: 'https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_4DGS.ipynb',
+    ext: '.splat4d', mode: 'video'
+  }
+};
+const $ = id => document.getElementById(id);
+let flow = null, stream = null, facing = 'environment', recorder = null, chunks = [];
+
+document.querySelectorAll('.card').forEach(c => c.addEventListener('click', () => {
+  flow = FLOWS[c.dataset.flow];
+  $('wz-title').textContent = flow.title;
+  $('wz-cap-title').textContent = flow.capTitle;
+  $('wz-cap-text').textContent = flow.capText;
+  $('wz-cap-tip').textContent = flow.capTip;
+  $('wz-colab').href = flow.colab;
+  $('wz-ext').textContent = flow.ext;
+  $('cam-shoot').style.display = flow.mode === 'photo' ? '' : 'none';
+  $('cam-rec').style.display = flow.mode === 'video' ? '' : 'none';
+  $('cards-view').classList.add('hidden');
+  $('wizard').classList.add('visible');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}));
+$('wz-back').addEventListener('click', e => {
+  e.preventDefault();
+  stopCam();
+  $('wizard').classList.remove('visible');
+  $('cards-view').classList.remove('hidden');
+});
+$('wz-skip').addEventListener('click', () => {
+  stopCam();
+  document.querySelectorAll('.step')[1].scrollIntoView({ behavior: 'smooth' });
+});
+
+function stopCam() {
+  if (recorder && recorder.state === 'recording') recorder.stop();
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = null;
+  $('cam-box').classList.remove('visible');
+}
+async function startCam() {
+  stopCam();
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: facing, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false
+    });
+    $('cam-video').srcObject = stream;
+    $('cam-box').classList.add('visible');
+    $('cam-status').textContent = '';
+  } catch (e) { alert('Câmera indisponível: ' + (e.message || e)); }
+}
+$('wz-cam').addEventListener('click', startCam);
+$('cam-flip').addEventListener('click', () => { facing = facing === 'environment' ? 'user' : 'environment'; startCam(); });
+
+// foto
+$('cam-shoot').addEventListener('click', () => {
+  const v = $('cam-video');
+  const cv = document.createElement('canvas');
+  cv.width = v.videoWidth; cv.height = v.videoHeight;
+  cv.getContext('2d').drawImage(v, 0, 0);
+  cv.toBlob(b => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = 'bruxos_foto.jpg';
+    a.click();
+    $('cam-status').textContent = '✅ Foto salva (bruxos_foto.jpg) — use no Passo 2!';
+  }, 'image/jpeg', 0.92);
+});
+
+// vídeo
+$('cam-rec').addEventListener('click', () => {
+  if (recorder && recorder.state === 'recording') { recorder.stop(); return; }
+  chunks = [];
+  const mime = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm';
+  recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12_000_000 });
+  recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  recorder.onstop = () => {
+    const ext = mime.includes('mp4') ? 'mp4' : 'webm';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(chunks, { type: mime }));
+    a.download = 'bruxos_video.' + ext;
+    a.click();
+    $('cam-rec').innerHTML = '⏺ Gravar';
+    $('cam-status').textContent = `✅ Vídeo salvo (bruxos_video.${ext}) — use no Passo 2!`;
+  };
+  recorder.start();
+  $('cam-rec').innerHTML = '<span class="rec-dot"></span>Parar gravação';
+  $('cam-status').textContent = 'Gravando… ande devagar ao redor.';
+});
+</script>
+</body>
+</html>

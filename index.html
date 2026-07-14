@@ -1662,7 +1662,7 @@ function syncFxUniforms() {
       const s = dfxState[i];
       dOn.value[i] = s.on ? 1 : 0;
       dAxis.value[i].set(s.ax[0], s.ax[1], s.ax[2]);
-      dAmp.value[i] = s.amp;
+      dAmp.value[i] = dfxAmpEff(i);
       dFreq.value[i] = s.freq;
       dSpd.value[i] = s.speed;
       dRad.value[i] = s.radius >= 0.99 ? 0 : diag * 0.6 * Math.pow(s.radius, 2.5);
@@ -2179,8 +2179,13 @@ const DFX = [
   { id:'ben', name:'Bend',   multi:false, amp:0.3,  ampMin:-2, ampMax:2, freq:1, freqMax:5,  speed:0,   ax:[0,1,0] },
   { id:'tap', name:'Taper',  multi:false, amp:0.5,  ampMin:0,  ampMax:2, freq:1, freqMax:5,  speed:0,   ax:[0,1,0] },
   { id:'bul', name:'Bulge',  multi:true,  amp:0.5,  ampMin:-2, ampMax:2, freq:1, freqMax:5,  speed:0,   ax:[1,1,1] },
-  { id:'tur', name:'Turbulência', multi:true, amp:0.3, ampMin:0, ampMax:2, freq:1.5, freqMax:10, speed:1, ax:[1,1,1] },
+  { id:'tur', name:'Turbulent Displace', multi:true, amp:0.3, ampMin:0, ampMax:2, freq:1.5, freqMax:10, speed:1, ax:[1,1,1] },
 ];
+// amplitude efetiva com curva fina: início do slider = valores sutis (milésimos)
+function dfxAmpEff(i) {
+  const a = dfxState[i].amp, mx = Math.max(Math.abs(DFX[i].ampMax), 1e-4);
+  return Math.sign(a) * Math.pow(Math.abs(a) / mx, 2.5) * mx;
+}
 const dfxState = DFX.map(d => ({
   on:false, ax:[...d.ax], amp:d.amp, freq:d.freq, speed:d.speed, radius:1, auBand:-1, auGain:1,
   boxOn:false, showBox:false, box:{ px:.5, py:.5, pz:.5, sx:.5, sy:.5, sz:.5, rx:0, ry:0, rz:0 }
@@ -2237,7 +2242,12 @@ const dfxState = DFX.map(d => ({
         syncFxUniforms();
       });
     });
-    bindSlider(`${p}-amp`, `v-${p}amp`, v => v.toFixed(2), v => { st.amp = v; syncFxUniforms(); });
+    const ampFmt = v => {
+      const mx = Math.max(Math.abs(d.ampMax), 1e-4);
+      return (Math.sign(v) * Math.pow(Math.abs(v) / mx, 2.5) * mx).toFixed(4);
+    };
+    bindSlider(`${p}-amp`, `v-${p}amp`, ampFmt, v => { st.amp = v; syncFxUniforms(); });
+    $(`v-${p}amp`).textContent = ampFmt(d.amp);
     bindSlider(`${p}-freq`, `v-${p}freq`, v => v.toFixed(1), v => { st.freq = v; syncFxUniforms(); });
     bindSlider(`${p}-spd`, `v-${p}spd`, v => v.toFixed(1), v => { st.speed = v; syncFxUniforms(); });
     bindSlider(`${p}-rad`, `v-${p}rad`, v => v >= 0.99 ? 'livre' : (Math.pow(v, 2.5)*100).toFixed(3)+'%', v => { st.radius = v; syncFxUniforms(); });
@@ -2815,8 +2825,8 @@ function tickAudio() {
   if (dAmp) for (let i = 0; i < 8; i++) {
     const st = dfxState[i];
     dAmp.value[i] = st.auBand >= 0
-      ? st.amp * (1 + st.auGain * 3 * audioFx.bands[st.auBand])
-      : st.amp;
+      ? dfxAmpEff(i) * (1 + st.auGain * 3 * audioFx.bands[st.auBand])
+      : dfxAmpEff(i);
   }
   const uPl = bxU('uBxPLStr');
   if (uPl) uPl.value = parseFloat($('pl-str').value) *

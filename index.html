@@ -499,6 +499,7 @@
       <button class="ax-btn" id="mf-rep">Repele</button>
       <button class="ax-btn" id="mf-att">Atrai</button>
       <button class="ax-btn" id="mf-rip">Ripple</button>
+      <button class="ax-btn" id="mf-grab">Puxar</button>
     </div>
     <div class="row"><label>Raio</label><input type="range" id="mf-r" min="0.02" max="1" step="0.01" value="0.3"><span class="val" id="v-mfr">30%</span></div>
     <div class="row"><label>Força</label><input type="range" id="mf-str" min="0" max="1" step="0.005" value="0.3"><span class="val" id="v-mfstr">0.090</span></div>
@@ -531,6 +532,10 @@
       <button class="panel-btn" id="midi-clear">Limpar</button>
     </div>
     <p class="note" id="midi-status">Conecte um controlador MIDI e clique em Ativar (Chrome/Edge).</p>
+
+    <h3>🖐 Mão (webcam)</h3>
+    <button class="panel-btn" id="hand-on">🖐 Controlar com a mão</button>
+    <p class="note" id="hand-status">MediaPipe Hands: a ponta do indicador move a força do mouse (escolha o modo acima) e a <b>pinça</b> (indicador + polegar) aplica/solta a força. No modo Puxar, pince para agarrar e solte para ver a mola.</p>
   </div>
 
   <h3>Gravação</h3>
@@ -830,6 +835,9 @@ uniform float uBxMouseOn;
 uniform vec3 uBxMousePos;
 uniform float uBxMouseR;
 uniform float uBxMouseStr;
+uniform vec3 uBxGrabA;
+uniform vec3 uBxGrabD;
+uniform float uBxGrabR;
 // --- crop box (ao vivo) ---
 uniform float uBxCropBoxOn;
 uniform vec3  uBxCropBoxPos;
@@ -1005,8 +1013,14 @@ vec3 bruxosPos(vec3 p){
     if (mfall > 0.001) {
       if (uBxMouseOn < 1.5)      p += (mrel/md) * (mfall * uBxMouseStr);
       else if (uBxMouseOn < 2.5) p -= (mrel/md) * (mfall * uBxMouseStr);
-      else p += (mrel/md) * (sin(md * 10.0 / max(uBxMouseR, 0.001) - bxTT * 7.0) * mfall * uBxMouseStr);
+      else if (uBxMouseOn < 3.5) p += (mrel/md) * (sin(md * 10.0 / max(uBxMouseR, 0.001) - bxTT * 7.0) * mfall * uBxMouseStr);
     }
+  }
+  // PUXAR: arrasto elástico a partir do ponto agarrado (solta com wiggle de mola)
+  if (dot(uBxGrabD, uBxGrabD) > 0.000001) {
+    float gdd = length(p - uBxGrabA);
+    float gf = 1.0 - smoothstep(0.0, max(uBxGrabR, 0.0001), gdd);
+    p += uBxGrabD * gf;
   }
   // fumaça (difusão global do centro para fora)
   if (uBxSmoke > 0.001) {
@@ -1191,6 +1205,9 @@ function bxPatchShader(mesh) {
     uBxMousePos:   { value: new THREE.Vector3(1e9, 1e9, 1e9) },
     uBxMouseR:     { value: 1 },
     uBxMouseStr:   { value: 0.1 },
+    uBxGrabA:      { value: new THREE.Vector3() },
+    uBxGrabD:      { value: new THREE.Vector3() },
+    uBxGrabR:      { value: 1 },
     // crop box
     uBxCropBoxOn:      { value: 0 },
     uBxCropBoxPos:     { value: v3() },
@@ -1743,6 +1760,7 @@ function syncFxUniforms() {
   set('uBxMouseOn', anim.mouseFx);
   set('uBxMouseR', diag * 0.4 * parseFloat($('mf-r').value));
   set('uBxMouseStr', diag * 0.15 * Math.pow(parseFloat($('mf-str').value), 2));
+  set('uBxGrabR', diag * 0.4 * parseFloat($('mf-r').value));
   // --- crop box (ao vivo) ---
   set('uBxCropBoxOn', anim.cropBox.on ? 1 : 0);
   {
@@ -2351,11 +2369,11 @@ bindSlider('tr-amt', 'v-tramt', v => v.toFixed(2) + 's', () => syncFxUniforms())
 // 🕹 INTERATIVO — mouse como força, LFOs e MIDI (estilo TouchDesigner)
 // ============================================================
 // --- mouse como força ---
-[['mf-off',0],['mf-rep',1],['mf-att',2],['mf-rip',3]].forEach(([id, mode]) => {
+const MF_MODES = [['mf-off',0],['mf-rep',1],['mf-att',2],['mf-rip',3],['mf-grab',4]];
+MF_MODES.forEach(([id, mode]) => {
   $(id).addEventListener('click', () => {
     anim.mouseFx = mode;
-    [['mf-off',0],['mf-rep',1],['mf-att',2],['mf-rip',3]].forEach(([id2, m2]) =>
-      $(id2).classList.toggle('on', m2 === anim.mouseFx));
+    MF_MODES.forEach(([id2, m2]) => $(id2).classList.toggle('on', m2 === anim.mouseFx));
     syncFxUniforms();
   });
 });
@@ -2386,6 +2404,115 @@ $('viewer-container').addEventListener('pointerleave', () => {
   const u = bxU('uBxMousePos');
   if (u) u.value.set(1e9, 1e9, 1e9);
 });
+
+// --- modo PUXAR: agarra com o clique, arrasta, e ao soltar volta com mola/wiggle ---
+const grab = { active: false, start: null, spring: null };
+function grabBegin(pt) {
+  if (!pt) return;
+  grab.active = true; grab.spring = null;
+  grab.start = pt.clone();
+  const a = bxU('uBxGrabA'), d = bxU('uBxGrabD');
+  if (a) a.value.copy(pt);
+  if (d) d.value.set(0, 0, 0);
+}
+function grabMove(pt) {
+  if (!grab.active || !pt || !grab.start) return;
+  const d = bxU('uBxGrabD');
+  if (d) d.value.set(pt.x - grab.start.x, pt.y - grab.start.y, pt.z - grab.start.z);
+}
+function grabEnd() {
+  if (!grab.active) return;
+  grab.active = false;
+  const d = bxU('uBxGrabD');
+  if (d && d.value.lengthSq() > 1e-8) grab.spring = { D0: d.value.clone(), t0: anim.fxTime };
+}
+$('viewer-container').addEventListener('pointerdown', e => {
+  if (anim.mouseFx !== 4 || anim.paintMode) return;
+  if (viewer?.controls) viewer.controls.enabled = false; // pausa a órbita durante o puxão
+  grabBegin(bxScreenToModel(e));
+});
+$('viewer-container').addEventListener('pointermove', e => {
+  if (grab.active) grabMove(bxScreenToModel(e));
+});
+window.addEventListener('pointerup', () => {
+  if (anim.mouseFx === 4 && viewer?.controls && !anim.paintMode) viewer.controls.enabled = true;
+  grabEnd();
+});
+
+// --- mão na webcam (MediaPipe Hands) controla a força do mouse ---
+const hand = { on: false, lm: null, video: null, stream: null, last: 0, pinch: false };
+function stopHand() {
+  hand.on = false;
+  try { hand.stream?.getTracks().forEach(t => t.stop()); } catch (e) {}
+  hand.stream = null; hand.video = null;
+  $('hand-on').classList.remove('on');
+  $('hand-on').textContent = '🖐 Controlar com a mão';
+  const u = bxU('uBxMousePos'); if (u) u.value.set(1e9, 1e9, 1e9);
+  grabEnd();
+  syncFxUniforms();
+}
+$('hand-on').addEventListener('click', async () => {
+  if (hand.on) { stopHand(); return; }
+  try {
+    $('hand-status').textContent = 'Carregando modelo de mãos…';
+    const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+    const fileset = await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+    hand.lm = await vision.HandLandmarker.createFromOptions(fileset, {
+      baseOptions: {
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+        delegate: 'GPU'
+      },
+      runningMode: 'VIDEO', numHands: 1
+    });
+    hand.video = document.createElement('video');
+    hand.video.muted = true; hand.video.playsInline = true;
+    hand.stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+    hand.video.srcObject = hand.stream;
+    await hand.video.play();
+    hand.on = true;
+    $('hand-on').classList.add('on');
+    $('hand-on').textContent = '🖐 Mão (ligada)';
+    $('hand-status').textContent = 'Mostre a mão para a webcam — indicador move, pinça aplica.';
+    if (!anim.mouseFx) $('mf-rep').click(); // liga um modo padrão
+  } catch (e) {
+    showError('Webcam/modelo indisponível: ' + (e.message || e));
+    stopHand();
+  }
+});
+function tickHand() {
+  if (!hand.on || !hand.lm || !hand.video || hand.video.readyState < 2) return;
+  const now = performance.now();
+  if (now - hand.last < 33) return; // ~30 fps de detecção
+  hand.last = now;
+  let res;
+  try { res = hand.lm.detectForVideo(hand.video, now); } catch (e) { return; }
+  const lms = res.landmarks && res.landmarks[0];
+  const uP = bxU('uBxMousePos'), uS = bxU('uBxMouseStr');
+  if (!lms) {
+    if (uP) uP.value.set(1e9, 1e9, 1e9);
+    if (hand.pinch) { hand.pinch = false; grabEnd(); }
+    return;
+  }
+  const tip = lms[8], th = lms[4];
+  const rect = $('viewer-container').getBoundingClientRect();
+  const fake = {
+    clientX: rect.left + (1 - tip.x) * rect.width,  // espelhado (webcam)
+    clientY: rect.top + tip.y * rect.height
+  };
+  const pt = bxScreenToModel(fake);
+  const pinch = Math.hypot(tip.x - th.x, tip.y - th.y) < 0.06;
+  if (anim.mouseFx === 4) {
+    // Puxar por pinça: pinçou = agarra, soltou = mola
+    if (pinch && !hand.pinch) grabBegin(pt);
+    else if (pinch && hand.pinch) grabMove(pt);
+    else if (!pinch && hand.pinch) grabEnd();
+  } else {
+    if (pt && uP) uP.value.copy(pt);
+    // sem pinça, força zero; com pinça, força do slider
+    if (uS) uS.value = pinch ? bxDiag() * 0.15 * Math.pow(parseFloat($('mf-str').value), 2) : 0;
+  }
+  hand.pinch = pinch;
+}
 
 // --- alvos moduláveis (LFO e MIDI) ---
 const IT_TARGETS = [
@@ -2441,6 +2568,17 @@ function lfoWave(kind, t) {
   return Math.sin(t*6.28)*0.5 + Math.sin(t*13.7+1.3)*0.3 + Math.sin(t*29.1+4.1)*0.2; // noise suave
 }
 function tickInteractive() {
+  // mola do modo Puxar: volta ao lugar oscilando (wiggle amortecido)
+  if (grab.spring) {
+    const te = anim.fxTime - grab.spring.t0;
+    const env = Math.exp(-3.5 * te);
+    const d = bxU('uBxGrabD');
+    if (d) {
+      if (env < 0.02) { d.value.set(0, 0, 0); grab.spring = null; }
+      else d.value.copy(grab.spring.D0).multiplyScalar(env * Math.cos(14 * te));
+    }
+  }
+  tickHand();
   for (let i = 0; i < 2; i++) {
     const L = lfos[i];
     if (!L.on || L.base === null) continue;
@@ -2480,14 +2618,17 @@ function midiMsg(e) {
 $('midi-on').addEventListener('click', async () => {
   if (!navigator.requestMIDIAccess) { showError('Web MIDI não suportado neste navegador.'); return; }
   try {
-    midi.access = await navigator.requestMIDIAccess();
+    midi.access = await navigator.requestMIDIAccess({ sysex: false });
     const hook = () => { for (const inp of midi.access.inputs.values()) inp.onmidimessage = midiMsg; };
     hook();
     midi.access.onstatechange = hook;
     $('midi-on').classList.add('on');
     const n = [...midi.access.inputs.values()].length;
     midiStatus(n ? `${n} dispositivo(s) MIDI conectado(s). Escolha o alvo e clique em Mapear.` : 'MIDI ativo — conecte um controlador.');
-  } catch (e) { showError('MIDI negado/indisponível: ' + (e.message || e)); }
+  } catch (e) {
+    showError('Permissão MIDI negada. Clique no cadeado 🔒 na barra de endereço → Permissões do site → MIDI → Permitir, e recarregue a página. Precisa ser https no Chrome/Edge.');
+    midiStatus('Permissão negada — libere MIDI no cadeado 🔒 do site e recarregue.');
+  }
 });
 $('midi-learn').addEventListener('click', () => {
   if (!midi.access) { showError('Ative o MIDI primeiro.'); return; }

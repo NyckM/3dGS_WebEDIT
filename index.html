@@ -248,6 +248,7 @@
     <button class="fx-tab" data-tab="tab-trans">✨ Transição</button>
     <button class="fx-tab" data-tab="tab-misc">🧪 Diversos</button>
     <button class="fx-tab" data-tab="tab-inter">🕹 Interativo</button>
+    <button class="fx-tab" data-tab="tab-vfx">🔮 VFX</button>
   </div>
 
   <!-- ========== EDITAR GAUSSIANS ========== -->
@@ -421,16 +422,6 @@
     <div class="row"><label>Cor 2</label><input type="color" id="l2-color" value="#aaccff" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
     <p class="note">Relight aproximado (sem normais reais — usa direção radial).</p>
 
-    <h3>🔮 Ball Chrome / HDRI</h3>
-    <button class="panel-btn" id="ball-toggle">▶ Ball chrome</button>
-    <div class="row"><label>Tamanho</label><input type="range" id="ball-size" min="0.02" max="0.5" step="0.005" value="0.12"><span class="val" id="v-ballsize">0.12</span></div>
-    <div class="btn-pair">
-      <button class="panel-btn" id="ball-update">🔄 Atualizar reflexo</button>
-      <button class="panel-btn" id="ball-export">📤 Exportar 360</button>
-    </div>
-    <div id="ball-pal" style="display:flex; gap:6px; margin:8px 0; flex-wrap:wrap;"></div>
-    <p class="note">Esfera espelhada no Anchor Point refletindo a cena. "Exportar 360" gera um PNG equiretangular 2048×1024 para usar como HDRI; a paleta traz as cores dominantes da luz (clique para copiar o hex).</p>
-
   </div>
 
   <!-- ========== EFEITOS DE TRANSIÇÃO ========== -->
@@ -523,6 +514,20 @@
     <div class="row"><label>Deslocar</label><input type="range" id="ts-shift" min="0" max="1" step="0.01" value="0"><span class="val" id="v-tsshift">0%</span></div>
     <button class="panel-btn" id="ts-invert">Inverter direção</button>
     <p class="note">Só em sequências 4D: cada fatia do espaço mostra um frame do tempo (slit-scan).</p>
+  </div>
+
+  <!-- ========== VFX ========== -->
+  <div class="tab-page" id="tab-vfx">
+
+    <h3>🔮 Ball Chrome / HDRI</h3>
+    <button class="panel-btn" id="ball-toggle">▶ Ball chrome</button>
+    <div class="row"><label>Tamanho</label><input type="range" id="ball-size" min="0.02" max="0.5" step="0.005" value="0.12"><span class="val" id="v-ballsize">0.12</span></div>
+    <div class="btn-pair">
+      <button class="panel-btn" id="ball-update">🔄 Atualizar reflexo</button>
+      <button class="panel-btn" id="ball-export">📤 Exportar 360</button>
+    </div>
+    <div id="ball-pal" style="display:flex; gap:6px; margin:8px 0; flex-wrap:wrap;"></div>
+    <p class="note">Esfera espelhada no Anchor Point refletindo a cena. "Exportar 360" gera um PNG equiretangular 2048×1024 para usar como HDRI; a paleta traz as cores dominantes da luz (clique para copiar o hex).</p>
   </div>
 
   <!-- ========== INTERATIVO ========== -->

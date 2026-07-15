@@ -30,40 +30,137 @@
   #corner-logo.visible { display: block; }
 
   /* ================= SPLASH ================= */
+  @keyframes dzDrift1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(18px,-24px); } }
+  @keyframes dzDrift2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-22px,16px); } }
+  @keyframes dzDrift3 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(14px,20px); } }
   #dropzone {
     position: fixed; inset: 0; z-index: 10;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 10px; text-align: center; padding: 24px;
-    background: radial-gradient(ellipse at 50% 40%, #1c1226 0%, var(--bg) 70%);
+    display: flex; align-items: stretch;
+    background: radial-gradient(ellipse 1200px 700px at 60% -10%, #1c1226 0%, var(--bg) 60%);
     transition: opacity .4s;
+    overflow: hidden;
   }
   #dropzone.hidden { opacity: 0; pointer-events: none; }
-  #dropzone.dragover { outline: 3px dashed var(--verde); outline-offset: -16px; }
-  #splash-logo { width: min(240px, 45vw); }
-  #dropzone .brand { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 800; letter-spacing: .5px; margin-top: 8px; }
+  #dropzone.dragover .dz-main { outline: 3px dashed var(--verde); outline-offset: -16px; }
+
+  #dz-glow {
+    position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(600px circle at var(--mx, 60%) var(--my, 30%), rgba(150,201,61,.10), rgba(176,100,196,.07) 40%, transparent 65%);
+    transition: background .15s ease-out;
+  }
+  .dz-particles { position: absolute; inset: 0; z-index: 1; pointer-events: none; transition: transform .2s ease-out; }
+  .dz-particle { position: absolute; border-radius: 50%; }
+
+  /* ---- sidebar ---- */
+  .dz-sidebar {
+    position: relative; z-index: 2; width: 76px; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 22px 0; background: rgba(255,255,255,.02); border-right: 1px solid rgba(255,255,255,.06);
+  }
+  .dz-sidebar .dz-mark { width: 40px; margin-bottom: 26px; }
+  .dz-sidebar .dz-mark svg, .dz-sidebar .dz-mark img { display: block; width: 100%; height: auto; }
+  .dz-nav { display: flex; flex-direction: column; gap: 10px; width: 100%; align-items: center; }
+  .dz-nav-item {
+    width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    color: #8a8794; text-decoration: none; font-size: 1.1rem; cursor: pointer; border: none; background: transparent;
+  }
+  .dz-nav-item.active { background: rgba(150,201,61,.14); color: var(--verde); border-left: 2px solid var(--verde); }
+  .dz-nav-item:hover { color: var(--verde); }
+  .dz-sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 16px; align-items: center; }
+  .dz-sidebar-bottom a { color: #7a7886; text-decoration: none; font-size: .62rem; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .dz-sidebar-bottom a:hover { color: var(--verde); }
+
+  /* ---- main ---- */
+  .dz-main { position: relative; z-index: 2; flex: 1; overflow-y: auto; padding: 32px 40px 50px; }
+  .dz-badge {
+    position: absolute; top: 24px; right: 32px; z-index: 3;
+    display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
+    border-radius: 999px; padding: 7px 16px; font-size: .78rem; font-weight: 600; color: #ddd;
+  }
+  .dz-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--verde); box-shadow: 0 0 8px var(--verde); }
+  .dz-hero { max-width: 780px; margin: 40px auto 0; text-align: center; }
+  #splash-logo { width: min(150px, 30vw); margin: 0 auto; }
+  #dropzone .brand { font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 800; letter-spacing: .5px; margin-top: 12px; }
   #dropzone .brand .b { color: var(--verde); }
   #dropzone .brand .v { color: var(--roxo-claro); }
-  #dropzone .sub { font-size: clamp(1.1rem, 3vw, 1.6rem); font-weight: 700; color: #888; letter-spacing: 6px; }
+  .dz-divider { color: var(--roxo-claro); font-size: .9rem; margin: 16px 0; opacity: .7; }
+  .dz-tagline { font-size: 1.02rem; color: #a9a6b3; line-height: 1.6; max-width: 560px; margin: 0 auto; }
   #dropzone .formats { font-size: .85rem; color: #666; margin-top: 14px; }
+
+  .dz-cards { display: grid; grid-template-columns: repeat(2, minmax(260px, 1fr)); gap: 18px; margin-top: 34px; text-align: left; }
+  .dz-card {
+    background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.12); border-radius: 18px; padding: 26px 26px 28px;
+    display: flex; flex-direction: column;
+  }
+  .dz-card.roxo { border-color: rgba(176,100,196,.35); }
+  .dz-card.verde { border-color: rgba(150,201,61,.3); }
+  .dz-card-icon { font-size: 1.3rem; margin-bottom: 6px; }
+  .dz-card h2 { font-size: 1.15rem; font-weight: 700; margin: 2px 0 8px; }
+  .dz-card.roxo h2 { color: var(--roxo-claro); }
+  .dz-card.verde h2 { color: var(--verde); }
+  .dz-card p { font-size: .86rem; color: #a9a6b3; line-height: 1.55; margin: 0 0 18px; }
+  .dz-dropbox {
+    border: 1px dashed rgba(255,255,255,.22); border-radius: 12px; padding: 22px 14px; text-align: center;
+    background: rgba(255,255,255,.015); margin-bottom: 14px;
+  }
+  .dz-dropbox .dz-dz-icon { font-size: 1.3rem; color: #8a8794; }
+  .dz-dropbox p { font-size: .85rem; color: #ccc; margin: 8px 0 4px; }
+  .dz-dropbox .fmt { font-size: .72rem; color: #77748a; margin: 0; }
+
   .btn {
     background: linear-gradient(135deg, var(--roxo), #9b3db0);
-    border: none; color: #fff; font-size: 1.05rem; font-weight: 600;
-    padding: 14px 34px; border-radius: 999px; cursor: pointer; margin-top: 20px;
-    box-shadow: 0 4px 24px rgba(123, 45, 142, .5);
+    border: none; color: #fff; font-size: .95rem; font-weight: 600;
+    padding: 13px 24px; border-radius: 999px; cursor: pointer;
+    box-shadow: 0 4px 24px rgba(123, 45, 142, .35);
     transition: transform .15s, box-shadow .15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-align: center;
+    text-decoration: none;
   }
-  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 30px rgba(150, 201, 61, .35); }
-  #dropzone .cta {
-    display: flex; flex-direction: column; align-items: stretch; gap: 10px;
-    width: min(420px, 88vw); margin-top: 22px;
-  }
-  #dropzone .cta .btn { margin-top: 0; width: 100%; text-align: center; }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 30px rgba(150, 201, 61, .3); }
+  .btn.verde { background: linear-gradient(135deg, #7ba32e, var(--verde)); color: #0d0a12; box-shadow: 0 4px 20px rgba(150,201,61,.3); }
+  #dropzone .cta { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
   .btn.ghost {
-    background: transparent; border: 2px solid var(--verde); box-shadow: none;
-    color: var(--verde); text-decoration: none; display: block;
-    padding: 12px 20px; font-size: .95rem;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15); box-shadow: none;
+    color: #eee; text-decoration: none; padding: 12px 20px; font-size: .88rem;
   }
-  .btn.ghost:hover { background: rgba(150,201,61,.15); box-shadow: none; transform: translateY(-1px); }
+  .btn.ghost:hover { background: rgba(255,255,255,.09); box-shadow: none; transform: translateY(-1px); }
+
+  .dz-tips {
+    margin-top: 22px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+    background: rgba(176,100,196,.06); border: 1px solid rgba(176,100,196,.2); border-radius: 14px; padding: 16px 22px;
+  }
+  .dz-tips .tip-lead { display: flex; align-items: center; gap: 10px; color: var(--roxo-claro); font-weight: 700; font-size: .85rem; white-space: nowrap; }
+  .dz-tips .tip-lead .bulb { width: 30px; height: 30px; border-radius: 50%; background: rgba(176,100,196,.2); display: flex; align-items: center; justify-content: center; }
+  .dz-tips .tip { font-size: .82rem; color: #a9a6b3; }
+  .dz-footer { text-align: center; font-size: .78rem; color: #55525f; margin-top: 40px; }
+
+  /* ================= SPLASH — MOBILE ================= */
+  @media (max-width: 720px) {
+    #dropzone { flex-direction: column; }
+    .dz-sidebar {
+      width: 100%; flex-direction: row; padding: 12px 14px; gap: 10px;
+      border-right: none; border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .dz-sidebar .dz-mark { width: 30px; margin-bottom: 0; margin-right: auto; }
+    .dz-nav { flex-direction: row; width: auto; gap: 6px; }
+    .dz-nav-item { width: 38px; height: 38px; }
+    .dz-sidebar-bottom { margin-top: 0; flex-direction: row; gap: 10px; }
+    .dz-sidebar-bottom a { flex-direction: row; font-size: .95rem; gap: 0; }
+    .dz-sidebar-bottom a span { display: none; }
+
+    .dz-main { padding: 20px 16px 36px; }
+    .dz-badge { position: static; display: inline-flex; margin-bottom: 16px; }
+    .dz-hero { margin-top: 6px; }
+    #splash-logo { width: 90px; }
+    #dropzone .brand { font-size: 1.6rem; margin-top: 8px; }
+    .dz-tagline { font-size: .9rem; }
+
+    .dz-cards { grid-template-columns: 1fr; gap: 14px; margin-top: 24px; }
+    .dz-card { padding: 20px 18px 22px; }
+
+    .dz-tips { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px 16px; }
+    .dz-tips .tip-lead { white-space: normal; }
+  }
 
   /* ================= TOPBAR ================= */
   #topbar {
@@ -214,18 +311,73 @@
 
 <!-- ===== SPLASH ===== -->
 <div id="dropzone">
-  <div class="logo-wrap" id="splash-logo"></div>
-  <div class="brand"><span class="b">Bruxos</span> <span style="color:#fff">do</span> <span class="v">VFX</span></div>
-  <div class="sub">3DGS</div>
-  <div class="cta">
-    <button class="btn" id="btn-import">Importar Gaussians</button>
-    <a class="btn ghost" id="btn-criar" href="criar.html">✨ Criar meu splat (foto, vídeo, 4D) — guia passo a passo</a>
-    <button class="btn ghost" id="btn-ex0">🎁 Exemplo 1 — testar sem ter splat</button>
-    <button class="btn ghost" id="btn-ex1">🎁 Exemplo 2 — testar sem ter splat</button>
+  <div id="dz-glow"></div>
+  <div class="dz-particles" id="dz-particles">
+    <div class="dz-particle" style="top:14%; left:70%; width:5px; height:5px; background:#9ee05a; opacity:.5; animation: dzDrift1 9s ease-in-out infinite; box-shadow:0 0 12px 2px rgba(158,224,90,.5);"></div>
+    <div class="dz-particle" style="top:62%; left:82%; width:4px; height:4px; background:#b47af0; opacity:.45; animation: dzDrift2 11s ease-in-out infinite; box-shadow:0 0 10px 2px rgba(180,122,240,.5);"></div>
+    <div class="dz-particle" style="top:30%; left:92%; width:6px; height:6px; background:#9ee05a; opacity:.4; animation: dzDrift3 13s ease-in-out infinite; box-shadow:0 0 14px 2px rgba(158,224,90,.4);"></div>
+    <div class="dz-particle" style="top:80%; left:60%; width:4px; height:4px; background:#b47af0; opacity:.5; animation: dzDrift1 10s ease-in-out infinite reverse; box-shadow:0 0 10px 2px rgba(180,122,240,.5);"></div>
+    <div class="dz-particle" style="top:48%; left:20%; width:3px; height:3px; background:#e9f7d0; opacity:.3; animation: dzDrift2 8s ease-in-out infinite;"></div>
+    <div class="dz-particle" style="top:20%; left:35%; width:3px; height:3px; background:#b47af0; opacity:.3; animation: dzDrift3 12s ease-in-out infinite;"></div>
   </div>
-  <p class="formats">Arraste para cá ou importe — <b>.ply</b> · <b>.splat</b> · <b>.ksplat</b> · <b>.splat4d</b> (4D)</p>
-  <input type="file" id="file-input" accept=".ply,.splat,.ksplat,.splat4d" multiple hidden>
-  <p class="formats">Importe um <b>.splat4d</b> (4D com efeitos) ou vários <b>.ply</b> de uma vez ▶</p>
+
+  <div class="dz-sidebar">
+    <div class="dz-mark" id="dz-mark"></div>
+    <div class="dz-nav">
+      <a class="dz-nav-item active" href="#" title="Início">🏠</a>
+      <a class="dz-nav-item" href="criar.html" title="Ajuda">❔</a>
+    </div>
+    <div class="dz-sidebar-bottom">
+      <a href="criar.html">📖 <span>Docs</span></a>
+      <a href="#">🐙 <span>GitHub</span></a>
+    </div>
+  </div>
+
+  <div class="dz-main">
+    <div class="dz-badge"><span class="dot"></span> 3DGS</div>
+    <div class="dz-hero">
+      <div class="logo-wrap" id="splash-logo"></div>
+      <div class="brand"><span class="b">Bruxos</span> <span style="color:#fff">do</span> <span class="v">VFX</span></div>
+      <div class="dz-divider">✦</div>
+      <p class="dz-tagline">Ferramentas para transformar fotos em cenas 3D com Gaussian Splatting — simples, poderoso e mágico.</p>
+
+      <div class="dz-cards">
+        <div class="dz-card roxo">
+          <div class="dz-card-icon">☁️</div>
+          <h2>Importar Gaussians</h2>
+          <p>Importe um arquivo .ply ou .splat para visualizar e editar.</p>
+          <div class="dz-dropbox">
+            <div class="dz-dz-icon">☁️</div>
+            <p>Arraste e solte seu arquivo aqui</p>
+            <p class="fmt">.ply · .splat · .ksplat · .splat4d (4D)</p>
+          </div>
+          <button class="btn ghost" id="btn-import">📁 Selecionar arquivo</button>
+          <input type="file" id="file-input" accept=".ply,.splat,.ksplat,.splat4d" multiple hidden>
+        </div>
+
+        <div class="dz-card verde">
+          <div class="dz-card-icon">✨</div>
+          <h2>Criar meu splat</h2>
+          <p>Transforme suas fotos, vídeos ou dados 4D em Gaussian Splatting.</p>
+          <div class="cta" style="margin-top: auto;">
+            <a class="btn verde" id="btn-criar" href="criar.html">Começar agora →</a>
+            <a class="btn ghost" href="criar.html">📖 Ver guia passo a passo</a>
+            <button class="btn ghost" id="btn-ex0">🎁 Exemplo 1 — testar sem ter splat</button>
+            <button class="btn ghost" id="btn-ex1">🎁 Exemplo 2 — testar sem ter splat</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="dz-tips">
+        <div class="tip-lead"><span class="bulb">💡</span> Dicas rápidas</div>
+        <div class="tip">Use boas fotos com boa iluminação e foco.</div>
+        <div class="tip">Evite objetos muito reflexivos ou superfícies transparentes.</div>
+        <div class="tip">Quanto mais ângulos, melhor o resultado 3D.</div>
+      </div>
+
+      <p class="dz-footer">© 2025 Bruxos do VFX — Feito com magia e pixels.</p>
+    </div>
+  </div>
 </div>
 
 <!-- ===== TOPBAR ===== -->
@@ -354,13 +506,13 @@
 
     <h3>Handheld (shake)</h3>
     <button class="panel-btn" id="hh-toggle">▶ Camera shake</button>
+    <div class="row"><label>Intensidade</label><input type="range" id="hh-amp" min="0" max="2" step="0.01" value="0.3"><span class="val" id="v-hhamp">0.30</span></div>
+    <div class="row"><label>Frequência</label><input type="range" id="hh-freq" min="0.2" max="8" step="0.1" value="2"><span class="val" id="v-hhfreq">2.0</span></div>
     <div class="axis-row"><span class="lbl">Eixos</span>
       <button class="ax-btn on" id="hh-ax">X</button>
       <button class="ax-btn on" id="hh-ay">Y</button>
       <button class="ax-btn on" id="hh-az">Z</button>
     </div>
-    <div class="row"><label>Intensidade</label><input type="range" id="hh-amp" min="0" max="2" step="0.01" value="0.3"><span class="val" id="v-hhamp">0.30</span></div>
-    <div class="row"><label>Frequência</label><input type="range" id="hh-freq" min="0.2" max="8" step="0.1" value="2"><span class="val" id="v-hhfreq">2.0</span></div>
 
     <h3>Desfoque de fundo (DoF)</h3>
     <button class="panel-btn" id="d-toggle">▶ Desfoque</button>
@@ -404,7 +556,7 @@
       <button class="ax-btn" id="pl-aub2">A</button>
     </div>
     <div class="row"><label>Reação</label><input type="range" id="pl-aug" min="0" max="3" step="0.05" value="1"><span class="val" id="v-plaug">1.00</span></div>
-    <p class="note">Posição mapeada no volume da cena. A dureza da sombra usa o slider "Sombra" do Relight.</p>
+    <p class="note">Com a luz ligada aparece uma esfera com gizmo na cena — arraste para posicionar. A dureza da sombra usa o slider "Sombra" do Relight.</p>
 
     <h3>Relight (2 luzes + sombra)</h3>
     <button class="panel-btn" id="l-toggle">▶ Relight</button>
@@ -489,7 +641,7 @@
     <h3>Paint (pincel)</h3>
     <button class="panel-btn" id="pt-toggle">🖌 Modo pincel</button>
     <div class="row"><label>Cor</label><input type="color" id="pt-color" value="#9933b3" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
-    <div class="row"><label>Tamanho</label><input type="range" id="pt-r" min="0.005" max="1" step="0.002" value="0.15"><span class="val" id="v-ptr">0.871%</span></div>
+    <div class="row"><label>Tamanho</label><input type="range" id="pt-r" min="0.005" max="1" step="0.002" value="0.15"><span class="val" id="v-ptr">10%</span></div>
     <div class="row"><label>Força</label><input type="range" id="pt-str" min="0" max="1" step="0.05" value="0.8"><span class="val" id="v-ptstr">0.80</span></div>
     <button class="panel-btn" id="pt-clear">Limpar pinceladas</button>
     <p class="note">Com o modo pincel ligado, clique e arraste sobre a cena para pintar (a órbita do mouse fica pausada). Até 64 pinceladas.</p>
@@ -522,12 +674,16 @@
     <h3>🔮 Ball Chrome / HDRI</h3>
     <button class="panel-btn" id="ball-toggle">▶ Ball chrome</button>
     <div class="row"><label>Tamanho</label><input type="range" id="ball-size" min="0.02" max="0.5" step="0.005" value="0.12"><span class="val" id="v-ballsize">0.12</span></div>
+    <div class="row"><label>Pos X</label><input type="range" id="ball-x" min="-0.2" max="1.2" step="0.005" value="0.5"><span class="val" id="v-ballx">50%</span></div>
+    <div class="row"><label>Pos Y</label><input type="range" id="ball-y" min="-0.2" max="1.2" step="0.005" value="0.5"><span class="val" id="v-bally">50%</span></div>
+    <div class="row"><label>Pos Z</label><input type="range" id="ball-z" min="-0.2" max="1.2" step="0.005" value="0.5"><span class="val" id="v-ballz">50%</span></div>
+    <button class="panel-btn" id="ball-gizmo">🕹 Gizmo da ball (arrastar)</button>
     <div class="btn-pair">
       <button class="panel-btn" id="ball-update">🔄 Atualizar reflexo</button>
       <button class="panel-btn" id="ball-export">📤 Exportar 360</button>
     </div>
     <div id="ball-pal" style="display:flex; gap:6px; margin:8px 0; flex-wrap:wrap;"></div>
-    <p class="note">Esfera espelhada no Anchor Point refletindo a cena. "Exportar 360" gera um PNG equiretangular 2048×1024 para usar como HDRI; a paleta traz as cores dominantes da luz (clique para copiar o hex).</p>
+    <p class="note">Esfera espelhada refletindo a cena — posicione pelos sliders ou pelo gizmo (ela nasce no centro; começa cinza e ganha o reflexo ao Atualizar). "Exportar 360" gera um PNG equiretangular 2048×1024 para usar como HDRI; a paleta traz as cores dominantes da luz (clique para copiar o hex).</p>
   </div>
 
   <!-- ========== INTERATIVO ========== -->
@@ -542,7 +698,7 @@
     </div>
     <div class="row"><label>Raio</label><input type="range" id="mf-r" min="0.02" max="1" step="0.01" value="0.3"><span class="val" id="v-mfr">30%</span></div>
     <div class="row"><label>Força</label><input type="range" id="mf-str" min="0" max="1" step="0.005" value="0.3"><span class="val" id="v-mfstr">0.090</span></div>
-    <p class="note">Os Gaussians reagem ao cursor sobre a cena. No modo <b>Puxar</b>, clique e arraste — ao soltar, voltam com mola/wiggle.</p>
+    <p class="note">Os Gaussians reagem ao cursor sobre a cena (no plano do alvo da câmera). Funciona junto com a órbita.</p>
 
     <h3>〰 LFO 1</h3>
     <button class="panel-btn" id="lfo0-on">▶ LFO 1</button>
@@ -570,7 +726,7 @@
       <button class="panel-btn" id="midi-learn">Mapear (mexa um knob)</button>
       <button class="panel-btn" id="midi-clear">Limpar</button>
     </div>
-    <p class="note" id="midi-status">Conecte um controlador MIDI e clique em Ativar (Chrome/Edge, https).</p>
+    <p class="note" id="midi-status">Conecte um controlador MIDI e clique em Ativar (Chrome/Edge).</p>
 
     <h3>🖐 Mão (webcam)</h3>
     <button class="panel-btn" id="hand-on">🖐 Controlar com a mão</button>
@@ -639,10 +795,12 @@
 // (já apontando para nyckm/3dGS_WebEDIT)
 // ============================================================
 // A página Criar abre como overlay dentro do viewer (sem sair da página).
-document.getElementById('btn-criar').addEventListener('click', function (e) {
-  e.preventDefault();
-  document.getElementById('criar-frame').src = 'criar.html';
-  document.getElementById('criar-overlay').classList.add('visible');
+document.querySelectorAll('a[href="criar.html"]').forEach(function (a) {
+  a.addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('criar-frame').src = 'criar.html';
+    document.getElementById('criar-overlay').classList.add('visible');
+  });
 });
 document.getElementById('criar-close').addEventListener('click', function () {
   document.getElementById('criar-overlay').classList.remove('visible');
@@ -659,6 +817,22 @@ function mountLogo(el) {
 }
 mountLogo(document.getElementById("splash-logo"));
 mountLogo(document.getElementById("corner-logo"));
+mountLogo(document.getElementById("dz-mark"));
+
+// ===== glow/parallax de fundo que reage ao mouse (splash) =====
+(function () {
+  const dz = document.getElementById('dropzone');
+  const particles = document.getElementById('dz-particles');
+  if (!dz || !particles) return;
+  dz.addEventListener('mousemove', (e) => {
+    const r = dz.getBoundingClientRect();
+    const mx = (e.clientX - r.left) / r.width;
+    const my = (e.clientY - r.top) / r.height;
+    dz.style.setProperty('--mx', (mx * 100) + '%');
+    dz.style.setProperty('--my', (my * 100) + '%');
+    particles.style.transform = 'translate(' + ((mx - 0.5) * -18) + 'px, ' + ((my - 0.5) * -14) + 'px)';
+  });
+})();
 
 // ===== Vigia de inicialização =====
 // Se o módulo principal não rodar (CDN bloqueado, sem internet, erro de script),
@@ -1673,6 +1847,61 @@ function updateBoxHelpers() {
   updateLightGizmo();
   updateBall();
 }
+// --- luz pontual: marcador (esfera) + gizmo próprio para posicionar em 3D ---
+const bxLight = { marker: null, ctl: null, dragging: false };
+function bxUpdateLightHelper() {
+  const mesh = viewer?.splatMesh;
+  if (!mesh) return;
+  let mk = bxLight.marker;
+  if (!mk) {
+    mk = bxLight.marker = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 16, 12),
+      new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0.95, depthTest: false, depthWrite: false }));
+    mk.renderOrder = 9995;
+  }
+  if (mk.parent !== mesh) { try { mk.parent?.remove(mk); } catch(e){} mesh.add(mk); }
+  mk.visible = anim.plight;
+  const r = bxDiag() * 0.018;
+  mk.scale.set(r, r, r);
+  mk.material.color.set($('pl-color').value);
+  if (!(bxLight.dragging && bxLight.ctl)) {
+    mk.position.set(
+      bxMap01(0, parseFloat($('pl-x').value)),
+      bxMap01(1, parseFloat($('pl-y').value)),
+      bxMap01(2, parseFloat($('pl-z').value)));
+  }
+  if (!TransformControls || !viewer?.camera || !viewer?.renderer) return;
+  let g = bxLight.ctl;
+  if (g && g.camera !== viewer.camera) {
+    try { g.detach(); g.dispose(); g.parent?.remove(g); } catch(e){}
+    g = bxLight.ctl = null;
+  }
+  if (!anim.plight) { if (g) { g.detach(); g.visible = false; } return; }
+  if (!g) {
+    g = bxLight.ctl = new TransformControls(viewer.camera, viewer.renderer.domElement);
+    g.setSize(0.7);
+    g.setMode('translate');
+    g.addEventListener('dragging-changed', e => {
+      bxLight.dragging = e.value;
+      if (viewer?.controls) viewer.controls.enabled = !e.value && !anim.paintMode;
+    });
+    g.addEventListener('objectChange', () => {
+      const mp = bxLight.marker.position;
+      const ex = bbox ? [bbox.max[0]-bbox.min[0]||1, bbox.max[1]-bbox.min[1]||1, bbox.max[2]-bbox.min[2]||1] : [5,5,5];
+      const mn = bbox ? bbox.min : [-2.5,-2.5,-2.5];
+      [['pl-x','v-plx',(mp.x-mn[0])/ex[0]], ['pl-y','v-ply',(mp.y-mn[1])/ex[1]], ['pl-z','v-plz',(mp.z-mn[2])/ex[2]]]
+        .forEach(([id, vid, val]) => {
+          $(id).value = Math.max(-0.5, Math.min(1.5, val));
+          $(vid).textContent = Math.round(val*100) + '%';
+        });
+      syncFxUniforms();
+    });
+    viewer.threeScene.add(g);
+  }
+  if (g.parent !== viewer.threeScene) viewer.threeScene.add(g);
+  if (g.object !== mk) g.attach(mk);
+  g.visible = true; g.enabled = true;
+}
 
 // --- luz pontual: marcador 3D (esfera) + gizmo para arrastar no espaço ---
 const plG = { marker: null, ctl: null, dragging: false };
@@ -1755,15 +1984,15 @@ function syncFxUniforms() {
       dbRot.value[i].setFromMatrix4(new THREE.Matrix4().makeRotationFromEuler(w.eul)).transpose();
     }
   }
-  set('uBxMouseOn', anim.mouseFx);
-  set('uBxMouseR', diag * 0.4 * parseFloat($('mf-r').value));
-  set('uBxMouseStr', diag * 0.15 * Math.pow(parseFloat($('mf-str').value), 2));
-  set('uBxGrabR', diag * 0.4 * parseFloat($('mf-r').value));
   set('uBxDLow', parseFloat($('tur-low') ? $('tur-low').value : 1));
   set('uBxDHigh', parseFloat($('tur-high') ? $('tur-high').value : 0.5));
   set('uBxTrail', parseFloat($('tr-amt').value));
   set('uBxCAOn', anim.ca ? 1 : 0);
   set('uBxCAAmt', parseFloat($('ca-amt').value));
+  set('uBxMouseOn', anim.mouseFx);
+  set('uBxMouseR', diag * 0.4 * parseFloat($('mf-r').value));
+  set('uBxMouseStr', diag * 0.15 * Math.pow(parseFloat($('mf-str').value), 2));
+  set('uBxGrabR', diag * 0.4 * parseFloat($('mf-r').value));
   // --- crop box (ao vivo) ---
   set('uBxCropBoxOn', anim.cropBox.on ? 1 : 0);
   {
@@ -1859,8 +2088,9 @@ function syncFxUniforms() {
   set('uBxMono', anim.pb ? 1 : 0);
   const pc = viewer?.splatMesh?.material?.uniforms?.pointCloudModeEnabled;
   if (pc) pc.value = (anim.pb || anim.depthCol) ? 1 : 0;
-  // wireframes dos boxes
+  // wireframes dos boxes + marcador/gizmo da luz pontual
   updateBoxHelpers();
+  bxUpdateLightHelper();
 }
 
 async function loadFile(file) {
@@ -2372,8 +2602,9 @@ bindSlider('tur-high', 'v-turhigh', v => v.toFixed(2), () => syncFxUniforms());
 bindSlider('tr-amt', 'v-tramt', v => v.toFixed(2) + 's', () => syncFxUniforms());
 
 // ============================================================
-// 🕹 INTERATIVO — mouse como força, puxar, LFOs, MIDI e mão (TouchDesigner-style)
+// 🕹 INTERATIVO — mouse como força, LFOs e MIDI (estilo TouchDesigner)
 // ============================================================
+// --- mouse como força ---
 const MF_MODES = [['mf-off',0],['mf-rep',1],['mf-att',2],['mf-rip',3],['mf-grab',4]];
 MF_MODES.forEach(([id, mode]) => {
   $(id).addEventListener('click', () => {
@@ -2443,6 +2674,115 @@ window.addEventListener('pointerup', () => {
   if (anim.mouseFx === 4 && viewer?.controls && !anim.paintMode) viewer.controls.enabled = true;
   grabEnd();
 });
+
+// --- mão na webcam (MediaPipe Hands) controla a força do mouse ---
+const hand = { on: false, lm: null, video: null, stream: null, last: 0, pinch: false };
+function stopHand() {
+  hand.on = false;
+  try { hand.stream?.getTracks().forEach(t => t.stop()); } catch (e) {}
+  hand.stream = null; hand.video = null;
+  $('hand-preview').classList.remove('visible');
+  const hpc0 = $('hp-canvas');
+  if (hpc0) hpc0.getContext('2d').clearRect(0, 0, hpc0.width, hpc0.height);
+  $('hand-on').classList.remove('on');
+  $('hand-on').textContent = '🖐 Controlar com a mão';
+  const u = bxU('uBxMousePos'); if (u) u.value.set(1e9, 1e9, 1e9);
+  grabEnd();
+  syncFxUniforms();
+}
+$('hand-on').addEventListener('click', async () => {
+  if (hand.on) { stopHand(); return; }
+  try {
+    $('hand-status').textContent = 'Carregando modelo de mãos…';
+    const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+    const fileset = await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+    hand.lm = await vision.HandLandmarker.createFromOptions(fileset, {
+      baseOptions: {
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+        delegate: 'GPU'
+      },
+      runningMode: 'VIDEO', numHands: 1
+    });
+    hand.video = $('hp-video');
+    hand.stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+    hand.video.srcObject = hand.stream;
+    await hand.video.play();
+    $('hand-preview').classList.add('visible');
+    const hpc = $('hp-canvas');
+    hpc.width = hand.video.videoWidth || 640;
+    hpc.height = hand.video.videoHeight || 480;
+    hand.on = true;
+    $('hand-on').classList.add('on');
+    $('hand-on').textContent = '🖐 Mão (ligada)';
+    $('hand-status').textContent = 'Mostre a mão para a webcam — indicador move, pinça aplica.';
+    if (!anim.mouseFx) $('mf-rep').click(); // liga um modo padrão
+  } catch (e) {
+    showError('Webcam/modelo indisponível: ' + (e.message || e));
+    stopHand();
+  }
+});
+// esqueleto da mão no preview (roxo = solta, verde = pinçando)
+const HP_CONN = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],
+                 [9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+function drawHandPreview(lms, pinch) {
+  const cv = $('hp-canvas');
+  if (!cv || !cv.width) return;
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  if (!lms) return;
+  const col = pinch ? '#96c93d' : '#b064c4';
+  ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  for (const [a, b] of HP_CONN) {
+    ctx.beginPath();
+    ctx.moveTo(lms[a].x * cv.width, lms[a].y * cv.height);
+    ctx.lineTo(lms[b].x * cv.width, lms[b].y * cv.height);
+    ctx.stroke();
+  }
+  ctx.fillStyle = '#fff';
+  for (const l of lms) { ctx.beginPath(); ctx.arc(l.x * cv.width, l.y * cv.height, 3.5, 0, 6.2832); ctx.fill(); }
+  const t = lms[8], th = lms[4]; // linha indicador–polegar (a pinça)
+  ctx.lineWidth = pinch ? 6 : 2;
+  ctx.beginPath();
+  ctx.moveTo(t.x * cv.width, t.y * cv.height);
+  ctx.lineTo(th.x * cv.width, th.y * cv.height);
+  ctx.stroke();
+}
+function tickHand() {
+  if (!hand.on || !hand.lm || !hand.video || hand.video.readyState < 2) return;
+  const now = performance.now();
+  if (now - hand.last < 33) return; // ~30 fps de detecção
+  hand.last = now;
+  let res;
+  try { res = hand.lm.detectForVideo(hand.video, now); } catch (e) { return; }
+  const lms = res.landmarks && res.landmarks[0];
+  const uP = bxU('uBxMousePos'), uS = bxU('uBxMouseStr');
+  if (!lms) {
+    if (uP) uP.value.set(1e9, 1e9, 1e9);
+    if (hand.pinch) { hand.pinch = false; grabEnd(); }
+    drawHandPreview(null, false);
+    return;
+  }
+  const tip = lms[8], th = lms[4];
+  const rect = $('viewer-container').getBoundingClientRect();
+  const fake = {
+    clientX: rect.left + (1 - tip.x) * rect.width,  // espelhado (webcam)
+    clientY: rect.top + tip.y * rect.height
+  };
+  const pt = bxScreenToModel(fake);
+  const pinch = Math.hypot(tip.x - th.x, tip.y - th.y) < 0.06;
+  drawHandPreview(lms, pinch);
+  if (anim.mouseFx === 4) {
+    // Puxar por pinça: pinçou = agarra, soltou = mola
+    if (pinch && !hand.pinch) grabBegin(pt);
+    else if (pinch && hand.pinch) grabMove(pt);
+    else if (!pinch && hand.pinch) grabEnd();
+  } else {
+    if (pt && uP) uP.value.copy(pt);
+    // sem pinça, força zero; com pinça, força do slider
+    if (uS) uS.value = pinch ? bxDiag() * 0.15 * Math.pow(parseFloat($('mf-str').value), 2) : 0;
+  }
+  hand.pinch = pinch;
+}
 
 // --- alvos moduláveis (LFO e MIDI) ---
 const IT_TARGETS = [
@@ -2571,115 +2911,6 @@ $('midi-clear').addEventListener('click', () => {
   midiStatus('Mapeamentos limpos.');
 });
 
-// --- mão na webcam (MediaPipe Hands) controla a força do mouse ---
-const hand = { on: false, lm: null, video: null, stream: null, last: 0, pinch: false };
-function stopHand() {
-  hand.on = false;
-  try { hand.stream?.getTracks().forEach(t => t.stop()); } catch (e) {}
-  hand.stream = null; hand.video = null;
-  $('hand-preview').classList.remove('visible');
-  const hpc0 = $('hp-canvas');
-  if (hpc0) hpc0.getContext('2d').clearRect(0, 0, hpc0.width, hpc0.height);
-  $('hand-on').classList.remove('on');
-  $('hand-on').textContent = '🖐 Controlar com a mão';
-  const u = bxU('uBxMousePos'); if (u) u.value.set(1e9, 1e9, 1e9);
-  grabEnd();
-  syncFxUniforms();
-}
-$('hand-on').addEventListener('click', async () => {
-  if (hand.on) { stopHand(); return; }
-  try {
-    $('hand-status').textContent = 'Carregando modelo de mãos…';
-    const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
-    const fileset = await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
-    hand.lm = await vision.HandLandmarker.createFromOptions(fileset, {
-      baseOptions: {
-        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
-        delegate: 'GPU'
-      },
-      runningMode: 'VIDEO', numHands: 1
-    });
-    hand.video = $('hp-video');
-    hand.stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
-    hand.video.srcObject = hand.stream;
-    await hand.video.play();
-    $('hand-preview').classList.add('visible');
-    const hpc = $('hp-canvas');
-    hpc.width = hand.video.videoWidth || 640;
-    hpc.height = hand.video.videoHeight || 480;
-    hand.on = true;
-    $('hand-on').classList.add('on');
-    $('hand-on').textContent = '🖐 Mão (ligada)';
-    $('hand-status').textContent = 'Mostre a mão para a webcam — indicador move, pinça aplica.';
-    if (!anim.mouseFx) $('mf-rep').click(); // liga um modo padrão
-  } catch (e) {
-    showError('Webcam/modelo indisponível: ' + (e.message || e));
-    stopHand();
-  }
-});
-// esqueleto da mão no preview (roxo = solta, verde = pinçando)
-const HP_CONN = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],
-                 [9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
-function drawHandPreview(lms, pinch) {
-  const cv = $('hp-canvas');
-  if (!cv || !cv.width) return;
-  const ctx = cv.getContext('2d');
-  ctx.clearRect(0, 0, cv.width, cv.height);
-  if (!lms) return;
-  const col = pinch ? '#96c93d' : '#b064c4';
-  ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.lineCap = 'round';
-  for (const [a, b] of HP_CONN) {
-    ctx.beginPath();
-    ctx.moveTo(lms[a].x * cv.width, lms[a].y * cv.height);
-    ctx.lineTo(lms[b].x * cv.width, lms[b].y * cv.height);
-    ctx.stroke();
-  }
-  ctx.fillStyle = '#fff';
-  for (const l of lms) { ctx.beginPath(); ctx.arc(l.x * cv.width, l.y * cv.height, 3.5, 0, 6.2832); ctx.fill(); }
-  const t = lms[8], th = lms[4]; // linha indicador–polegar (a pinça)
-  ctx.lineWidth = pinch ? 6 : 2;
-  ctx.beginPath();
-  ctx.moveTo(t.x * cv.width, t.y * cv.height);
-  ctx.lineTo(th.x * cv.width, th.y * cv.height);
-  ctx.stroke();
-}
-function tickHand() {
-  if (!hand.on || !hand.lm || !hand.video || hand.video.readyState < 2) return;
-  const now = performance.now();
-  if (now - hand.last < 33) return; // ~30 fps de detecção
-  hand.last = now;
-  let res;
-  try { res = hand.lm.detectForVideo(hand.video, now); } catch (e) { return; }
-  const lms = res.landmarks && res.landmarks[0];
-  const uP = bxU('uBxMousePos'), uS = bxU('uBxMouseStr');
-  if (!lms) {
-    if (uP) uP.value.set(1e9, 1e9, 1e9);
-    if (hand.pinch) { hand.pinch = false; grabEnd(); }
-    drawHandPreview(null, false);
-    return;
-  }
-  const tip = lms[8], th = lms[4];
-  const rect = $('viewer-container').getBoundingClientRect();
-  const fake = {
-    clientX: rect.left + (1 - tip.x) * rect.width,  // espelhado (webcam)
-    clientY: rect.top + tip.y * rect.height
-  };
-  const pt = bxScreenToModel(fake);
-  const pinch = Math.hypot(tip.x - th.x, tip.y - th.y) < 0.06;
-  drawHandPreview(lms, pinch);
-  if (anim.mouseFx === 4) {
-    // Puxar por pinça: pinçou = agarra, soltou = mola
-    if (pinch && !hand.pinch) grabBegin(pt);
-    else if (pinch && hand.pinch) grabMove(pt);
-    else if (!pinch && hand.pinch) grabEnd();
-  } else {
-    if (pt && uP) uP.value.copy(pt);
-    // sem pinça, força zero; com pinça, força do slider
-    if (uS) uS.value = pinch ? bxDiag() * 0.15 * Math.pow(parseFloat($('mf-str').value), 2) : 0;
-  }
-  hand.pinch = pinch;
-}
-
 // ============================================================
 // EFEITOS DE CÂMERA (aplicados no tick)
 // ============================================================
@@ -2716,11 +2947,11 @@ camToggle('tl-toggle', 'tilt', '⏸ Tilt (ligado)', '▶ Tilt Up/Down');
 bindSlider('hh-amp', 'v-hhamp', v => v.toFixed(2), () => {});
 bindSlider('hh-freq', 'v-hhfreq', v => v.toFixed(1), () => {});
 camToggle('hh-toggle', 'shake', '⏸ Camera shake (ligado)', '▶ Camera shake');
-// --- resetar câmera: desliga os efeitos, endireita o up e volta ao enquadramento inicial ---
 ['hh-ax','hh-ay','hh-az'].forEach((id, j) => $(id).addEventListener('click', () => {
   anim.cam.shakeAx[j] = anim.cam.shakeAx[j] ? 0 : 1;
   $(id).classList.toggle('on', !!anim.cam.shakeAx[j]);
 }));
+// --- resetar câmera: desliga os efeitos, endireita o up e volta ao enquadramento inicial ---
 $('cam-reset').addEventListener('click', () => {
   if (!viewer?.camera || !viewer?.controls) return;
   [['co-toggle','orbit','▶ Órbita'], ['vt-toggle','vertigo','▶ Vertigo'],
@@ -2795,8 +3026,8 @@ function tickCamera(dt) {
     const f = parseFloat($('hh-freq').value);
     const t = anim.fxTime * f;
     const n = (a, b, c) => Math.sin(t*1.1+a)*0.5 + Math.sin(t*2.3+b)*0.35 + Math.sin(t*4.7+c)*0.15;
-    const sax = anim.cam.shakeAx;
-    const off = new THREE.Vector3(n(1.7,4.2,9.1)*sax[0], n(2.9,0.6,5.3)*sax[1], n(7.7,3.1,1.9)*sax[2]).multiplyScalar(amp);
+    const A = C.shakeAx;
+    const off = new THREE.Vector3(n(1.7,4.2,9.1)*A[0], n(2.9,0.6,5.3)*A[1], n(7.7,3.1,1.9)*A[2]).multiplyScalar(amp);
     const d = new THREE.Vector3().subVectors(off, C.shakePrev);
     cam.position.add(d); ctr.target.add(d);
     C.shakePrev.copy(off);
@@ -2909,7 +3140,7 @@ function ensureBall() {
     ball.cubeCam = new THREE.CubeCamera(0.01, 1000, ball.cubeRT);
     ball.mesh = new THREE.Mesh(
       new THREE.SphereGeometry(1, 48, 32),
-      new THREE.MeshBasicMaterial({ envMap: ball.cubeRT.texture, transparent: true, depthTest: false, depthWrite: false }));
+      new THREE.MeshBasicMaterial({ color: 0xb8bcc6, transparent: true, depthTest: false, depthWrite: false }));
     ball.mesh.renderOrder = 9960;
     ball.tmpScene = new THREE.Scene();
   }
@@ -2921,9 +3152,50 @@ function updateBall() {
   const m = ensureBall();
   if (!m) return;
   m.visible = true;
-  m.position.copy(getAnchor());
+  if (!ballG.dragging) {
+    m.position.set(
+      bxMap01(0, parseFloat($('ball-x').value)),
+      bxMap01(1, parseFloat($('ball-y').value)),
+      bxMap01(2, parseFloat($('ball-z').value)));
+  }
   const r = bxDiag() * parseFloat($('ball-size').value) * 0.5;
   m.scale.set(r, r, r);
+  ballGizmoSync();
+}
+// gizmo para arrastar a ball
+const ballG = { ctl: null, dragging: false, want: false };
+function ballGizmoSync() {
+  if (!TransformControls || !viewer?.camera || !viewer?.renderer || !ball.mesh) return;
+  let g = ballG.ctl;
+  if (g && g.camera !== viewer.camera) { try { g.detach(); g.dispose(); g.parent?.remove(g); } catch(e){} g = ballG.ctl = null; }
+  const want = ball.on && ballG.want;
+  if (!want) { if (g) { g.detach(); g.visible = false; } return; }
+  if (!g) {
+    g = ballG.ctl = new TransformControls(viewer.camera, viewer.renderer.domElement);
+    g.setSize(0.7);
+    g.setMode('translate');
+    g.addEventListener('dragging-changed', e => {
+      ballG.dragging = e.value;
+      if (viewer?.controls) viewer.controls.enabled = !e.value && !anim.paintMode;
+      if (!e.value) refreshBall(); // soltou → atualiza o reflexo na nova posição
+    });
+    g.addEventListener('objectChange', () => {
+      const mn = bbox ? bbox.min : [-2.5, -2.5, -2.5];
+      const ex = bbox
+        ? [bbox.max[0]-bbox.min[0] || 1, bbox.max[1]-bbox.min[1] || 1, bbox.max[2]-bbox.min[2] || 1]
+        : [5, 5, 5];
+      const mk = ball.mesh;
+      [['ball-x','v-ballx',0], ['ball-y','v-bally',1], ['ball-z','v-ballz',2]].forEach(([sid, vid, k]) => {
+        const f = (mk.position.getComponent(k) - mn[k]) / ex[k];
+        $(sid).value = f;
+        $(vid).textContent = Math.round(f*100) + '%';
+      });
+    });
+    viewer.threeScene.add(g);
+  }
+  if (g.parent !== viewer.threeScene) viewer.threeScene.add(g);
+  if (g.object !== ball.mesh) g.attach(ball.mesh);
+  g.visible = true; g.enabled = true;
 }
 function refreshBall() {
   if (!viewer?.renderer || !viewer?.splatMesh || !ball.cubeCam) return;
@@ -2932,7 +3204,7 @@ function refreshBall() {
   m.visible = false;
   const prevParent = sm.parent;
   ball.tmpScene.add(sm); // renderiza os splats numa cena temporária (6 faces do cubo)
-  ball.cubeCam.position.copy(anchorWorld());
+  ball.mesh.getWorldPosition(ball.cubeCam.position);
   try { ball.cubeCam.update(viewer.renderer, ball.tmpScene); }
   catch (e) { console.warn('ball chrome:', e); }
   if (prevParent) prevParent.add(sm); else ball.tmpScene.remove(sm);
@@ -2944,6 +3216,11 @@ function refreshBall() {
   for (let f = 0; f < 6; f++) {
     try { viewer.renderer.readRenderTargetPixels(ball.cubeRT, 0, 0, S, S, buf, f); } catch (e) { break; }
     ball.faces.push(Uint8Array.from(buf));
+  }
+  // aplica o reflexo no material (antes disso a ball fica cinza-cromada visível)
+  if (ball.faces.length === 6) {
+    const mt = ball.mesh.material;
+    if (!mt.envMap) { mt.envMap = ball.cubeRT.texture; mt.color.set(0xffffff); mt.needsUpdate = true; }
   }
   buildBallPalette();
 }
@@ -3010,6 +3287,15 @@ function exportBall360() {
   }, 'image/png');
 }
 bindSlider('ball-size', 'v-ballsize', v => v.toFixed(2), () => updateBall());
+bindSlider('ball-x', 'v-ballx', v => Math.round(v*100)+'%', () => updateBall());
+bindSlider('ball-y', 'v-bally', v => Math.round(v*100)+'%', () => updateBall());
+bindSlider('ball-z', 'v-ballz', v => Math.round(v*100)+'%', () => updateBall());
+$('ball-gizmo').addEventListener('click', () => {
+  ballG.want = !ballG.want;
+  $('ball-gizmo').classList.toggle('on', ballG.want);
+  if (ballG.want && !ball.on) $('ball-toggle').click(); // liga a ball junto
+  else updateBall();
+});
 $('ball-toggle').addEventListener('click', () => {
   ball.on = !ball.on;
   $('ball-toggle').classList.toggle('on', ball.on);
@@ -3123,7 +3409,7 @@ let weatherPts = null;
 bindSlider('wx-amt', 'v-wxamt', v => (v/1000)+'k', () => { if (anim.weather) startWeather(anim.weather); });
 bindSlider('wx-size', 'v-wxsize', v => v.toFixed(1), () => { if (anim.weather) startWeather(anim.weather); });
 function clearWeather() {
-  if (weatherPts && viewer?.threeScene) viewer.threeScene.remove(weatherPts);
+  if (weatherPts) weatherPts.parent?.remove(weatherPts);
   if (weatherPts) { weatherPts.geometry.dispose(); weatherPts.material.dispose(); }
   weatherPts = null;
 }
@@ -3131,7 +3417,8 @@ function startWeather(kind) {
   clearWeather();
   anim.weather = kind;
   if (!viewer) return;
-  const scene = viewer.threeScene || viewer.scene;
+  // filho do splatMesh: renderiza no mesmo passe dos splats (senão fica atrás deles)
+  const scene = viewer.splatMesh || viewer.threeScene || viewer.scene;
   if (!scene) return;
   const N = parseInt($('wx-amt').value);
   let ext = 8, cx = 0, cy = 0, cz = 0;
@@ -3161,6 +3448,8 @@ function startWeather(kind) {
 }
 function tickWeather(dt) {
   if (!weatherPts) return;
+  // cena recarregada → reanexa as partículas ao splatMesh novo
+  if (viewer?.splatMesh && weatherPts.parent !== viewer.splatMesh) viewer.splatMesh.add(weatherPts);
   const u = weatherPts.userData;
   const p = weatherPts.geometry.attributes.position.array;
   const drop = u.speed * dt * (u.ext * 0.15);
@@ -3222,7 +3511,8 @@ $('ts-toggle').addEventListener('click', () => {
 
 
 // ============================================================
-// 🎵 AUDIO REACTIVE — FFT em 3 bandas (graves/médios/agudos)
+// 🎵 AUDIO REACTIVE — FFT do som separada em 3 bandas de vibração
+// (graves / médios / agudos), cada uma roteada para um efeito.
 // ============================================================
 const audioFx = { ctx:null, analyser:null, data:null, el:null, elSrc:null, mic:null, micSrc:null,
                   active:false, bands:[0,0,0], trim:[0,1], splatWas:false, recDest:null };
@@ -3261,7 +3551,7 @@ function auConnect(node, toSpeakers) {
   node.connect(audioFx.analyser);
   if (toSpeakers) audioFx.analyser.connect(audioFx.ctx.destination);
 }
-function auRestore() {
+function auRestore() { // devolve os valores base quando o áudio para
   syncFxUniforms();
   if (viewer?.splatMesh && !anim.dissolve) viewer.splatMesh.setSplatScale(anim.splatScale);
   audioFx.splatWas = false;
@@ -3337,6 +3627,7 @@ function tickAudio() {
     const m = $('au-m' + i);
     if (m) m.style.width = Math.round(audioFx.bands[i] * 100) + '%';
   }
+  // cada efeito com 🎧 ligado tem a amplitude modulada pela banda escolhida
   const dAmp = bxU('uBxDAmp');
   if (dAmp) for (let i = 0; i < 8; i++) {
     const st = dfxState[i];
@@ -3380,7 +3671,7 @@ function tickBody(now) {
   anim.fxTime += dt;
   const uT = bxU('uBxTime'); if (uT) uT.value = anim.fxTime;
   tickAudio(); // 🎵 modulação por áudio (graves/médios/agudos)
-  tickInteractive(); // 🕹 LFOs, mola do Puxar e mão
+  tickInteractive(); // 🕹 LFOs
   // animação da fumaça
   if (anim.smoke) {
     const s = anim.smoke;

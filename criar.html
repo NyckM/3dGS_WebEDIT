@@ -1,272 +1,452 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bruxos do VFX — Criar meu Splat</title>
-<style>
-  :root {
-    --roxo: #7b2d8e; --roxo-claro: #b064c4; --verde: #96c93d;
-    --bg: #0d0a12; --panel: rgba(20, 14, 28, .92);
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { min-height: 100%; background: radial-gradient(ellipse at 50% 0%, #1c1226 0%, var(--bg) 60%); font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; }
-  .wrap { max-width: 860px; margin: 0 auto; padding: 28px 18px 60px; }
-  a.back { color: #888; text-decoration: none; font-size: .85rem; }
-  a.back:hover { color: var(--verde); }
-  h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin: 14px 0 6px; }
-  h1 .b { color: var(--verde); } h1 .v { color: var(--roxo-claro); }
-  .sub { color: #999; margin-bottom: 26px; font-size: .95rem; line-height: 1.5; }
-
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
-  .card {
-    background: var(--panel); border: 1px solid rgba(255,255,255,.12); border-radius: 16px;
-    padding: 20px 18px; cursor: pointer; transition: transform .15s, border-color .15s;
-  }
-  .card:hover { transform: translateY(-3px); border-color: var(--verde); }
-  .card .emo { font-size: 2rem; }
-  .card h2 { font-size: 1.05rem; margin: 10px 0 6px; }
-  .card p { font-size: .8rem; color: #aaa; line-height: 1.45; }
-  .card .tag { display: inline-block; margin-top: 10px; font-size: .68rem; padding: 3px 10px; border-radius: 999px; background: rgba(150,201,61,.15); color: var(--verde); }
-  .card .tag.roxo { background: rgba(176,100,196,.15); color: var(--roxo-claro); }
-
-  #wizard { display: none; }
-  #wizard.visible { display: block; }
-  #cards-view.hidden { display: none; }
-  .step {
-    background: var(--panel); border: 1px solid rgba(255,255,255,.12); border-radius: 16px;
-    padding: 18px 20px; margin-bottom: 14px; position: relative;
-  }
-  .step .num {
-    position: absolute; top: -12px; left: 16px; background: var(--roxo); color: #fff;
-    font-weight: 800; font-size: .8rem; padding: 3px 12px; border-radius: 999px;
-  }
-  .step h3 { font-size: 1rem; margin: 6px 0 8px; color: var(--verde); }
-  .step p { font-size: .85rem; color: #bbb; line-height: 1.55; }
-  .step p b { color: #eee; }
-  .btn {
-    display: inline-block; background: linear-gradient(135deg, var(--roxo), #9b3db0);
-    border: none; color: #fff; font-size: .92rem; font-weight: 600; text-decoration: none;
-    padding: 11px 24px; border-radius: 999px; cursor: pointer; margin-top: 12px;
-    box-shadow: 0 4px 18px rgba(123,45,142,.45); transition: transform .15s;
-  }
-  .btn:hover { transform: translateY(-2px); }
-  .btn.verde { background: linear-gradient(135deg, #7ba32e, var(--verde)); color: #0d0a12; box-shadow: 0 4px 18px rgba(150,201,61,.35); }
-  .btn.ghost { background: transparent; border: 2px solid rgba(255,255,255,.25); box-shadow: none; }
-  .btn.ghost:hover { border-color: var(--verde); }
-  .note { font-size: .74rem; color: #777; margin-top: 8px; line-height: 1.5; }
-
-  #cam-box { display: none; margin-top: 14px; }
-  #cam-box.visible { display: block; }
-  #cam-video { width: 100%; max-height: 380px; border-radius: 12px; background: #000; object-fit: cover; }
-  .cam-controls { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-  .rec-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #d33; margin-right: 6px; animation: blink 1s infinite; }
-  @keyframes blink { 50% { opacity: .2; } }
-  #cam-status { font-size: .8rem; color: var(--verde); margin-top: 8px; }
-  .colab-tip {
-    background: rgba(150,201,61,.08); border: 1px solid rgba(150,201,61,.3);
-    border-radius: 10px; padding: 10px 14px; margin-top: 10px; font-size: .82rem; color: #cde; line-height: 1.5;
-  }
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
 </head>
 <body>
-<div class="wrap">
-  <a class="back" href="index.html">← voltar ao viewer</a>
-  <h1><span class="b">Criar</span> meu <span class="v">Splat</span></h1>
-  <p class="sub">Escolha o tipo de captura. A página te guia do começo ao fim — a parte pesada roda de graça na nuvem (Google Colab), sem instalar nada.</p>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    @keyframes drift1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(18px,-24px); } }
+    @keyframes drift2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-22px,16px); } }
+    @keyframes drift3 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(14px,20px); } }
+    @keyframes blinkDot { 50% { opacity: .25; } }
+    body { margin: 0; background: #0a0912; font-family: 'Inter', system-ui, sans-serif; }
+  </style>
+</helmet>
 
-  <!-- ===== ESCOLHA ===== -->
-  <div class="cards" id="cards-view">
-    <div class="card" data-flow="foto">
-      <div class="emo">🖼️</div>
-      <h2>Foto → 3D</h2>
-      <p>Uma única foto vira um splat 3D em segundos (Apple SHARP). O jeito mais fácil de começar.</p>
-      <span class="tag">Mais fácil · ~5 min no total</span>
-    </div>
-    <div class="card" data-flow="video">
-      <div class="emo">🎬</div>
-      <h2>Vídeo → 3D</h2>
-      <p>Filme orbitando um objeto ou lugar e gere um splat de alta qualidade com treino completo.</p>
-      <span class="tag roxo">Melhor qualidade · ~1h</span>
-    </div>
-    <div class="card" data-flow="light">
-      <div class="emo">🪶</div>
-      <h2>Vídeo → 3D compacto</h2>
-      <p>Igual ao anterior, mas com poda LightGaussian: arquivo ~3× menor com a mesma cara.</p>
-      <span class="tag roxo">Arquivo leve · ~1h</span>
-    </div>
-    <div class="card" data-flow="quatro">
-      <div class="emo">🎞️</div>
-      <h2>Vídeo → 4D</h2>
-      <p>Cada frame do vídeo vira um splat — uma cena que se move no tempo (.splat4d).</p>
-      <span class="tag">Experimental · ~30 min</span>
-    </div>
+<div
+  onMouseMove="{{onMouseMove}}"
+  style="position: relative; min-height: 100vh; overflow: hidden; background: radial-gradient(ellipse 1200px 700px at 50% -10%, #1a1224 0%, #0a0912 55%); color: #f2f0f6;"
+>
+  <!-- ambient mouse-reactive glow -->
+  <div style="{{glowStyle}}"></div>
+
+  <!-- drifting ambient particles (parallax with mouse) -->
+  <div style="{{parallaxLayer1}}">
+    <div style="position:absolute; top:14%; left:8%; width:5px; height:5px; border-radius:50%; background:#9ee05a; opacity:.5; animation: drift1 9s ease-in-out infinite; box-shadow:0 0 12px 2px rgba(158,224,90,.5);"></div>
+    <div style="position:absolute; top:62%; left:22%; width:4px; height:4px; border-radius:50%; background:#b47af0; opacity:.45; animation: drift2 11s ease-in-out infinite; box-shadow:0 0 10px 2px rgba(180,122,240,.5);"></div>
+    <div style="position:absolute; top:30%; left:78%; width:6px; height:6px; border-radius:50%; background:#9ee05a; opacity:.4; animation: drift3 13s ease-in-out infinite; box-shadow:0 0 14px 2px rgba(158,224,90,.4);"></div>
+    <div style="position:absolute; top:80%; left:65%; width:4px; height:4px; border-radius:50%; background:#b47af0; opacity:.5; animation: drift1 10s ease-in-out infinite reverse; box-shadow:0 0 10px 2px rgba(180,122,240,.5);"></div>
+    <div style="position:absolute; top:48%; left:45%; width:3px; height:3px; border-radius:50%; background:#e9f7d0; opacity:.35; animation: drift2 8s ease-in-out infinite;"></div>
   </div>
 
-  <!-- ===== WIZARD ===== -->
-  <div id="wizard">
-    <a class="back" href="#" id="wz-back">← escolher outro tipo</a>
-    <h1 id="wz-title" style="font-size:1.4rem; margin-top:10px;"></h1>
+  <div style="position: relative; z-index: 2; max-width: 900px; margin: 0 auto; padding: 32px 20px 70px;">
 
-    <div class="step">
-      <span class="num">PASSO 1</span>
-      <h3 id="wz-cap-title"></h3>
-      <p id="wz-cap-text"></p>
-      <button class="btn verde" id="wz-cam">📷 Usar a câmera daqui</button>
-      <button class="btn ghost" id="wz-skip">Já tenho o arquivo →</button>
-      <div id="cam-box">
-        <video id="cam-video" autoplay muted playsinline></video>
-        <div class="cam-controls">
-          <button class="btn verde" id="cam-shoot">📸 Tirar foto</button>
-          <button class="btn" id="cam-rec">⏺ Gravar</button>
-          <button class="btn ghost" id="cam-flip">🔄 Trocar câmera</button>
+    <a href="#" onClick="{{backToCards}}" style="color: #8b8a94; text-decoration: none; font-size: .85rem; font-family: 'Inter', sans-serif; display: {{backLinkDisplay}};">
+      ← voltar ao viewer
+    </a>
+
+    <div style="{{headerRowStyle}}">
+      <div style="max-width: 480px;">
+        <h1 style="{{heroTitleStyle}}">
+          <span style="color: #9ee05a;">Criar</span> meu <span style="color: #b47af0;">Splat</span>
+        </h1>
+        <p style="color: #9a97a6; font-size: .95rem; line-height: 1.55; margin: 0;">
+          Escolha o tipo de captura. A página te guia do começo ao fim — a parte pesada roda de graça na nuvem (Google Colab), sem instalar nada.
+        </p>
+      </div>
+      <sc-if value="{{isWizard}}" hint-placeholder-val="{{false}}">
+        <div style="{{heroPreviewStyle}}">
+          <span style="font-family: 'Courier New', monospace; font-size: .68rem; color: #7a7886; text-align: center; padding: 0 10px;">renderização 3D do splat</span>
         </div>
-        <p id="cam-status"></p>
-        <p class="note" id="wz-cap-tip"></p>
-      </div>
+      </sc-if>
     </div>
 
-    <div class="step">
-      <span class="num">PASSO 2</span>
-      <h3>Abrir a "cozinha" na nuvem</h3>
-      <p>Clique abaixo para abrir o processador no Google Colab (grátis, precisa de conta Google).</p>
-      <a class="btn" id="wz-colab" href="#" target="_blank" rel="noopener">🚀 Abrir o processador</a>
-      <div class="colab-tip">
-        Lá dentro, faça só isto:<br>
-        <b>1.</b> Menu <b>Ambiente de execução → Alterar tipo</b> → escolha <b>GPU (T4)</b> e salve.<br>
-        <b>2.</b> Menu <b>Ambiente de execução → Executar tudo</b> (Ctrl+F9).<br>
-        <b>3.</b> Quando uma célula pedir, <b>envie o arquivo</b> do Passo 1.<br>
-        <b>4.</b> No final, o resultado baixa sozinho. Só esperar. ☕
+    <!-- ===== CARDS VIEW ===== -->
+    <sc-if value="{{isCards}}" hint-placeholder-val="{{true}}">
+      <div style="margin-top: 30px;">
+        <div style="font-size: .8rem; color: #7a7886; margin-bottom: 10px; font-weight: 600; letter-spacing: .02em;">Tipo de captura</div>
+        <div style="{{cardsGridStyle}}">
+          <sc-for list="{{cards}}" as="c" hint-placeholder-count="4">
+            <div
+              onClick="{{c.select}}"
+              style-hover="{{cardHoverStyle}}"
+              style="background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 20px 18px; cursor: pointer; transition: transform .15s, border-color .15s;"
+            >
+              <div style="width: 40px; height: 40px; border-radius: 10px; background: {{c.iconBg}}; display: flex; align-items: center; justify-content: center; font-size: 1.15rem;">{{c.icon}}</div>
+              <h2 style="font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 600; margin: 12px 0 6px;">{{c.title}}</h2>
+              <p style="font-size: .8rem; color: #9a97a6; line-height: 1.45; margin: 0;">{{c.desc}}</p>
+              <span style="display: inline-block; margin-top: 12px; font-size: .68rem; padding: 3px 10px; border-radius: 999px; background: {{c.tagBg}}; color: {{c.tagColor}};">{{c.tag}}</span>
+            </div>
+          </sc-for>
+        </div>
       </div>
-    </div>
+    </sc-if>
 
-    <div class="step">
-      <span class="num">PASSO 3</span>
-      <h3>Abrir no viewer e fazer mágica ✦</h3>
-      <p>Arraste o arquivo baixado (<b id="wz-ext">.ply</b>) para o viewer: distorça, ilumine, reaja ao som e exporte MP4 em 1080p.</p>
-      <a class="btn verde" href="index.html">✨ Abrir o viewer</a>
-    </div>
+    <!-- ===== WIZARD ===== -->
+    <sc-if value="{{isWizard}}" hint-placeholder-val="{{false}}">
+      <div style="margin-top: 26px;">
+
+        <div style="display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); border-radius: 999px; padding: 8px 18px 8px 8px; margin-bottom: 24px;">
+          <span style="width: 30px; height: 30px; border-radius: 8px; background: rgba(158,224,90,.18); display: flex; align-items: center; justify-content: center; font-size: 1rem;">{{flow.icon}}</span>
+          <span style="font-weight: 600; font-size: .9rem;">{{flow.title}}</span>
+        </div>
+
+        <div style="position: relative;">
+          <div style="{{trackLineStyle}}"></div>
+
+          <!-- STEP 1 -->
+          <div style="{{stepGridStyle}}">
+            <div style="{{step1NumStyle}}">01</div>
+            <div style="{{step1BodyStyle}}">
+              <div>
+                <h3 style="font-family: 'Poppins', sans-serif; color: #9ee05a; font-size: 1rem; font-weight: 600; margin: 0 0 8px;">{{flow.capTitle}}</h3>
+                <p style="font-size: .85rem; color: #b3b0bd; line-height: 1.55; margin: 0 0 14px;">{{flow.capText}}</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <button onClick="{{startCamera}}" style="background: linear-gradient(135deg, #7ba32e, #9ee05a); border: none; color: #0a0912; font-weight: 600; font-size: .88rem; padding: 11px 20px; border-radius: 999px; cursor: pointer;">📷 Usar a câmera daqui</button>
+                  <button onClick="{{triggerFile}}" style="background: transparent; border: 2px solid rgba(255,255,255,.2); color: #f2f0f6; font-weight: 600; font-size: .88rem; padding: 9px 20px; border-radius: 999px; cursor: pointer;">📁 Já tenho o arquivo →</button>
+                  <input ref="{{fileInputRef}}" type="file" accept="{{flow.accept}}" onChange="{{onFileChange}}" style="display: none;"/>
+                </div>
+
+                <sc-if value="{{camActive}}" hint-placeholder-val="{{false}}">
+                  <div style="margin-top: 16px;">
+                    <video ref="{{videoRef}}" autoPlay="{{true}}" muted="{{true}}" playsInline="{{true}}" style="width: 100%; max-height: 320px; border-radius: 12px; background: #000; object-fit: cover;"></video>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                      <sc-if value="{{isPhotoMode}}" hint-placeholder-val="{{true}}">
+                        <button onClick="{{takePhoto}}" style="background: linear-gradient(135deg, #7ba32e, #9ee05a); border: none; color: #0a0912; font-weight: 600; font-size: .85rem; padding: 9px 18px; border-radius: 999px; cursor: pointer;">📸 Tirar foto</button>
+                      </sc-if>
+                      <sc-if value="{{isVideoMode}}" hint-placeholder-val="{{false}}">
+                        <button onClick="{{toggleRecord}}" style="background: {{recordBtnBg}}; border: none; color: #fff; font-weight: 600; font-size: .85rem; padding: 9px 18px; border-radius: 999px; cursor: pointer;">{{recordBtnLabel}}</button>
+                      </sc-if>
+                      <button onClick="{{flipCamera}}" style="background: transparent; border: 2px solid rgba(255,255,255,.2); color: #f2f0f6; font-weight: 600; font-size: .85rem; padding: 7px 16px; border-radius: 999px; cursor: pointer;">🔄 Trocar câmera</button>
+                    </div>
+                    <p style="font-size: .8rem; color: #9ee05a; margin: 8px 0 0;">{{camStatus}}</p>
+                  </div>
+                </sc-if>
+              </div>
+
+              <div style="border: 1px dashed rgba(255,255,255,.22); border-radius: 12px; height: 150px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.015); overflow: hidden;">
+                <sc-if value="{{hasPreview}}" hint-placeholder-val="{{false}}">
+                  <div style="{{previewImgStyle}}"></div>
+                </sc-if>
+                <sc-if value="{{noPreview}}" hint-placeholder-val="{{true}}">
+                  <div style="text-align: center; color: #7a7886;">
+                    <div style="font-size: 1.4rem;">🖼️</div>
+                    <div style="font-size: .78rem; margin-top: 6px;">Pré-visualização</div>
+                    <div style="font-size: .68rem; color: #605e6c; margin-top: 2px;">O arquivo aparecerá aqui</div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2 -->
+          <div style="{{stepGridStyle}}">
+            <div style="{{step2NumStyle}}">02</div>
+            <div style="{{step2BodyStyle}}">
+              <div>
+                <h3 style="font-family: 'Poppins', sans-serif; color: #c896f7; font-size: 1rem; font-weight: 600; margin: 0 0 8px;">Abrir a "cozinha" na nuvem</h3>
+                <p style="font-size: .85rem; color: #b3b0bd; line-height: 1.55; margin: 0 0 14px;">Clique abaixo para abrir o processador no Google Colab (grátis, precisa de conta Google).</p>
+                <a href="{{flow.colab}}" target="_blank" rel="noopener" style="display: inline-block; background: linear-gradient(135deg, #7b2d8e, #a94fc4); color: #fff; font-weight: 600; font-size: .88rem; padding: 11px 22px; border-radius: 999px; text-decoration: none; box-shadow: 0 4px 18px rgba(123,45,142,.4);">🚀 Abrir o processador</a>
+              </div>
+              <div style="background: rgba(180,122,240,.08); border: 1px solid rgba(180,122,240,.28); border-radius: 12px; padding: 14px 16px; font-size: .8rem; color: #d8cdf0; line-height: 1.6;">
+                Lá dentro, faça só isto:<br/>
+                <b style="color: #fff;">1.</b> Menu <b style="color: #fff;">Ambiente de execução → Alterar tipo</b> → escolha <b style="color: #fff;">GPU (T4)</b> e salve.<br/>
+                <b style="color: #fff;">2.</b> Menu <b style="color: #fff;">Ambiente de execução → Executar tudo</b> (Ctrl+F9).<br/>
+                <b style="color: #fff;">3.</b> Quando uma célula pedir, <b style="color: #fff;">envie o arquivo</b> do Passo 1.<br/>
+                <b style="color: #fff;">4.</b> No final, o resultado baixa sozinho. Só esperar. ☕
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3 -->
+          <div style="{{stepGridStyle}}">
+            <div style="{{step3NumStyle}}">03</div>
+            <div style="{{step3BodyStyle}}">
+              <div>
+                <h3 style="font-family: 'Poppins', sans-serif; color: #9ee05a; font-size: 1rem; font-weight: 600; margin: 0 0 8px;">Abrir no viewer e fazer mágica ✦</h3>
+                <p style="font-size: .85rem; color: #b3b0bd; line-height: 1.55; margin: 0;">Arraste o arquivo baixado (<b style="color: #eee;">{{flow.ext}}</b>) para o viewer: distorça, ilumine, reaja ao som e exporte MP4 em 1080p.</p>
+              </div>
+              <a href="index.html" style="display: inline-block; text-align: center; background: linear-gradient(135deg, #7ba32e, #9ee05a); color: #0a0912; font-weight: 700; font-size: .9rem; padding: 12px 18px; border-radius: 999px; text-decoration: none; box-shadow: 0 4px 18px rgba(158,224,90,.3);">✨ Abrir o viewer</a>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 16px; background: rgba(180,122,240,.06); border: 1px solid rgba(180,122,240,.2); border-radius: 14px; padding: 16px 22px; margin-top: 6px;">
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: rgba(180,122,240,.2); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">💡</div>
+          <div>
+            <div style="color: #c896f7; font-weight: 600; font-size: .85rem;">Dica rápida</div>
+            <div style="color: #9a97a6; font-size: .82rem; margin-top: 2px;">Use boa iluminação, fundo neutro e foco no objeto. Quanto melhor a foto, melhor o 3D.</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
   </div>
 </div>
 
-<script>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
 const FLOWS = {
   foto: {
-    title: '🖼️ Foto → 3D',
+    key: 'foto', icon: '🖼️', title: 'Foto → 3D', mode: 'photo',
     capTitle: 'Consiga uma boa foto',
     capText: 'Uma foto nítida e bem iluminada do objeto/cena. Pode tirar aqui pela câmera ou usar uma que você já tem.',
-    capTip: 'Dica: evite reflexos e fundos muito lisos.',
     colab: 'https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_SHARP.ipynb',
-    ext: '.ply', mode: 'photo'
+    ext: '.ply', accept: 'image/*'
   },
   video: {
-    title: '🎬 Vídeo → 3D',
+    key: 'video', icon: '🎬', title: 'Vídeo → 3D', mode: 'video',
     capTitle: 'Grave um vídeo orbitando',
     capText: 'Ande devagar ao redor do objeto/lugar por 30-60s, sem movimentos bruscos, mantendo tudo em foco.',
-    capTip: 'Dica: dê a volta completa e varie um pouco a altura. Luz constante ajuda muito.',
     colab: 'https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_3DGS.ipynb',
-    ext: '.ply', mode: 'video'
+    ext: '.ply', accept: 'video/*'
   },
   light: {
-    title: '🪶 Vídeo → 3D compacto (LightGaussian)',
+    key: 'light', icon: '🪶', title: 'Vídeo → 3D compacto', mode: 'video',
     capTitle: 'Grave um vídeo orbitando',
     capText: 'Mesma captura do Vídeo → 3D. A diferença é o processamento: o resultado sai ~3× menor.',
-    capTip: 'Dica: dê a volta completa e varie um pouco a altura. Luz constante ajuda muito.',
     colab: 'https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_LightGaussian.ipynb',
-    ext: '.ply', mode: 'video'
+    ext: '.ply', accept: 'video/*'
   },
   quatro: {
-    title: '🎞️ Vídeo → 4D',
+    key: 'quatro', icon: '🎞️', title: 'Vídeo → 4D', mode: 'video',
     capTitle: 'Grave a ação',
     capText: 'Aqui o movimento fica na cena: grave alguém dançando, algo caindo, etc. Câmera o mais parada possível.',
-    capTip: 'Dica: até ~120 frames viram a sequência. Vídeos curtos (5-15s) funcionam melhor.',
     colab: 'https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_4DGS.ipynb',
-    ext: '.splat4d', mode: 'video'
+    ext: '.splat4d', accept: 'video/*'
   }
 };
-const $ = id => document.getElementById(id);
-let flow = null, stream = null, facing = 'environment', recorder = null, chunks = [];
 
-document.querySelectorAll('.card').forEach(c => c.addEventListener('click', () => {
-  flow = FLOWS[c.dataset.flow];
-  $('wz-title').textContent = flow.title;
-  $('wz-cap-title').textContent = flow.capTitle;
-  $('wz-cap-text').textContent = flow.capText;
-  $('wz-cap-tip').textContent = flow.capTip;
-  $('wz-colab').href = flow.colab;
-  $('wz-ext').textContent = flow.ext;
-  $('cam-shoot').style.display = flow.mode === 'photo' ? '' : 'none';
-  $('cam-rec').style.display = flow.mode === 'video' ? '' : 'none';
-  $('cards-view').classList.add('hidden');
-  $('wizard').classList.add('visible');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}));
-$('wz-back').addEventListener('click', e => {
-  e.preventDefault();
-  stopCam();
-  $('wizard').classList.remove('visible');
-  $('cards-view').classList.remove('hidden');
-});
-$('wz-skip').addEventListener('click', () => {
-  stopCam();
-  document.querySelectorAll('.step')[1].scrollIntoView({ behavior: 'smooth' });
-});
+const CARD_META = {
+  foto: { desc: 'Uma única foto vira um splat 3D em segundos. O jeito mais fácil de começar.', tag: 'Mais fácil · ~5 min', tagBg: 'rgba(158,224,90,.15)', tagColor: '#9ee05a', iconBg: 'rgba(158,224,90,.18)' },
+  video: { desc: 'Filme orbitando um objeto ou lugar e gere um splat de alta qualidade com treino completo.', tag: 'Melhor qualidade · ~1h', tagBg: 'rgba(180,122,240,.15)', tagColor: '#c896f7', iconBg: 'rgba(180,122,240,.18)' },
+  light: { desc: 'Igual ao anterior, mas com poda LightGaussian: arquivo ~3× menor com a mesma cara.', tag: 'Arquivo leve · ~1h', tagBg: 'rgba(180,122,240,.15)', tagColor: '#c896f7', iconBg: 'rgba(180,122,240,.18)' },
+  quatro: { desc: 'Cada frame do vídeo vira um splat — uma cena que se move no tempo (.splat4d).', tag: 'Experimental · ~30 min', tagBg: 'rgba(158,224,90,.15)', tagColor: '#9ee05a', iconBg: 'rgba(158,224,90,.18)' }
+};
 
-function stopCam() {
-  if (recorder && recorder.state === 'recording') recorder.stop();
-  if (stream) stream.getTracks().forEach(t => t.stop());
-  stream = null;
-  $('cam-box').classList.remove('visible');
-}
-async function startCam() {
-  stopCam();
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facing, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false
-    });
-    $('cam-video').srcObject = stream;
-    $('cam-box').classList.add('visible');
-    $('cam-status').textContent = '';
-  } catch (e) { alert('Câmera indisponível: ' + (e.message || e)); }
-}
-$('wz-cam').addEventListener('click', startCam);
-$('cam-flip').addEventListener('click', () => { facing = facing === 'environment' ? 'user' : 'environment'; startCam(); });
-
-// foto
-$('cam-shoot').addEventListener('click', () => {
-  const v = $('cam-video');
-  const cv = document.createElement('canvas');
-  cv.width = v.videoWidth; cv.height = v.videoHeight;
-  cv.getContext('2d').drawImage(v, 0, 0);
-  cv.toBlob(b => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(b);
-    a.download = 'bruxos_foto.jpg';
-    a.click();
-    $('cam-status').textContent = '✅ Foto salva (bruxos_foto.jpg) — use no Passo 2!';
-  }, 'image/jpeg', 0.92);
-});
-
-// vídeo
-$('cam-rec').addEventListener('click', () => {
-  if (recorder && recorder.state === 'recording') { recorder.stop(); return; }
-  chunks = [];
-  const mime = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm';
-  recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12_000_000 });
-  recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-  recorder.onstop = () => {
-    const ext = mime.includes('mp4') ? 'mp4' : 'webm';
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob(chunks, { type: mime }));
-    a.download = 'bruxos_video.' + ext;
-    a.click();
-    $('cam-rec').innerHTML = '⏺ Gravar';
-    $('cam-status').textContent = `✅ Vídeo salvo (bruxos_video.${ext}) — use no Passo 2!`;
+function stepNum(color, filled, isMobile) {
+  return {
+    position: 'relative', zIndex: 1, width: isMobile ? 34 : 46, height: isMobile ? 34 : 46,
+    borderRadius: '50%', background: filled ? color : '#0a0912',
+    border: filled ? 'none' : '2px solid ' + color, color: filled ? '#0a0912' : color,
+    fontWeight: 800, fontSize: isMobile ? '.68rem' : '.82rem',
+    display: 'flex', alignItems: 'center', justifyContent: 'center'
   };
-  recorder.start();
-  $('cam-rec').innerHTML = '<span class="rec-dot"></span>Parar gravação';
-  $('cam-status').textContent = 'Gravando… ande devagar ao redor.';
-});
+}
+function stepBody(cols, isMobile) {
+  return {
+    background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 16,
+    padding: isMobile ? '16px 16px' : '20px 22px',
+    display: 'grid',
+    gridTemplateColumns: isMobile ? '1fr' : cols,
+    gap: isMobile ? 14 : 20, alignItems: isMobile ? 'stretch' : 'start'
+  };
+}
+
+class Component extends DCLogic {
+  state = {
+    stage: 'cards',
+    flowKey: null,
+    camActive: false,
+    facing: 'environment',
+    recording: false,
+    camStatus: '',
+    previewSrc: null,
+    mx: 0.5,
+    my: 0.3,
+    isMobile: typeof window !== 'undefined' && window.innerWidth <= 720
+  };
+
+  constructor(props) {
+    super(props);
+    this.videoRef = React.createRef();
+    this.fileInputRef = React.createRef();
+    this.stream = null;
+    this.recorder = null;
+    this.chunks = [];
+  }
+
+  componentDidMount() {
+    this.onResize = () => this.setState({ isMobile: window.innerWidth <= 720 });
+    window.addEventListener('resize', this.onResize);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.onResize);
+  }
+
+  onMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    this.setState({ mx: (e.clientX - rect.left) / rect.width, my: (e.clientY - rect.top) / rect.height });
+  };
+
+  selectFlow = (key) => {
+    this.setState({ stage: 'wizard', flowKey: key, previewSrc: null, camStatus: '' });
+  };
+
+  backToCards = (e) => {
+    if (e) e.preventDefault();
+    this.stopCamera();
+    this.setState({ stage: 'cards', flowKey: null });
+  };
+
+  stopCamera = () => {
+    if (this.recorder && this.recorder.state === 'recording') this.recorder.stop();
+    if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+    this.stream = null;
+    this.setState({ camActive: false, recording: false });
+  };
+
+  startCamera = async () => {
+    this.stopCamera();
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: this.state.facing, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false
+      });
+      this.setState({ camActive: true, camStatus: '' });
+      setTimeout(() => { if (this.videoRef.current) this.videoRef.current.srcObject = this.stream; }, 0);
+    } catch (e) {
+      alert('Câmera indisponível: ' + (e.message || e));
+    }
+  };
+
+  flipCamera = () => {
+    this.setState({ facing: this.state.facing === 'environment' ? 'user' : 'environment' }, () => this.startCamera());
+  };
+
+  takePhoto = () => {
+    const v = this.videoRef.current;
+    if (!v) return;
+    const cv = document.createElement('canvas');
+    cv.width = v.videoWidth; cv.height = v.videoHeight;
+    cv.getContext('2d').drawImage(v, 0, 0);
+    const url = cv.toDataURL('image/jpeg', 0.92);
+    this.setState({ previewSrc: url, camStatus: '✅ Foto capturada — use no Passo 2!' });
+  };
+
+  toggleRecord = () => {
+    if (this.recorder && this.recorder.state === 'recording') { this.recorder.stop(); return; }
+    this.chunks = [];
+    const mime = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm';
+    this.recorder = new MediaRecorder(this.stream, { mimeType: mime, videoBitsPerSecond: 12000000 });
+    this.recorder.ondataavailable = (e) => { if (e.data.size) this.chunks.push(e.data); };
+    this.recorder.onstop = () => {
+      const ext = mime.includes('mp4') ? 'mp4' : 'webm';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob(this.chunks, { type: mime }));
+      a.download = 'splat_video.' + ext;
+      a.click();
+      this.setState({ recording: false, camStatus: '✅ Vídeo salvo — use no Passo 2!' });
+    };
+    this.recorder.start();
+    this.setState({ recording: true, camStatus: 'Gravando… ande devagar ao redor.' });
+  };
+
+  triggerFile = () => { if (this.fileInputRef.current) this.fileInputRef.current.click(); };
+
+  onFileChange = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    if (f.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (ev) => this.setState({ previewSrc: ev.target.result, camStatus: '✅ Arquivo carregado — use no Passo 2!' });
+      reader.readAsDataURL(f);
+    } else {
+      this.setState({ camStatus: '✅ Arquivo "' + f.name + '" pronto — use no Passo 2!' });
+    }
+  };
+
+  renderVals() {
+    const flowKey = this.state.flowKey || 'foto';
+    const flow = FLOWS[flowKey];
+    const isWizard = this.state.stage === 'wizard';
+    const isCards = this.state.stage === 'cards';
+    const mx = this.state.mx, my = this.state.my;
+    const isMobile = this.state.isMobile;
+
+    const cards = Object.keys(FLOWS).map((k) => {
+      const f = FLOWS[k];
+      const m = CARD_META[k];
+      return {
+        key: k, icon: f.icon, title: f.title, desc: m.desc, tag: m.tag,
+        tagBg: m.tagBg, tagColor: m.tagColor, iconBg: m.iconBg,
+        select: () => this.selectFlow(k)
+      };
+    });
+
+    return {
+      isWizard, isCards, isMobile,
+      backLinkDisplay: isWizard ? 'inline-block' : 'none',
+      flow, cards,
+      headerRowStyle: {
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24,
+        marginTop: 14, flexWrap: 'wrap'
+      },
+      heroTitleStyle: {
+        fontFamily: "'Poppins', sans-serif", fontWeight: 700, margin: '0 0 10px', lineHeight: 1.15,
+        fontSize: isMobile ? '1.5rem' : 'clamp(1.7rem, 4vw, 2.5rem)'
+      },
+      heroPreviewStyle: {
+        width: isMobile ? '100%' : 220, height: isMobile ? 110 : 150, borderRadius: 16,
+        border: '1px solid rgba(255,255,255,.1)',
+        background: 'repeating-linear-gradient(135deg, rgba(180,122,240,.10), rgba(180,122,240,.10) 10px, rgba(158,224,90,.08) 10px, rgba(158,224,90,.08) 20px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+      },
+      cardsGridStyle: {
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: 14
+      },
+      stepGridStyle: {
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '36px 1fr' : '48px 1fr',
+        gap: isMobile ? 12 : 18, marginBottom: 20
+      },
+      trackLineStyle: {
+        position: 'absolute', left: isMobile ? 17 : 23, top: 26, bottom: 26, width: 2,
+        background: 'linear-gradient(180deg, #9ee05a, #b47af0, #9ee05a)'
+      },
+      step1NumStyle: stepNum('#9ee05a', false, isMobile),
+      step2NumStyle: stepNum('#b47af0', true, isMobile),
+      step3NumStyle: stepNum('#9ee05a', false, isMobile),
+      step1BodyStyle: stepBody('1fr 220px', isMobile),
+      step2BodyStyle: stepBody('1fr 260px', isMobile),
+      step3BodyStyle: Object.assign(stepBody('1fr 220px', isMobile), { alignItems: isMobile ? 'stretch' : 'center' }),
+      cardHoverStyle: { transform: 'translateY(-3px)', borderColor: '#9ee05a' },
+      onMouseMove: this.onMouseMove,
+      backToCards: this.backToCards,
+      startCamera: this.startCamera,
+      flipCamera: this.flipCamera,
+      takePhoto: this.takePhoto,
+      toggleRecord: this.toggleRecord,
+      triggerFile: this.triggerFile,
+      onFileChange: this.onFileChange,
+      videoRef: this.videoRef,
+      fileInputRef: this.fileInputRef,
+      camActive: this.state.camActive,
+      camStatus: this.state.camStatus,
+      isPhotoMode: flow.mode === 'photo',
+      isVideoMode: flow.mode === 'video',
+      recordBtnBg: this.state.recording ? '#d33' : 'linear-gradient(135deg, #7b2d8e, #a94fc4)',
+      recordBtnLabel: this.state.recording ? '⏺ Parar gravação' : '⏺ Gravar',
+      hasPreview: !!this.state.previewSrc,
+      noPreview: !this.state.previewSrc,
+      previewImgStyle: {
+        width: '100%', height: '100%',
+        backgroundImage: this.state.previewSrc ? 'url(' + this.state.previewSrc + ')' : 'none',
+        backgroundSize: 'cover', backgroundPosition: 'center'
+      },
+      glowStyle: {
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, pointerEvents: 'none',
+        background: 'radial-gradient(600px circle at ' + (mx * 100) + '% ' + (my * 100) + '%, rgba(158,224,90,.10), rgba(180,122,240,.06) 40%, transparent 65%)',
+        transition: 'background .15s ease-out'
+      },
+      parallaxLayer1: {
+        position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
+        transform: 'translate(' + ((mx - 0.5) * -18) + 'px, ' + ((my - 0.5) * -14) + 'px)',
+        transition: 'transform .2s ease-out'
+      }
+    };
+  }
+}
+
 </script>
 </body>
 </html>

@@ -362,8 +362,8 @@
           <div class="cta" style="margin-top: auto;">
             <a class="btn verde" id="btn-criar" href="criar.html">Começar agora →</a>
             <a class="btn ghost" href="criar.html">📖 Ver guia passo a passo</a>
-            <button class="btn ghost" id="btn-ex0">🎁 Exemplo 1 — testar sem ter splat</button>
-            <button class="btn ghost" id="btn-ex1">🎁 Exemplo 2 — testar sem ter splat</button>
+            <button class="btn ghost" id="btn-ex0">🎁 Exemplo — Bixinho</button>
+            <button class="btn ghost" id="btn-ex1">🎁 Exemplo — Jacanva</button>
           </div>
         </div>
       </div>
@@ -673,7 +673,7 @@
 
     <h3>🔮 Ball Chrome / HDRI</h3>
     <button class="panel-btn" id="ball-toggle">▶ Ball chrome</button>
-    <div class="row"><label>Tamanho</label><input type="range" id="ball-size" min="0.02" max="0.5" step="0.005" value="0.12"><span class="val" id="v-ballsize">0.12</span></div>
+    <div class="row"><label>Tamanho</label><input type="range" id="ball-size" min="0.01" max="0.5" step="0.005" value="0.05"><span class="val" id="v-ballsize">0.050</span></div>
     <div class="row"><label>Pos X</label><input type="range" id="ball-x" min="-0.2" max="1.2" step="0.005" value="0.5"><span class="val" id="v-ballx">50%</span></div>
     <div class="row"><label>Pos Y</label><input type="range" id="ball-y" min="-0.2" max="1.2" step="0.005" value="0.5"><span class="val" id="v-bally">50%</span></div>
     <div class="row"><label>Pos Z</label><input type="range" id="ball-z" min="-0.2" max="1.2" step="0.005" value="0.5"><span class="val" id="v-ballz">50%</span></div>
@@ -3286,7 +3286,7 @@ function exportBall360() {
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   }, 'image/png');
 }
-bindSlider('ball-size', 'v-ballsize', v => v.toFixed(2), () => updateBall());
+bindSlider('ball-size', 'v-ballsize', v => v.toFixed(3), () => updateBall());
 bindSlider('ball-x', 'v-ballx', v => Math.round(v*100)+'%', () => updateBall());
 bindSlider('ball-y', 'v-bally', v => Math.round(v*100)+'%', () => updateBall());
 bindSlider('ball-z', 'v-ballz', v => Math.round(v*100)+'%', () => updateBall());
@@ -3807,8 +3807,8 @@ window.__bxReady = true;
 // EDITE AQUI: URLs das suas duas cenas (repo do GitHub se <100MB, ou Hugging Face:
 // https://huggingface.co/<usuario>/<repo>/resolve/main/<arquivo>.splat )
 const EXAMPLE_SCENES = [
-  { id: 'btn-ex0', url: 'COLE_AQUI_A_URL_DA_CENA_1.splat' },
-  { id: 'btn-ex1', url: 'COLE_AQUI_A_URL_DA_CENA_2.splat' }
+  { id: 'btn-ex0', url: 'https://huggingface.co/datasets/NyckM/GaussiansSplatting-test/resolve/main/Bixinho.ply' },
+  { id: 'btn-ex1', url: 'https://huggingface.co/datasets/NyckM/GaussiansSplatting-test/resolve/main/Jacanva.ply' }
 ];
 async function loadExample(url) {
   if (!/^https?:\/\//.test(url)) { showError('Exemplo ainda não configurado — edite EXAMPLE_SCENES no index.html com as URLs das cenas.'); return; }

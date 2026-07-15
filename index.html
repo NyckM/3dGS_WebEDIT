@@ -362,8 +362,7 @@
           <div class="cta" style="margin-top: auto;">
             <a class="btn verde" id="btn-criar" href="criar.html">Começar agora →</a>
             <a class="btn ghost" href="criar.html">📖 Ver guia passo a passo</a>
-            <button class="btn ghost" id="btn-ex0">🎁 Exemplo — Bixinho</button>
-            <button class="btn ghost" id="btn-ex1">🎁 Exemplo — Jacanva</button>
+            <button class="btn ghost" id="btn-ex0">🎁 Exemplo — Coffee ☕</button>
           </div>
         </div>
       </div>
@@ -2093,6 +2092,27 @@ function syncFxUniforms() {
   bxUpdateLightHelper();
 }
 
+// reduz a cena mantendo 1 a cada N splats (celular: evita o Safari matar a aba por memória)
+function bxDownsampleGeom(buffer, g, maxN) {
+  const step = Math.ceil(g.count / maxN);
+  if (step <= 1) return buffer;
+  const keepN = Math.floor(g.count / step);
+  let headerBytes = new Uint8Array(0);
+  if (g.type === 'ply') {
+    const newHeader = g.header.replace(/element\s+vertex\s+\d+/, 'element vertex ' + keepN);
+    headerBytes = new TextEncoder().encode(newHeader);
+  }
+  const u8 = new Uint8Array(buffer);
+  const out = new Uint8Array(headerBytes.length + keepN * g.stride);
+  out.set(headerBytes, 0);
+  for (let j = 0; j < keepN; j++) {
+    const src = g.dataStart + (j * step) * g.stride;
+    out.set(u8.subarray(src, src + g.stride), headerBytes.length + j * g.stride);
+  }
+  return out.buffer;
+}
+const MAX_MOBILE_SPLATS = 500000;
+
 async function loadFile(file) {
   const format = formatFromName(file.name);
   if (format === null) { showError('Formato não suportado. Use .ply, .splat ou .ksplat'); return; }
@@ -2103,7 +2123,14 @@ async function loadFile(file) {
     currentBuffer = await file.arrayBuffer();
     currentFormat = format;
     currentName = file.name;
-    const g = analyzeGeom(currentBuffer, format);
+    let g = analyzeGeom(currentBuffer, format);
+    // celular: reduz cenas grandes para não estourar a memória (iOS recarrega a aba)
+    if (IS_MOBILE && g && g.count > MAX_MOBILE_SPLATS) {
+      loadingText.textContent = `Cena com ${(g.count/1e6).toFixed(1)}M splats — reduzindo para o celular…`;
+      showError(`Cena grande (${(g.count/1e6).toFixed(1)}M splats): reduzida para ~${(MAX_MOBILE_SPLATS/1e6).toFixed(1)}M no celular. No PC abre completa.`);
+      currentBuffer = bxDownsampleGeom(currentBuffer, g, MAX_MOBILE_SPLATS);
+      g = analyzeGeom(currentBuffer, format);
+    }
     bbox = g ? computeGeomBBox(currentBuffer, g) : null;
     $('crop-note').innerHTML = bbox ? 'Ajuste o box 3D (verde) e aplique ao vivo ou permanente.' : 'Crop indisponível para este arquivo (suportado: <b>.splat</b> e <b>.ply</b> binário padrão).';
     topbar.classList.add('visible');
@@ -3807,8 +3834,7 @@ window.__bxReady = true;
 // EDITE AQUI: URLs das suas duas cenas (repo do GitHub se <100MB, ou Hugging Face:
 // https://huggingface.co/<usuario>/<repo>/resolve/main/<arquivo>.splat )
 const EXAMPLE_SCENES = [
-  { id: 'btn-ex0', url: 'https://huggingface.co/datasets/NyckM/GaussiansSplatting-test/resolve/main/Bixinho.ply' },
-  { id: 'btn-ex1', url: 'https://huggingface.co/datasets/NyckM/GaussiansSplatting-test/resolve/main/Jacanva.ply' }
+  { id: 'btn-ex0', url: 'https://huggingface.co/datasets/NyckM/GaussiansSplatting-test/resolve/main/gs_Coffee.ply' }
 ];
 async function loadExample(url) {
   if (!/^https?:\/\//.test(url)) { showError('Exemplo ainda não configurado — edite EXAMPLE_SCENES no index.html com as URLs das cenas.'); return; }

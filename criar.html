@@ -210,6 +210,20 @@ const FLOWS = {
     capText: 'Aqui o movimento fica na cena: grave alguém dançando, algo caindo, etc. Câmera o mais parada possível.',
     colab: 'https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_4DGS.ipynb',
     ext: '.splat4d', accept: 'video/*'
+  },
+  asset: {
+    key: 'asset', icon: '🧱', title: 'Imagem → Asset 3D', mode: 'photo',
+    capTitle: 'Consiga uma imagem do objeto',
+    capText: 'Foto, render ou ilustração — o TripoSplat gera o objeto completo em 360° (não só o que aparece na foto), com o fundo removido automaticamente.',
+    colab: 'https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_TripoSplat.ipynb',
+    ext: '.splat', accept: 'image/*'
+  },
+  rosto: {
+    key: 'rosto', icon: '🎭', title: 'Rosto em 4D', mode: 'video',
+    capTitle: 'Grave as expressões do rosto',
+    capText: 'Vídeo curto (3-8s) do rosto bem enquadrado e iluminado. Cada frame vira um splat — as expressões viram uma sequência 4D pronta para distorcer no viewer.',
+    colab: 'https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_FaceAnything4D.ipynb',
+    ext: '.zip (frames .splat)', accept: 'video/*'
   }
 };
 
@@ -217,7 +231,9 @@ const CARD_META = {
   foto: { desc: 'Uma única foto vira um splat 3D em segundos. O jeito mais fácil de começar.', tag: 'Mais fácil · ~5 min', tagBg: 'rgba(158,224,90,.15)', tagColor: '#9ee05a', iconBg: 'rgba(158,224,90,.18)' },
   video: { desc: 'Filme orbitando um objeto ou lugar e gere um splat de alta qualidade com treino completo.', tag: 'Melhor qualidade · ~1h', tagBg: 'rgba(180,122,240,.15)', tagColor: '#c896f7', iconBg: 'rgba(180,122,240,.18)' },
   light: { desc: 'Igual ao anterior, mas com poda LightGaussian: arquivo ~3× menor com a mesma cara.', tag: 'Arquivo leve · ~1h', tagBg: 'rgba(180,122,240,.15)', tagColor: '#c896f7', iconBg: 'rgba(180,122,240,.18)' },
-  quatro: { desc: 'Cada frame do vídeo vira um splat — uma cena que se move no tempo (.splat4d).', tag: 'Experimental · ~30 min', tagBg: 'rgba(158,224,90,.15)', tagColor: '#9ee05a', iconBg: 'rgba(158,224,90,.18)' }
+  quatro: { desc: 'Cada frame do vídeo vira um splat — uma cena que se move no tempo (.splat4d).', tag: 'Experimental · ~30 min', tagBg: 'rgba(158,224,90,.15)', tagColor: '#9ee05a', iconBg: 'rgba(158,224,90,.18)' },
+  asset: { desc: 'Uma imagem vira um asset 3D completo em 360° (TripoSplat, até 262k gaussians).', tag: 'Asset 360° · ~15 min', tagBg: 'rgba(158,224,90,.15)', tagColor: '#9ee05a', iconBg: 'rgba(158,224,90,.18)' },
+  rosto: { desc: 'Expressões de um vídeo viram um rosto 4D denso e consistente (FaceAnything).', tag: 'Rosto 4D · ~40 min', tagBg: 'rgba(180,122,240,.15)', tagColor: '#c896f7', iconBg: 'rgba(180,122,240,.18)' }
 };
 
 function stepNum(color, filled, isMobile) {

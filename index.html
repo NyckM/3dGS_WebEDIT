@@ -202,6 +202,16 @@
   }
   #panel h3:first-child { margin-top: 0; }
   .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  /* botão de reset ao lado de cada controle */
+  .rst {
+    flex: 0 0 auto; width: 17px; height: 17px; line-height: 15px; text-align: center;
+    border-radius: 5px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.04);
+    color: #8e8b99; font-size: .68rem; cursor: pointer; padding: 0; user-select: none;
+    opacity: .38; transition: opacity .12s, color .12s, border-color .12s;
+  }
+  .row:hover .rst { opacity: .85; }
+  .rst:hover { color: var(--verde); border-color: rgba(150,201,61,.55); opacity: 1; }
+  .rst.dirty { opacity: 1; color: var(--verde); border-color: rgba(150,201,61,.45); }
   .row label { font-size: .78rem; color: #bbb; width: 74px; flex-shrink: 0; }
   .row input[type=range] {
     -webkit-appearance: none; appearance: none; flex: 1; height: 4px; border-radius: 2px;
@@ -965,8 +975,19 @@
   <button class="sq-btn" id="sq-prev" title="Frame anterior">⏮</button>
   <button class="sq-btn" id="sq-play" title="Play/Pause">▶</button>
   <button class="sq-btn" id="sq-next" title="Próximo frame">⏭</button>
-  <input type="range" id="sq-fps" min="1" max="30" step="1" value="8" title="FPS">
-  <span id="v-sqfps">8 fps</span>
+  <div id="sq-fps-wrap">
+    <button class="sq-btn" id="sq-fps-btn" title="Velocidade (FPS)">
+      <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
+        <rect x="2"  y="12" width="3" height="6"  rx="1" fill="currentColor"/>
+        <rect x="7"  y="8"  width="3" height="10" rx="1" fill="currentColor"/>
+        <rect x="12" y="4"  width="3" height="14" rx="1" fill="currentColor"/>
+      </svg>
+    </button>
+    <div id="sq-fps-pop">
+      <span id="v-sqfps">8 fps</span>
+      <input type="range" id="sq-fps" min="1" max="30" step="1" value="8" title="FPS" orient="vertical">
+    </div>
+  </div>
   <span id="seq-label">1/1</span>
 </div>
 <style>
@@ -983,7 +1004,23 @@
   }
   .sq-btn:hover { background: var(--roxo); }
   #sq-play { background: var(--verde); color: #0d0a12; font-weight: 700; }
-  #sq-fps { width: 90px; accent-color: var(--verde); }
+  /* velocidade (fps): ícone + slider VERTICAL, para não confundir com a timeline */
+  #sq-fps-wrap { position: relative; display: flex; align-items: center; }
+  #sq-fps-btn { display: flex; align-items: center; justify-content: center; color: #fff; }
+  #sq-fps-btn.on { background: var(--verde); color: #0d0a12; }
+  #sq-fps-pop {
+    display: none; position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+    flex-direction: column; align-items: center; gap: 8px;
+    background: var(--panel); border: 1px solid rgba(255,255,255,.15);
+    border-radius: 14px; padding: 12px 10px; backdrop-filter: blur(8px);
+    box-shadow: 0 6px 22px rgba(0,0,0,.5);
+  }
+  #sq-fps-pop.visible { display: flex; }
+  #sq-fps {
+    writing-mode: vertical-rl; direction: rtl;      /* padrão moderno */
+    -webkit-appearance: slider-vertical;            /* fallback */
+    width: 22px; height: 110px; accent-color: var(--verde);
+  }
   #v-sqfps, #seq-label { font-size: .78rem; color: var(--verde); min-width: 44px; }
 </style>
 
@@ -2620,6 +2657,18 @@ $('sq-play').addEventListener('click', () => {
   if (!seq) return;
   seq.playing = !seq.playing;
   $('sq-play').textContent = seq.playing ? '⏸' : '▶';
+});
+// abre/fecha o slider vertical de FPS
+$('sq-fps-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = $('sq-fps-pop').classList.toggle('visible');
+  $('sq-fps-btn').classList.toggle('on', open);
+});
+document.addEventListener('click', e => {
+  if (!$('sq-fps-wrap').contains(e.target)) {
+    $('sq-fps-pop').classList.remove('visible');
+    $('sq-fps-btn').classList.remove('on');
+  }
 });
 $('sq-fps').addEventListener('input', () => {
   $('v-sqfps').textContent = $('sq-fps').value + ' fps';
@@ -5161,6 +5210,66 @@ if (params.has('url')) {
     return loadFile(new File([buf], fakeName));
   }).catch(e => showError('Erro ao carregar URL: ' + e));
 }
+</script>
+<script>
+/* ============================================================
+   ↺ RESET POR CONTROLE — guarda o valor original de cada
+   slider/cor/select e devolve com um clique.
+   ============================================================ */
+(function () {
+  const SEL = 'input[type=range], input[type=color], input[type=number], select';
+  const orig = new WeakMap();
+
+  const valOf = el => (el.tagName === 'SELECT' ? el.value : el.value);
+  const defOf = el => {
+    if (el.tagName === 'SELECT') {
+      const o = [...el.options].find(o => o.defaultSelected);
+      return o ? o.value : el.options[0] && el.options[0].value;
+    }
+    const a = el.getAttribute('value');
+    return a !== null ? a : el.defaultValue;
+  };
+
+  function markDirty(el, btn) {
+    btn.classList.toggle('dirty', String(valOf(el)) !== String(orig.get(el)));
+  }
+
+  function attach(el) {
+    if (el.dataset.rstOn) return;
+    const row = el.closest('.row');
+    if (!row) return;
+    el.dataset.rstOn = '1';
+    orig.set(el, defOf(el));
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'rst';
+    btn.textContent = '↺';
+    btn.title = 'voltar ao valor original (' + orig.get(el) + ')';
+    btn.addEventListener('click', ev => {
+      ev.preventDefault(); ev.stopPropagation();
+      el.value = orig.get(el);
+      el.dispatchEvent(new Event('input',  { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      markDirty(el, btn);
+    });
+    row.appendChild(btn);
+
+    el.addEventListener('input',  () => markDirty(el, btn));
+    el.addEventListener('change', () => markDirty(el, btn));
+  }
+
+  const scan = () => document.querySelectorAll(SEL).forEach(attach);
+  scan();
+  // painéis criados depois (cinema, vfx, interativo…) também ganham o botão
+  new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
+
+  // reset de um painel inteiro: window.bxResetPanel('#tab-camera')
+  window.bxResetPanel = sel => {
+    const root = document.querySelector(sel);
+    if (root) root.querySelectorAll('.rst').forEach(b => b.click());
+  };
+})();
 </script>
 </body>
 </html>

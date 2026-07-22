@@ -203,6 +203,14 @@
   #panel h3:first-child { margin-top: 0; }
   .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
   /* botão de reset ao lado de cada controle */
+  /* valor clicável para digitar um número exato */
+  .val.editable { cursor: text; border-bottom: 1px dashed rgba(255,255,255,.22); }
+  .val.editable:hover { color: var(--verde); border-bottom-color: var(--verde); }
+  input.val-edit {
+    width: 62px; font: inherit; font-size: .74rem; text-align: right;
+    background: rgba(0,0,0,.5); color: var(--verde);
+    border: 1px solid var(--verde); border-radius: 5px; padding: 1px 4px; outline: none;
+  }
   .rst {
     flex: 0 0 auto; width: 17px; height: 17px; line-height: 15px; text-align: center;
     border-radius: 5px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.04);
@@ -2580,6 +2588,40 @@ async function loadFile(file) {
 }
 
 // ===== Sequência 4DGS (vários PLYs = frames no tempo) =====
+// ============================================================
+// Mantém o carregamento andando com a aba em segundo plano.
+// O navegador congela requestAnimationFrame em abas ocultas, e é dele que a
+// biblioteca depende para finalizar cada cena. Um Worker com timer próprio
+// cutuca o viewer manualmente enquanto a aba não está visível.
+// ============================================================
+let bxKeepAlive = null;
+function bxKeepAliveStart() {
+  if (bxKeepAlive) return;
+  let worker = null;
+  try {
+    const src = 'let t=null; onmessage=e=>{ if(e.data===\'go\'){ t=setInterval(()=>postMessage(1),16); } else { clearInterval(t); } };';
+    worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    worker.onmessage = () => {
+      if (!document.hidden || !viewer) return;
+      try { viewer.update(); viewer.render(); } catch (e) {}
+    };
+    worker.postMessage('go');
+  } catch (e) { worker = null; }
+  // rede de segurança caso Worker/Blob esteja bloqueado
+  const iv = setInterval(() => {
+    if (!document.hidden || !viewer) return;
+    try { viewer.update(); viewer.render(); } catch (e) {}
+  }, 100);
+  bxKeepAlive = { worker, iv };
+}
+function bxKeepAliveStop() {
+  if (!bxKeepAlive) return;
+  try { bxKeepAlive.worker && bxKeepAlive.worker.postMessage('stop'); } catch (e) {}
+  try { bxKeepAlive.worker && bxKeepAlive.worker.terminate(); } catch (e) {}
+  clearInterval(bxKeepAlive.iv);
+  bxKeepAlive = null;
+}
+
 async function loadSequence(files) {
   let list = [...files].filter(f => formatFromName(f.name) !== null);
   if (list.length === 0) { showError('Nenhum arquivo suportado.'); return; }
@@ -2596,10 +2638,12 @@ async function loadSequence(files) {
   viewer = makeViewer({ enableOptionalEffects: true }); // visibilidade por cena (4DGS)
   viewer.start();
   applyFov();
+  bxKeepAliveStart();
   try {
     let union = null; // bounding box unificado de todos os frames
     for (let i = 0; i < list.length; i++) {
-      loadingText.textContent = `Carregando frame ${i + 1}/${list.length}… (${list[i].name})`;
+      loadingText.textContent = `Carregando frame ${i + 1}/${list.length}… (${list[i].name})`
+        + (document.hidden ? ' — aba em segundo plano: o navegador reduz a velocidade' : '');
       const buf = await list[i].arrayBuffer();
       const fmt = formatFromName(list[i].name);
       // acumula o bbox do frame no bbox da sequência (pivô/reveal/crop radial usam isso)
@@ -2622,11 +2666,13 @@ async function loadSequence(files) {
     bbox = union; // efeitos (pivô, epicentro, crop radial) refletem o volume real da sequência
   } catch (e) {
     console.error(e);
+    bxKeepAliveStop();
     loading.classList.remove('visible');
     dropzone.classList.remove('hidden');
     showError('Erro na sequência: ' + (e.message || e));
     return;
   }
+  bxKeepAliveStop();
   seq = { count: list.length, current: 0, playing: false, fps: parseFloat($('sq-fps').value), timer: 0 };
   const ok = bxPatchShader(viewer.splatMesh);
   if (ok) syncFxUniforms();
@@ -5280,7 +5326,61 @@ if (params.has('url')) {
     el.addEventListener('change', () => markDirty(el, btn));
   }
 
-  const scan = () => document.querySelectorAll(SEL).forEach(attach);
+  /* ---- digitar um valor exato: clique no número ao lado do slider ---- */
+  function makeEditable(el) {
+    if (el.dataset.editOn) return;
+    const row = el.closest('.row');
+    if (!row) return;
+    // o mostrador é o span logo depois do slider
+    let disp = el.nextElementSibling;
+    while (disp && disp.tagName !== 'SPAN') disp = disp.nextElementSibling;
+    if (!disp) return;
+    el.dataset.editOn = '1';
+    disp.classList.add('editable');
+    disp.title = 'clique para digitar um valor exato';
+
+    disp.addEventListener('click', () => {
+      if (disp.querySelector('input')) return;
+      const antes = disp.textContent;
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'val-edit';
+      inp.value = el.value;
+      disp.textContent = '';
+      disp.appendChild(inp);
+      inp.focus();
+      inp.select();
+
+      const aplicar = () => {
+        // aceita vírgula decimal (27,75) além do ponto
+        const v = parseFloat(String(inp.value).replace(',', '.'));
+        disp.textContent = antes;
+        if (!Number.isFinite(v)) return;
+        // amplia os limites se o número digitado ficar fora deles
+        if (v < parseFloat(el.min)) el.min = String(v);
+        if (v > parseFloat(el.max)) el.max = String(v);
+        // 'any' permite valores fora da grade do passo (ex.: 27,75 com passo 0,5)
+        const passo = el.step;
+        el.step = 'any';
+        el.value = String(v);
+        el.dispatchEvent(new Event('input',  { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        el.step = passo;
+      };
+      inp.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter') { ev.preventDefault(); aplicar(); }
+        else if (ev.key === 'Escape') { ev.preventDefault(); disp.textContent = antes; }
+        ev.stopPropagation();          // não deixa atalhos do viewer capturarem a digitação
+      });
+      inp.addEventListener('keyup',  ev => ev.stopPropagation());
+      inp.addEventListener('blur', aplicar);
+    });
+  }
+
+  const scan = () => {
+    document.querySelectorAll(SEL).forEach(attach);
+    document.querySelectorAll('input[type=range]').forEach(makeEditable);
+  };
   scan();
   // painéis criados depois (cinema, vfx, interativo…) também ganham o botão
   new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });

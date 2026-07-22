@@ -992,7 +992,9 @@
 </div>
 <style>
   #seqbar {
-    position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 26;
+    /* sobe sozinho quando a timeline abre (--seqbar-lift é medido em JS) */
+    position: fixed; bottom: calc(14px + var(--seqbar-lift, 0px)); left: 50%;
+    transform: translateX(-50%); z-index: 29; transition: bottom .18s ease;
     display: none; align-items: center; gap: 10px;
     background: var(--panel); border: 1px solid rgba(255,255,255,.15);
     border-radius: 999px; padding: 8px 18px; backdrop-filter: blur(8px);
@@ -5211,6 +5213,25 @@ if (params.has('url')) {
   }).catch(e => showError('Erro ao carregar URL: ' + e));
 }
 </script>
+<script>
+/* ============================================================
+   A barra do 4DGS sobe quando a timeline abre, para não ficar escondida
+   ============================================================ */
+(function () {
+  const tl = document.getElementById('timeline');
+  if (!tl) return;
+  const sync = () => {
+    const aberta = tl.classList.contains('visible');
+    const h = aberta ? tl.getBoundingClientRect().height : 0;
+    document.documentElement.style.setProperty('--seqbar-lift', h + 'px');
+  };
+  sync();
+  new MutationObserver(sync).observe(tl, { attributes: true, attributeFilter: ['class', 'style'] });
+  if (window.ResizeObserver) new ResizeObserver(sync).observe(tl);   // painel de layers muda a altura
+  window.addEventListener('resize', sync);
+})();
+</script>
+
 <script>
 /* ============================================================
    ↺ RESET POR CONTROLE — guarda o valor original de cada

@@ -52,10 +52,17 @@
     <input type="range" id="disp" min="0.2" max="3" step="0.05" value="1" style="flex:1; accent-color:var(--verde);">
     <span id="dispv" style="color:var(--verde); width:34px;">1.00</span>
   </div>
-  <div style="font-size:.7rem;color:#666;margin-top:6px;">build <b id="buildid" style="color:var(--verde)">v7</b> — se aqui não estiver <b>v7</b>, o navegador está com cache antigo (Ctrl+Shift+R)</div>
+  <div style="font-size:.7rem;color:#666;margin-top:6px;">build <b id="buildid" style="color:var(--verde)">v8</b> — se aqui não estiver <b>v8</b>, o navegador está com cache antigo (Ctrl+Shift+R)</div>
   <div id="status"></div>
   <div id="bar"><div></div></div>
   <div class="warn" id="warn"></div>
+  <div id="diag" style="display:none; background:#12101a; border:1px solid rgba(150,201,61,.35); border-radius:12px; padding:12px 14px; margin-top:14px;">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+      <b style="font-size:.82rem; color:var(--verde);">Diagnóstico do modelo</b>
+      <button id="diag-copy" style="margin-left:auto; font-size:.72rem; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); color:#fff; border-radius:8px; padding:4px 12px; cursor:pointer;">copiar</button>
+    </div>
+    <pre id="diag-txt" style="font-size:.68rem; line-height:1.45; color:#c9c6d4; white-space:pre-wrap; margin:0; max-height:300px; overflow:auto;"></pre>
+  </div>
 
   <div id="stage">
     <div id="view"></div>
@@ -289,6 +296,11 @@ async function preview(splatBuf) {
   URL.revokeObjectURL(url);
 }
 
+document.getElementById('diag-copy').addEventListener('click', () => {
+  navigator.clipboard.writeText(document.getElementById('diag-txt').textContent);
+  document.getElementById('diag-copy').textContent = 'copiado!';
+  setTimeout(() => { document.getElementById('diag-copy').textContent = 'copiar'; }, 1500);
+});
 let lastSplat = null;
 async function run(file) {
   $('warn').classList.remove('on');
@@ -337,6 +349,29 @@ async function run(file) {
       console.error(tries.join('\n'));
       throw new Error('nenhuma das ' + tries.length + ' combinações passou. 1ª: ' + tries[0]);
     }
+    // ---- diagnóstico: forma + estatísticas reais de cada saída ----
+    {
+      const lines = [];
+      for (const n of session.outputNames) {
+        const t = outputs[n];
+        const d = (t.type === 'float16') ? fromF16(t.data) : t.data;
+        let mn = Infinity, mx = -Infinity, sum = 0, cnt = 0, nan = 0;
+        const step = Math.max(1, Math.floor(d.length / 50000));
+        for (let i = 0; i < d.length; i += step) {
+          const v = d[i];
+          if (Number.isNaN(v)) { nan++; continue; }
+          if (v < mn) mn = v; if (v > mx) mx = v; sum += v; cnt++;
+        }
+        const head = Array.from(d.slice(0, 8)).map(v => (+v).toFixed(4)).join(', ');
+        lines.push(`${n}\n  dims=[${t.dims.join(', ')}]  tipo=${t.type}  len=${d.length}` +
+                   `\n  min=${mn.toFixed(4)}  max=${mx.toFixed(4)}  média=${(sum/(cnt||1)).toFixed(4)}  NaN=${nan}` +
+                   `\n  primeiros: ${head}`);
+      }
+      const txt = 'entradas: ' + session.inputNames.join(', ') + '  |  res=' + INPUT_RES + '\n\n' + lines.join('\n\n');
+      $('diag-txt').textContent = txt;
+      $('diag').style.display = 'block';
+      console.log(txt);
+    }
     // mostra a forma real das saídas (para calibrar o parsing na 1ª rodada)
     const spec = session.outputNames.map(n => `${n}[${outputs[n].dims.join('×')}] ${outputs[n].type}`).join('  ·  ');
     console.log('SHARP saída:', spec);
@@ -349,7 +384,7 @@ async function run(file) {
     setTimeout(() => $('bar').classList.remove('on'), 800);
   } catch (e) {
     console.error(e);
-    warn('[v7] Erro ao gerar: ' + (e.message || e));
+    warn('[v8] Erro ao gerar: ' + (e.message || e));
     setStatus('');
   }
 }

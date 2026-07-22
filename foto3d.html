@@ -137,6 +137,32 @@ async function loadModel() {
   return session;
 }
 
+// ---- conversão float32 <-> float16 (o modelo fp16 exige tensores float16) ----
+const _f32 = new Float32Array(1), _i32 = new Int32Array(_f32.buffer);
+function f32to16(v) {
+  _f32[0] = v; const x = _i32[0];
+  let bits = (x >> 16) & 0x8000;
+  let m = (x >> 12) & 0x07ff;
+  const e = (x >> 23) & 0xff;
+  if (e < 103) return bits;
+  if (e > 142) { bits |= 0x7c00; bits |= ((e === 255) ? 0 : 1) && (x & 0x007fffff); return bits; }
+  if (e < 113) { m |= 0x0800; bits |= (m >> (114 - e)) + ((m >> (113 - e)) & 1); return bits; }
+  bits |= ((e - 112) << 10) | (m >> 1); bits += m & 1; return bits;
+}
+function f16to32(h) {
+  const s = (h & 0x8000) >> 15, e = (h & 0x7C00) >> 10, f = h & 0x03FF;
+  if (e === 0) return (s ? -1 : 1) * Math.pow(2, -14) * (f / 1024);
+  if (e === 0x1F) return f ? NaN : (s ? -1 : 1) * Infinity;
+  return (s ? -1 : 1) * Math.pow(2, e - 15) * (1 + f / 1024);
+}
+const toF16Array = arr => { const o = new Uint16Array(arr.length); for (let i = 0; i < arr.length; i++) o[i] = f32to16(arr[i]); return o; };
+// tensor no dtype pedido
+function mkTensor(dtype, floatArr, dims) {
+  return dtype === 'float16'
+    ? new ort.Tensor('float16', toF16Array(floatArr), dims)
+    : new ort.Tensor('float32', floatArr instanceof Float32Array ? floatArr : Float32Array.from(floatArr), dims);
+}
+
 // pré-processa a imagem → tensor [1,3,RES,RES] float 0..1 (CHW)
 async function imageToTensor(file) {
   const img = await createImageBitmap(file);
@@ -154,7 +180,7 @@ async function imageToTensor(file) {
     arr[N + i] = d[i*4+1] / 255;     // G plane
     arr[2*N + i] = d[i*4+2] / 255;   // B plane
   }
-  return new ort.Tensor('float32', arr, [1, 3, INPUT_RES, INPUT_RES]);
+  return arr;   // Float32Array CHW — vira tensor no dtype certo em buildFeeds
 }
 
 // ============================================================
@@ -166,7 +192,10 @@ function gaussiansToSplat(outputs) {
   // pega o primeiro tensor de saída
   const key = Object.keys(outputs)[0];
   const t = outputs[key];
-  const data = t.data;                 // Float32Array
+  // saídas fp16 vêm como Uint16Array → converte para float
+  const data = (t.type === 'float16')
+    ? Float32Array.from(t.data, h => f16to32(h))
+    : t.data;
   const dims = t.dims;
   // tenta descobrir N e canais
   let N, C;
@@ -215,33 +244,36 @@ async function run(file) {
   try {
     await loadModel();
     setStatus('Processando no seu dispositivo…', 40);
-    const input = await imageToTensor(file);
+    const imgArr = await imageToTensor(file);
     const disp = parseFloat(document.getElementById('disp').value);
-    // alimenta TODAS as entradas do modelo: a imagem + escalares (ex.: disparity_factor)
-    const buildFeeds = (scalarDims) => {
+    // alimenta TODAS as entradas: imagem + escalares (ex.: disparity_factor), no dtype do modelo
+    const buildFeeds = (dtype, scalarDims) => {
       const f = {};
       let imgDone = false;
       for (const name of session.inputNames) {
         const n = name.toLowerCase();
         if (!imgDone && (n.includes('image') || n.includes('img') || n === 'input' || n.includes('rgb'))) {
-          f[name] = input; imgDone = true;
+          f[name] = mkTensor(dtype, imgArr, [1, 3, INPUT_RES, INPUT_RES]); imgDone = true;
         } else if (n.includes('disparity') || n.includes('depth') || n.includes('scale') || n.includes('factor')) {
-          f[name] = new ort.Tensor('float32', new Float32Array([disp]), scalarDims);
+          f[name] = mkTensor(dtype, new Float32Array([disp]), scalarDims);
         } else {
-          f[name] = new ort.Tensor('float32', new Float32Array([1]), scalarDims);
+          f[name] = mkTensor(dtype, new Float32Array([1]), scalarDims);
         }
       }
-      if (!imgDone) f[session.inputNames[0]] = input;   // fallback: 1ª entrada é a imagem
+      if (!imgDone) f[session.inputNames[0]] = mkTensor(dtype, imgArr, [1, 3, INPUT_RES, INPUT_RES]);
       return f;
     };
     const t0 = performance.now();
-    let outputs;
-    try {
-      outputs = await session.run(buildFeeds([1]));         // escalares como [1]
-    } catch (e1) {
-      console.warn('tentando escalares como [] :', e1.message);
-      outputs = await session.run(buildFeeds([]));          // fallback: escalar puro
+    let outputs = null, lastErr = null;
+    // o modelo fp16 quer float16; tentamos as combinações até uma passar
+    for (const dtype of ['float16', 'float32']) {
+      for (const dims of [[1], []]) {
+        try { outputs = await session.run(buildFeeds(dtype, dims)); break; }
+        catch (err) { lastErr = err; console.warn(`tentativa ${dtype}/[${dims}] falhou:`, err.message); }
+      }
+      if (outputs) break;
     }
+    if (!outputs) throw lastErr;
     // mostra a forma real das saídas (para calibrar o parsing na 1ª rodada)
     const spec = session.outputNames.map(n => `${n}[${outputs[n].dims.join('×')}] ${outputs[n].type}`).join('  ·  ');
     console.log('SHARP saída:', spec);

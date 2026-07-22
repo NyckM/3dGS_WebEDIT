@@ -32,6 +32,12 @@
   .warn { background:#5c1a1a; border:1px solid #a33; color:#fdd; padding:10px 14px; border-radius:10px; font-size:.84rem; margin-top:14px; display:none; }
   .warn.on { display:block; }
   .cfg { font-size:.72rem; color:#666; margin-top:20px; line-height:1.5; }
+  .ctl { display:flex; align-items:center; gap:10px; margin-top:12px; font-size:.82rem; color:#9a97a6; }
+  .ctl label { white-space:nowrap; min-width:104px; }
+  .ctl input[type=range] { flex:1; accent-color:var(--verde); }
+  .ctl .v { color:var(--verde); width:60px; text-align:right; }
+  details.adv { margin-top:14px; border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:10px 14px; }
+  details.adv summary { cursor:pointer; font-size:.82rem; color:#b7b4c2; }
 </style>
 </head>
 <body>
@@ -43,25 +49,53 @@
   <div id="drop">
     <div class="emo">🖼️</div>
     <h2>Solte uma foto aqui ou clique</h2>
-    <p>Objeto/pessoa centralizado, boa luz. JPG/PNG.</p>
+    <p>Objeto/pessoa centralizado, boa luz. JPG/PNG/WebP.</p>
     <input type="file" id="file" accept="image/*" hidden>
   </div>
 
-  <div style="display:flex; align-items:center; gap:10px; margin-top:14px; font-size:.82rem; color:#9a97a6;">
-    <label for="disp" style="white-space:nowrap;">Profundidade</label>
-    <input type="range" id="disp" min="0.2" max="3" step="0.05" value="1" style="flex:1; accent-color:var(--verde);">
-    <span id="dispv" style="color:var(--verde); width:34px;">1.00</span>
+  <div class="ctl">
+    <label for="disp">Profundidade</label>
+    <input type="range" id="disp" min="0.2" max="3" step="0.05" value="1">
+    <span class="v" id="dispv">1.00</span>
   </div>
-  <div style="font-size:.7rem;color:#666;margin-top:6px;">build <b id="buildid" style="color:var(--verde)">v8</b> — se aqui não estiver <b>v8</b>, o navegador está com cache antigo (Ctrl+Shift+R)</div>
+  <div class="ctl">
+    <label for="focal">Lente (mm)</label>
+    <input type="range" id="focal" min="14" max="85" step="1" value="30">
+    <span class="v" id="focalv">30 mm</span>
+  </div>
+
+  <details class="adv">
+    <summary>Opções avançadas</summary>
+    <div class="ctl">
+      <label for="opac">Opacidade mín.</label>
+      <input type="range" id="opac" min="0" max="0.3" step="0.005" value="0.02">
+      <span class="v" id="opacv">0.020</span>
+    </div>
+    <div class="ctl">
+      <label for="maxg">Máx. splats</label>
+      <input type="range" id="maxg" min="100000" max="2400000" step="100000" value="1200000">
+      <span class="v" id="maxgv">1.2M</span>
+    </div>
+    <div class="ctl" style="margin-top:14px;">
+      <label for="prec">Precisão</label>
+      <select id="prec" style="flex:1; background:#1a1622; color:#fff; border:1px solid rgba(255,255,255,.2); border-radius:8px; padding:6px 10px;">
+        <option value="fp32" selected>fp32 — 2,5 GB, resultado de referência</option>
+        <option value="fp16">fp16 — 1,2 GB, mais leve (experimental)</option>
+      </select>
+    </div>
+  </details>
+
+  <div style="font-size:.7rem;color:#666;margin-top:10px;">build <b style="color:var(--verde)">v9</b> — se aqui não estiver v9, o navegador está com cache antigo (Ctrl+Shift+R)</div>
   <div id="status"></div>
   <div id="bar"><div></div></div>
   <div class="warn" id="warn"></div>
+
   <div id="diag" style="display:none; background:#12101a; border:1px solid rgba(150,201,61,.35); border-radius:12px; padding:12px 14px; margin-top:14px;">
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
       <b style="font-size:.82rem; color:var(--verde);">Diagnóstico do modelo</b>
       <button id="diag-copy" style="margin-left:auto; font-size:.72rem; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); color:#fff; border-radius:8px; padding:4px 12px; cursor:pointer;">copiar</button>
     </div>
-    <pre id="diag-txt" style="font-size:.68rem; line-height:1.45; color:#c9c6d4; white-space:pre-wrap; margin:0; max-height:300px; overflow:auto;"></pre>
+    <pre id="diag-txt" style="font-size:.68rem; line-height:1.45; color:#c9c6d4; white-space:pre-wrap; margin:0; max-height:280px; overflow:auto;"></pre>
   </div>
 
   <div id="stage">
@@ -73,8 +107,8 @@
     </div>
   </div>
 
-  <p class="cfg">Modelo: <span id="cfg-model">—</span> · Backend: <span id="cfg-backend">detectando…</span>.
-  Configure a URL do modelo em <code>SHARP_ONNX_URL</code> no código (gere com o notebook <b>Exportar SHARP → ONNX</b>).</p>
+  <p class="cfg">Modelo: <span id="cfg-model">SHARP (Apple) — pesos de pristinaai/sentiantai</span> · Backend: <span id="cfg-backend">detectando…</span>.
+  Pipeline portado da implementação de referência <code>ml-sharp-web</code>: inferência em NDC + reprojeção para espaço métrico no navegador.</p>
 </div>
 
 <script type="importmap">
@@ -91,24 +125,50 @@ import * as GS from '@mkkellogg/gaussian-splats-3d';
 import * as ort from 'onnxruntime-web';
 
 // ============================================================
-// CONFIG — modelo SHARP já exportado por pristinaai (ONNX + WebGPU).
-// fp16 = ~1.2 GB (baixa 1x e fica em cache). Cada .onnx puxa o .data ao lado.
+// CONSTANTES — iguais às da implementação de referência (ml-sharp-web)
 // ============================================================
 const MODEL_BASE = 'https://huggingface.co/sentiantai/sharp-onnx-webgpu-weights/resolve/main/';
-const MODEL_URL = MODEL_BASE + 'sharp_web_predictor_fp16.onnx';   // ou sharp_web_predictor.onnx (fp32, 2.5 GB)
-let INPUT_RES = 1536;             // o SHARP exige exatamente 1536x1536 (≈2.4M gaussians)
-document.getElementById('cfg-model').textContent = 'SHARP fp16 (pristinaai)';
+const MODEL_FILE = { fp32: 'sharp_web_predictor.onnx', fp16: 'sharp_web_predictor_fp16.onnx' };
+const RES = 1536;                       // SHARP_INTERNAL_RESOLUTION
+const FILM_35MM_DIAG = Math.hypot(36, 24);
 
 const $ = id => document.getElementById(id);
 const setStatus = (t, pct) => { $('status').textContent = t || ''; if (pct != null) { $('bar').classList.add('on'); $('bar').firstElementChild.style.width = pct + '%'; } };
 const warn = t => { const w = $('warn'); w.textContent = t; w.classList.add('on'); };
 
-// backend: WebGPU se houver, senão WASM
 const hasWebGPU = !!navigator.gpu;
 $('cfg-backend').textContent = hasWebGPU ? 'WebGPU (GPU local)' : 'WASM (CPU — mais lento)';
 ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
 
-// baixa com barra de progresso (arquivos grandes: o .data tem ~1.2 GB)
+// sliders
+const bind = (id, out, fmt) => { const f = () => $(out).textContent = fmt(parseFloat($(id).value)); $(id).addEventListener('input', f); f(); };
+bind('disp', 'dispv', v => v.toFixed(2));
+bind('focal', 'focalv', v => v + ' mm');
+bind('opac', 'opacv', v => v.toFixed(3));
+bind('maxg', 'maxgv', v => (v / 1e6).toFixed(1) + 'M');
+
+// ============================================================
+// float16 (só usado no modo experimental)
+// ============================================================
+const HAS_F16 = (typeof Float16Array !== 'undefined');
+function f16to32(h) {
+  const s = (h & 0x8000) >> 15, e = (h & 0x7C00) >> 10, f = h & 0x03FF;
+  if (e === 0) return (s ? -1 : 1) * Math.pow(2, -14) * (f / 1024);
+  if (e === 0x1F) return f ? NaN : (s ? -1 : 1) * Infinity;
+  return (s ? -1 : 1) * Math.pow(2, e - 15) * (1 + f / 1024);
+}
+const asF32 = d => (d instanceof Float32Array) ? d
+  : (d instanceof Uint16Array) ? Float32Array.from(d, f16to32)
+  : Float32Array.from(d);
+const mkTensor = (dtype, arr, dims) => {
+  if (dtype !== 'float16') return new ort.Tensor('float32', arr instanceof Float32Array ? arr : Float32Array.from(arr), dims);
+  if (!HAS_F16) throw new Error('este navegador não suporta Float16Array; use a precisão fp32');
+  return new ort.Tensor('float16', Float16Array.from(arr), dims);
+};
+
+// ============================================================
+// download com barra de progresso
+// ============================================================
 async function fetchProgress(url, label) {
   const r = await fetch(url);
   if (!r.ok) throw new Error(label + ' HTTP ' + r.status);
@@ -125,169 +185,176 @@ async function fetchProgress(url, label) {
   for (const c of chunks) { buf.set(c, off); off += c.length; }
   return buf;
 }
-let session = null;
+
+let session = null, sessionKey = null;
 async function loadModel() {
-  if (session) return session;
+  const prec = $('prec').value;
+  if (session && sessionKey === prec) return session;
+  if (session) { try { await session.release(); } catch(e){} session = null; }
+  const url = MODEL_BASE + MODEL_FILE[prec];
   setStatus('Carregando o modelo SHARP…', 2);
-  // modelo + pesos externos (sidecar .data) — carregados juntos
-  const modelBuf = await fetchProgress(MODEL_URL, 'modelo');
-  const dataBuf = await fetchProgress(MODEL_URL + '.data', 'pesos');
+  const modelBuf = await fetchProgress(url, 'modelo');
+  const dataBuf  = await fetchProgress(url + '.data', 'pesos');
   session = await ort.InferenceSession.create(modelBuf, {
     executionProviders: hasWebGPU ? ['webgpu', 'wasm'] : ['wasm'],
     graphOptimizationLevel: 'all',
-    externalData: [{ path: MODEL_URL.split('/').pop() + '.data', data: dataBuf }]
+    externalData: [{ path: MODEL_FILE[prec] + '.data', data: dataBuf }]
   });
-  // mostra a especificação real do modelo (para calibrar o parsing)
-  console.log('SHARP inputs:', session.inputNames, '| outputs:', session.outputNames);
-  document.getElementById('cfg-model').textContent =
-    'SHARP fp16 · entradas: ' + session.inputNames.join(', ') + ' · saídas: ' + session.outputNames.join(', ');
-  window.__sharpSession = session;
+  sessionKey = prec;
+  $('cfg-model').textContent = `SHARP ${prec} · entradas: ${session.inputNames.join(', ')} · saídas: ${session.outputNames.join(', ')}`;
   return session;
 }
 
-// ---- conversão float32 <-> float16 (o modelo fp16 exige tensores float16) ----
-const _f32 = new Float32Array(1), _i32 = new Int32Array(_f32.buffer);
-function f32to16(v) {
-  _f32[0] = v; const x = _i32[0];
-  let bits = (x >> 16) & 0x8000;
-  let m = (x >> 12) & 0x07ff;
-  const e = (x >> 23) & 0xff;
-  if (e < 103) return bits;
-  if (e > 142) { bits |= 0x7c00; bits |= ((e === 255) ? 0 : 1) && (x & 0x007fffff); return bits; }
-  if (e < 113) { m |= 0x0800; bits |= (m >> (114 - e)) + ((m >> (113 - e)) & 1); return bits; }
-  bits |= ((e - 112) << 10) | (m >> 1); bits += m & 1; return bits;
-}
-function f16to32(h) {
-  const s = (h & 0x8000) >> 15, e = (h & 0x7C00) >> 10, f = h & 0x03FF;
-  if (e === 0) return (s ? -1 : 1) * Math.pow(2, -14) * (f / 1024);
-  if (e === 0x1F) return f ? NaN : (s ? -1 : 1) * Infinity;
-  return (s ? -1 : 1) * Math.pow(2, e - 15) * (1 + f / 1024);
-}
-const HAS_F16 = (typeof Float16Array !== 'undefined');
-// navegadores modernos exigem Float16Array nativo; nos antigos, Uint16Array com os bits
-const toF16Array = arr => {
-  if (HAS_F16) return Float16Array.from(arr);
-  const o = new Uint16Array(arr.length);
-  for (let i = 0; i < arr.length; i++) o[i] = f32to16(arr[i]);
-  return o;
-};
-// saída float16 → Float32Array (Float16Array já guarda floats; Uint16Array guarda bits)
-const fromF16 = d => (d instanceof Uint16Array) ? Float32Array.from(d, h => f16to32(h)) : Float32Array.from(d);
-// tensor no dtype pedido
-function mkTensor(dtype, floatArr, dims) {
-  return dtype === 'float16'
-    ? new ort.Tensor('float16', toF16Array(floatArr), dims)
-    : new ort.Tensor('float32', floatArr instanceof Float32Array ? floatArr : Float32Array.from(floatArr), dims);
-}
-
-// pré-processa a imagem → tensor [1,3,RES,RES] float 0..1 (CHW)
-async function imageToTensor(file) {
+// ============================================================
+// imagem → tensor [1,3,1536,1536] (esticada, como no SHARP original)
+// ============================================================
+let srcW = 0, srcH = 0;
+async function imageToArray(file) {
   const img = await createImageBitmap(file);
-  const c = document.createElement('canvas'); c.width = c.height = INPUT_RES;
-  const x = c.getContext('2d');
-  // "cover" central
-  const s = Math.max(INPUT_RES / img.width, INPUT_RES / img.height);
-  const w = img.width * s, h = img.height * s;
-  x.drawImage(img, (INPUT_RES - w) / 2, (INPUT_RES - h) / 2, w, h);
-  const d = x.getImageData(0, 0, INPUT_RES, INPUT_RES).data;
-  const N = INPUT_RES * INPUT_RES;
+  srcW = img.width; srcH = img.height;
+  const c = document.createElement('canvas'); c.width = c.height = RES;
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.drawImage(img, 0, 0, RES, RES);          // stretch — o SHARP espera a imagem inteira
+  const d = x.getImageData(0, 0, RES, RES).data;
+  const N = RES * RES;
   const arr = new Float32Array(3 * N);
   for (let i = 0; i < N; i++) {
-    arr[i] = d[i*4] / 255;           // R plane
-    arr[N + i] = d[i*4+1] / 255;     // G plane
-    arr[2*N + i] = d[i*4+2] / 255;   // B plane
+    arr[i]       = d[i*4]     / 255;
+    arr[N + i]   = d[i*4 + 1] / 255;
+    arr[2*N + i] = d[i*4 + 2] / 255;
   }
-  return arr;   // Float32Array CHW — vira tensor no dtype certo em buildFeeds
+  return arr;
 }
 
 // ============================================================
-// PARSE — converte a saída do SHARP em buffer .splat (32 bytes/splat).
-// Layout assumido por splat: [x,y,z, sx,sy,sz, qx,qy,qz,qw, op, r,g,b] (14 canais).
-// AJUSTE conforme a saída impressa pelo notebook (nomes/ordem/normalização).
+// ÁLGEBRA — reprojeção NDC → métrico (porte de unprojectGaussians)
 // ============================================================
-function gaussiansToSplat(outputs) {
-  // saídas reais do SHARP: mean_vectors_ndc, singular_values_ndc, quaternions_ndc, colors, opacities
-  const pick = (...cands) => {
-    for (const c of cands) for (const k of Object.keys(outputs)) if (k.toLowerCase().includes(c)) return outputs[k];
-    return null;
-  };
-  // tensor → { get(i,c), N, C }
-  const acc = (t, fallbackC) => {
-    if (!t) return null;
-    const d = (t.type === 'float16') ? fromF16(t.data) : t.data;
-    const dims = t.dims.filter(x => x !== 1);
-    let C = fallbackC, N;
-    if (dims.length >= 2) {
-      // canal é a menor dimensão (3, 4, 1); a outra é N
-      C = Math.min(dims[dims.length - 1], dims[0]) <= 4 ? Math.min(dims[dims.length - 1], dims[0]) : fallbackC;
-      N = Math.floor(d.length / C);
-      const channelLast = dims[dims.length - 1] === C;
-      return channelLast
-        ? { N, C, get: (i, c) => d[i * C + c] }        // [N, C]
-        : { N, C, get: (i, c) => d[c * N + i] };       // [C, N] / [C, H, W]
-    }
-    N = Math.floor(d.length / C);
-    return { N, C, get: (i, c) => d[i * C + c] };
-  };
-  const P  = acc(pick('mean_vectors', 'mean', 'position', 'xyz'), 3);
-  const S  = acc(pick('singular_values', 'scale', 'sigma'), 3);
-  const Q  = acc(pick('quaternion', 'rot'), 4);
-  const CO = acc(pick('color', 'rgb', 'sh'), 3);
-  const OP = acc(pick('opacit', 'alpha'), 1);
-  if (!P) throw new Error('não achei a saída de posições');
-  const N = P.N;
-  const clamp8 = v => Math.max(0, Math.min(255, Math.round(v)));
-  const sig = v => 1 / (1 + Math.exp(-v));
-  // as posições vêm em NDC (x,y em -1..1; z = profundidade) → espaço de mundo simples
-  const buf = new ArrayBuffer(N * 32);
-  const f = new Float32Array(buf), u = new Uint8Array(buf);
-  // detecta se cor/opacidade já estão em 0..1 (senão aplica sigmoid)
-  let maxC = 0, maxO = 0;
-  for (let i = 0; i < Math.min(N, 2000); i++) {
-    if (CO) maxC = Math.max(maxC, CO.get(i, 0));
-    if (OP) maxO = Math.max(maxO, OP.get(i, 0));
+function quatToMat(qw, qx, qy, qz) {
+  const n = Math.hypot(qw, qx, qy, qz) || 1;
+  const w = qw/n, x = qx/n, y = qy/n, z = qz/n;
+  const ww=w*w, xx=x*x, yy=y*y, zz=z*z;
+  const wx=w*x, wy=w*y, wz=w*z, xy=x*y, xz=x*z, yz=y*z;
+  return [ww+xx-yy-zz, 2*(xy-wz), 2*(xz+wy),
+          2*(xy+wz), ww-xx+yy-zz, 2*(yz-wx),
+          2*(xz-wy), 2*(yz+wx), ww-xx-yy+zz];
+}
+function jacobiRot(m, v, p, q) {
+  const pp=p*3+p, qq=q*3+q, pq=p*3+q, qp=q*3+p;
+  const app=m[pp], aqq=m[qq], apq=m[pq];
+  if (Math.abs(apq) < 1e-18) return;
+  const tau = (aqq-app)/(2*apq);
+  const t = tau >= 0 ? 1/(tau+Math.sqrt(1+tau*tau)) : -1/(-tau+Math.sqrt(1+tau*tau));
+  const c = 1/Math.sqrt(1+t*t), s = t*c;
+  for (let k=0;k<3;k++){
+    if (k===p||k===q) continue;
+    const kp=k*3+p, pk=p*3+k, kq=k*3+q, qk=q*3+k;
+    const mkp=m[kp], mkq=m[kq];
+    m[kp]=m[pk]=c*mkp-s*mkq;
+    m[kq]=m[qk]=s*mkp+c*mkq;
   }
-  const corNorm = maxC > 1.5 ? (v => v)          : (maxC <= 1.01 ? (v => v * 255) : (v => sig(v) * 255));
-  const opNorm  = maxO > 1.5 ? (v => v)          : (maxO <= 1.01 ? (v => v * 255) : (v => sig(v) * 255));
-  // escala: se vier negativa em média, está em log
-  let sMean = 0, sn = 0;
-  if (S) { for (let i = 0; i < Math.min(N, 2000); i++) { sMean += S.get(i, 0); sn++; } sMean /= (sn || 1); }
-  const escNorm = sMean < 0 ? (v => Math.exp(v)) : (v => v);
-  for (let i = 0; i < N; i++) {
-    f[i*8]   =  P.get(i, 0);
-    f[i*8+1] = -P.get(i, 1);              // NDC tem Y para cima; o viewer usa Y para baixo
-    f[i*8+2] =  P.get(i, 2);
-    const sx = S ? escNorm(S.get(i, 0)) : 0.01;
-    const sy = S ? escNorm(S.get(i, 1)) : 0.01;
-    const sz = S ? escNorm(S.get(i, 2)) : 0.01;
-    f[i*8+3] = sx; f[i*8+4] = sy; f[i*8+5] = sz;
-    u[i*32+24] = clamp8(CO ? corNorm(CO.get(i, 0)) : 200);
-    u[i*32+25] = clamp8(CO ? corNorm(CO.get(i, 1)) : 200);
-    u[i*32+26] = clamp8(CO ? corNorm(CO.get(i, 2)) : 200);
-    u[i*32+27] = clamp8(OP ? opNorm(OP.get(i, 0)) : 255);
-    // quaternion: .splat guarda (w,x,y,z) normalizado em bytes
-    let qw = 1, qx = 0, qy = 0, qz = 0;
-    if (Q) {
-      let a = Q.get(i,0), b = Q.get(i,1), c = Q.get(i,2), d2 = Q.get(i,3);
-      const len = Math.hypot(a,b,c,d2) || 1;
-      a/=len; b/=len; c/=len; d2/=len;
-      qw = a; qx = b; qy = c; qz = d2;
-    }
-    u[i*32+28] = clamp8(qw * 128 + 128);
-    u[i*32+29] = clamp8(qx * 128 + 128);
-    u[i*32+30] = clamp8(qy * 128 + 128);
-    u[i*32+31] = clamp8(qz * 128 + 128);
+  m[pp]=c*c*app-2*s*c*apq+s*s*aqq;
+  m[qq]=s*s*app+2*s*c*apq+c*c*aqq;
+  m[pq]=m[qp]=0;
+  for (let k=0;k<3;k++){
+    const kp=k*3+p, kq=k*3+q, vkp=v[kp], vkq=v[kq];
+    v[kp]=c*vkp-s*vkq; v[kq]=s*vkp+c*vkq;
+  }
+}
+function jacobiEigen(m, v) {
+  v.fill(0); v[0]=v[4]=v[8]=1;
+  for (let sweep=0; sweep<8; sweep++){
+    if (Math.abs(m[1])+Math.abs(m[2])+Math.abs(m[5]) < 1e-14) break;
+    jacobiRot(m,v,0,1); jacobiRot(m,v,0,2); jacobiRot(m,v,1,2);
+  }
+}
+function swapCols(v,a,b){ for(let r=0;r<3;r++){ const i=r*3+a, j=r*3+b, t=v[i]; v[i]=v[j]; v[j]=t; } }
+function sortEigen(e,v){
+  if (e[0]<e[1]) { const t=e[0]; e[0]=e[1]; e[1]=t; swapCols(v,0,1); }
+  if (e[1]<e[2]) { const t=e[1]; e[1]=e[2]; e[2]=t; swapCols(v,1,2); }
+  if (e[0]<e[1]) { const t=e[0]; e[0]=e[1]; e[1]=t; swapCols(v,0,1); }
+}
+function properRotation(v){
+  const det = v[0]*(v[4]*v[8]-v[5]*v[7]) - v[1]*(v[3]*v[8]-v[5]*v[6]) + v[2]*(v[3]*v[7]-v[4]*v[6]);
+  if (det < 0) { v[2]*=-1; v[5]*=-1; v[8]*=-1; }
+}
+function matToQuat(r00,r01,r02,r10,r11,r12,r20,r21,r22){
+  const tr = r00+r11+r22; let qw,qx,qy,qz;
+  if (tr > 0) { const s=2*Math.sqrt(Math.max(1e-12,tr+1)); qw=.25*s; qx=(r21-r12)/s; qy=(r02-r20)/s; qz=(r10-r01)/s; }
+  else if (r00>r11 && r00>r22) { const s=2*Math.sqrt(Math.max(1e-12,1+r00-r11-r22)); qw=(r21-r12)/s; qx=.25*s; qy=(r01+r10)/s; qz=(r02+r20)/s; }
+  else if (r11>r22) { const s=2*Math.sqrt(Math.max(1e-12,1+r11-r00-r22)); qw=(r02-r20)/s; qx=(r01+r10)/s; qy=.25*s; qz=(r12+r21)/s; }
+  else { const s=2*Math.sqrt(Math.max(1e-12,1+r22-r00-r11)); qw=(r10-r01)/s; qx=(r02+r20)/s; qy=(r12+r21)/s; qz=.25*s; }
+  const n = Math.hypot(qw,qx,qy,qz)||1;
+  return [qw/n, qx/n, qy/n, qz/n];
+}
+// converte os gaussians de NDC para espaço métrico, no lugar
+function unproject(count, means, sing, quats, sx, sy) {
+  const m = new Float64Array(9), v = new Float64Array(9), e = new Float64Array(3);
+  for (let i = 0; i < count; i++) {
+    const i3 = i*3, i4 = i*4;
+    means[i3]   *= sx;
+    means[i3+1] *= sy;
+    const [r00,r01,r02,r10,r11,r12,r20,r21,r22] = quatToMat(quats[i4],quats[i4+1],quats[i4+2],quats[i4+3]);
+    const v0 = sing[i3]**2, v1 = sing[i3+1]**2, v2 = sing[i3+2]**2;
+    const c00=r00*r00*v0+r01*r01*v1+r02*r02*v2;
+    const c01=r00*r10*v0+r01*r11*v1+r02*r12*v2;
+    const c02=r00*r20*v0+r01*r21*v1+r02*r22*v2;
+    const c11=r10*r10*v0+r11*r11*v1+r12*r12*v2;
+    const c12=r10*r20*v0+r11*r21*v1+r12*r22*v2;
+    const c22=r20*r20*v0+r21*r21*v1+r22*r22*v2;
+    m[0]=c00*sx*sx; m[1]=c01*sx*sy; m[2]=c02*sx;
+    m[3]=m[1];      m[4]=c11*sy*sy; m[5]=c12*sy;
+    m[6]=m[2];      m[7]=m[5];      m[8]=c22;
+    jacobiEigen(m, v);
+    e[0]=m[0]; e[1]=m[4]; e[2]=m[8];
+    sortEigen(e, v);
+    properRotation(v);
+    sing[i3]   = Math.sqrt(Math.max(e[0],1e-12));
+    sing[i3+1] = Math.sqrt(Math.max(e[1],1e-12));
+    sing[i3+2] = Math.sqrt(Math.max(e[2],1e-12));
+    const [qw,qx,qy,qz] = matToQuat(v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8]);
+    quats[i4]=qw; quats[i4+1]=qx; quats[i4+2]=qy; quats[i4+3]=qz;
+  }
+}
+
+// ============================================================
+// saída → buffer .splat (32 bytes por gaussian)
+// ============================================================
+const clamp01 = v => v <= 0 ? 0 : v >= 1 ? 1 : v;
+const linearToSrgb = v => { const x = clamp01(v); return x <= 0.0031308 ? 12.92*x : 1.055*Math.pow(x,1/2.4) - 0.055; };
+const q8 = v => Math.max(0, Math.min(255, Math.round(v * 128 + 128)));
+
+function buildSplat(count, means, sing, quats, colors, opac) {
+  const buf = new ArrayBuffer(count * 32);
+  const f = new Float32Array(buf), u = new Uint8Array(buf);
+  for (let i = 0; i < count; i++) {
+    const i3 = i*3, i4 = i*4, o = i*32;
+    f[i*8]   = means[i3];
+    f[i*8+1] = means[i3+1];
+    f[i*8+2] = means[i3+2];
+    f[i*8+3] = sing[i3];        // escala já é linear — nada de exp()
+    f[i*8+4] = sing[i3+1];
+    f[i*8+5] = sing[i3+2];
+    u[o+24] = Math.round(linearToSrgb(colors[i3])   * 255);
+    u[o+25] = Math.round(linearToSrgb(colors[i3+1]) * 255);
+    u[o+26] = Math.round(linearToSrgb(colors[i3+2]) * 255);
+    u[o+27] = Math.round(clamp01(opac[i]) * 255);   // opacidade já vem ativada
+    u[o+28] = q8(quats[i4]);                        // wxyz
+    u[o+29] = q8(quats[i4+1]);
+    u[o+30] = q8(quats[i4+2]);
+    u[o+31] = q8(quats[i4+3]);
   }
   return buf;
 }
 
-// mini-viewer para o preview inline
+// ============================================================
+// viewer de preview
+// ============================================================
 let viewer = null;
 async function preview(splatBuf) {
   if (viewer) { try { viewer.dispose(); } catch(e){} $('view').innerHTML = ''; viewer = null; }
   viewer = new GS.Viewer({
     rootElement: $('view'),
-    cameraUp: [0,-1,0], initialCameraPosition: [0,0,-4], initialCameraLookAt: [0,0,0],
+    cameraUp: [0,-1,0], initialCameraPosition: [0,0,-2], initialCameraLookAt: [0,0,1],
     selfDrivenMode: true, useBuiltInControls: true
   });
   const url = URL.createObjectURL(new Blob([splatBuf]));
@@ -296,114 +363,127 @@ async function preview(splatBuf) {
   URL.revokeObjectURL(url);
 }
 
-document.getElementById('diag-copy').addEventListener('click', () => {
-  navigator.clipboard.writeText(document.getElementById('diag-txt').textContent);
-  document.getElementById('diag-copy').textContent = 'copiado!';
-  setTimeout(() => { document.getElementById('diag-copy').textContent = 'copiar'; }, 1500);
-});
+// ============================================================
+// PIPELINE
+// ============================================================
 let lastSplat = null;
 async function run(file) {
   $('warn').classList.remove('on');
   try {
     await loadModel();
-    setStatus('Processando no seu dispositivo… (1536×1536, pode levar ~30s)', 40);
-    let imgArr = await imageToTensor(file);
-    let imgArr2 = imgArr; const imgRes = INPUT_RES;
-    const disp = parseFloat(document.getElementById('disp').value);
-    // alimenta TODAS as entradas: imagem + escalares (ex.: disparity_factor).
-    // o dtype da imagem e o dos escalares podem ser diferentes → testamos as combinações.
-    const buildFeeds = (imgDtype, scDtype, scalarDims) => {
-      const f = {};
-      let imgDone = false;
-      for (const name of session.inputNames) {
-        const n = name.toLowerCase();
-        if (!imgDone && (n.includes('image') || n.includes('img') || n === 'input' || n.includes('rgb'))) {
-          f[name] = mkTensor(imgDtype, imgArr2, [1, 3, INPUT_RES, INPUT_RES]); imgDone = true;
-        } else if (n.includes('disparity') || n.includes('depth') || n.includes('scale') || n.includes('factor')) {
-          f[name] = mkTensor(scDtype, new Float32Array([disp]), scalarDims);
-        } else {
-          f[name] = mkTensor(scDtype, new Float32Array([1]), scalarDims);
-        }
-      }
-      if (!imgDone) f[session.inputNames[0]] = mkTensor(imgDtype, imgArr2, [1, 3, INPUT_RES, INPUT_RES]);
-      return f;
-    };
+    if (session.inputNames.length < 2) throw new Error('modelo com entradas inesperadas: ' + session.inputNames.join(', '));
+
+    setStatus('Preparando a imagem…', 30);
+    const imgArr = await imageToArray(file);
+
+    const disp    = parseFloat($('disp').value);
+    const focalMm = parseFloat($('focal').value);
+    const focalPx = focalMm * Math.hypot(srcW, srcH) / FILM_35MM_DIAG;
+
+    setStatus('Rodando o SHARP no seu dispositivo… (pode levar ~1 min)', 45);
     const t0 = performance.now();
-    let outputs = null; const tries = [];
-    const RES_LIST = [1536, 1024, 768, 512];
-    const baseRes = INPUT_RES;
-    outer:
-    for (const res of RES_LIST) {
-      INPUT_RES = res;
-      imgArr2 = (res === baseRes) ? imgArr : await imageToTensor(file);
-      for (const imgDtype of ['float16', 'float32']) {
-        for (const scDtype of ['float16', 'float32']) {
-          for (const dims of [[1], []]) {
-            try { outputs = await session.run(buildFeeds(imgDtype, scDtype, dims)); break outer; }
-            catch (err) { tries.push(`${res}px img:${imgDtype} esc:${scDtype}[${dims}] → ${err.message}`); }
-          }
-        }
-      }
+
+    // a referência alimenta tudo em float32; fp16 só se o usuário escolher
+    const dt = $('prec').value === 'fp16' ? 'float16' : 'float32';
+    const feeds = {
+      [session.inputNames[0]]: mkTensor(dt, imgArr, [1, 3, RES, RES]),
+      [session.inputNames[1]]: mkTensor(dt, new Float32Array([disp]), [1])
+    };
+    // export "wrapper" antigo tem 5 entradas: + focal, largura, altura
+    if (session.inputNames.length >= 5) {
+      feeds[session.inputNames[2]] = mkTensor(dt, new Float32Array([focalPx]), [1]);
+      feeds[session.inputNames[3]] = mkTensor(dt, new Float32Array([srcW]),   [1]);
+      feeds[session.inputNames[4]] = mkTensor(dt, new Float32Array([srcH]),   [1]);
     }
-    if (!outputs) {
-      console.error(tries.join('\n'));
-      throw new Error('nenhuma das ' + tries.length + ' combinações passou. 1ª: ' + tries[0]);
-    }
-    // ---- diagnóstico: forma + estatísticas reais de cada saída ----
+    const outputs = await session.run(feeds);
+
+    // ---- saídas ----
+    const get = (...names) => { for (const n of names) if (outputs[n]) return { t: outputs[n], name: n };
+      throw new Error('saída ausente: ' + names.join('/') + '. Disponíveis: ' + Object.keys(outputs).join(', ')); };
+    const oMean = get('mean_vectors_ndc', 'mean_vectors');
+    const oSing = get('singular_values_ndc', 'singular_values');
+    const oQuat = get('quaternions_ndc', 'quaternions');
+    const oCol  = get('colors');
+    const oOpa  = get('opacities');
+    const isNdc = oMean.name.endsWith('_ndc') || oSing.name.endsWith('_ndc') || oQuat.name.endsWith('_ndc');
+
+    let means = asF32(oMean.t.data), sing = asF32(oSing.t.data);
+    let quats = asF32(oQuat.t.data), cols = asF32(oCol.t.data), opac = asF32(oOpa.t.data);
+
+    // diagnóstico
     {
-      const lines = [];
-      for (const n of session.outputNames) {
-        const t = outputs[n];
-        const d = (t.type === 'float16') ? fromF16(t.data) : t.data;
-        let mn = Infinity, mx = -Infinity, sum = 0, cnt = 0, nan = 0;
-        const step = Math.max(1, Math.floor(d.length / 50000));
-        for (let i = 0; i < d.length; i += step) {
-          const v = d[i];
-          if (Number.isNaN(v)) { nan++; continue; }
-          if (v < mn) mn = v; if (v > mx) mx = v; sum += v; cnt++;
-        }
-        const head = Array.from(d.slice(0, 8)).map(v => (+v).toFixed(4)).join(', ');
-        lines.push(`${n}\n  dims=[${t.dims.join(', ')}]  tipo=${t.type}  len=${d.length}` +
-                   `\n  min=${mn.toFixed(4)}  max=${mx.toFixed(4)}  média=${(sum/(cnt||1)).toFixed(4)}  NaN=${nan}` +
-                   `\n  primeiros: ${head}`);
-      }
-      const txt = 'entradas: ' + session.inputNames.join(', ') + '  |  res=' + INPUT_RES + '\n\n' + lines.join('\n\n');
-      $('diag-txt').textContent = txt;
-      $('diag').style.display = 'block';
-      console.log(txt);
+      const st = (n, d) => { let mn=Infinity,mx=-Infinity,nan=0; const s=Math.max(1,Math.floor(d.length/50000));
+        for(let i=0;i<d.length;i+=s){const v=d[i]; if(Number.isNaN(v)){nan++;continue;} if(v<mn)mn=v; if(v>mx)mx=v;}
+        return `${n}: len=${d.length} min=${mn.toFixed(4)} max=${mx.toFixed(4)} NaN=${nan}`; };
+      const txt = [`NDC=${isNdc} focalPx=${focalPx.toFixed(1)} img=${srcW}x${srcH}`,
+        st('means',means), st('sing',sing), st('quats',quats), st('colors',cols), st('opac',opac)].join('\n');
+      $('diag-txt').textContent = txt; $('diag').style.display = 'block'; console.log(txt);
     }
-    // mostra a forma real das saídas (para calibrar o parsing na 1ª rodada)
-    const spec = session.outputNames.map(n => `${n}[${outputs[n].dims.join('×')}] ${outputs[n].type}`).join('  ·  ');
-    console.log('SHARP saída:', spec);
-    $('cfg-model').textContent = 'SHARP fp16 · saída: ' + spec;
-    setStatus('Montando os Gaussians…', 85);
-    lastSplat = gaussiansToSplat(outputs);
-    setStatus(`Pronto! ${(lastSplat.byteLength/32/1000).toFixed(0)}k splats em ${((performance.now()-t0)/1000).toFixed(1)}s`, 100);
+
+    const total = opac.length;
+    if (total === 0) throw new Error('o modelo devolveu zero gaussians');
+
+    // ---- poda por opacidade + limite ----
+    setStatus('Filtrando gaussians…', 75);
+    const thr = parseFloat($('opac').value);
+    const maxG = parseInt($('maxg').value, 10);
+    let sel = [];
+    for (let i = 0; i < total; i++) if (opac[i] >= thr) sel.push(i);
+    if (sel.length === 0) sel = Array.from({length: total}, (_, i) => i);
+    if (sel.length > maxG) {
+      sel.sort((a, b) => opac[b] - opac[a]);
+      sel.length = maxG;
+      sel.sort((a, b) => a - b);
+    }
+    const n = sel.length;
+    const pick3 = src => { const o = new Float32Array(n*3); for(let k=0;k<n;k++){const s=sel[k]*3; o[k*3]=src[s]; o[k*3+1]=src[s+1]; o[k*3+2]=src[s+2];} return o; };
+    const pick4 = src => { const o = new Float32Array(n*4); for(let k=0;k<n;k++){const s=sel[k]*4; o[k*4]=src[s]; o[k*4+1]=src[s+1]; o[k*4+2]=src[s+2]; o[k*4+3]=src[s+3];} return o; };
+    means = pick3(means); sing = pick3(sing); cols = pick3(cols); quats = pick4(quats);
+    const op2 = new Float32Array(n); for (let k=0;k<n;k++) op2[k] = opac[sel[k]];
+
+    // ---- NDC → métrico ----
+    if (isNdc) {
+      setStatus('Convertendo de NDC para espaço métrico…', 85);
+      unproject(n, means, sing, quats, srcW / (2*focalPx), srcH / (2*focalPx));
+    }
+
+    setStatus('Montando o .splat…', 93);
+    lastSplat = buildSplat(n, means, sing, quats, cols, op2);
+    setStatus(`Pronto! ${(n/1000).toFixed(0)}k splats (de ${(total/1000).toFixed(0)}k) em ${((performance.now()-t0)/1000).toFixed(1)}s`, 100);
     $('stage').classList.add('on');
     await preview(lastSplat);
     setTimeout(() => $('bar').classList.remove('on'), 800);
   } catch (e) {
     console.error(e);
-    warn('[v8] Erro ao gerar: ' + (e.message || e));
+    warn('[v9] Erro ao gerar: ' + (e.message || e));
+    $('bar').classList.remove('on');
     setStatus('');
   }
 }
 
+// ============================================================
 // UI
-document.getElementById('disp').addEventListener('input', e => document.getElementById('dispv').textContent = (+e.target.value).toFixed(2));
+// ============================================================
 $('drop').addEventListener('click', () => $('file').click());
-$('file').addEventListener('change', () => { if ($('file').files[0]) run($('file').files[0]); });
+$('file').addEventListener('change', e => { if (e.target.files[0]) run(e.target.files[0]); });
 ['dragenter','dragover'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('over'); }));
 ['dragleave','drop'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.remove('over'); }));
-$('drop').addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f && f.type.startsWith('image/')) run(f); });
+$('drop').addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) run(f); });
+
 $('dl').addEventListener('click', () => {
   if (!lastSplat) return;
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lastSplat])); a.download = 'bruxos_foto3d.splat'; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lastSplat]));
+  a.download = 'bruxos_foto3d.splat';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 });
-$('again').addEventListener('click', () => { $('stage').classList.remove('on'); $('file').value=''; setStatus(''); });
-
-if (!hasWebGPU) warn('Seu navegador não tem WebGPU — vai rodar em CPU (WASM), bem mais lento. Use Chrome/Edge recentes para a versão rápida.');
+$('again').addEventListener('click', () => { $('stage').classList.remove('on'); $('file').value = ''; $('file').click(); });
+$('diag-copy').addEventListener('click', () => {
+  navigator.clipboard.writeText($('diag-txt').textContent);
+  $('diag-copy').textContent = 'copiado!';
+  setTimeout(() => { $('diag-copy').textContent = 'copiar'; }, 1500);
+});
 </script>
 </body>
 </html>

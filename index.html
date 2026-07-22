@@ -298,6 +298,41 @@
     position: absolute; top: 6px; left: 8px; font-size: .62rem; color: var(--verde);
     background: rgba(13,10,18,.55); padding: 2px 8px; border-radius: 999px; pointer-events: none;
   }
+  /* ===== modo Cinema: pós-processo + letterbox ===== */
+  #postfx-canvas {
+    position: fixed; inset: 0; z-index: 6; pointer-events: none; display: none;
+    width: 100%; height: 100%;
+  }
+  #postfx-canvas.visible { display: block; }
+  #letterbox { position: fixed; inset: 0; z-index: 7; pointer-events: none; display: none; }
+  #letterbox.visible { display: block; }
+  #letterbox .bar { position: absolute; left: 0; right: 0; background: #000; }
+  #letterbox .bar.top { top: 0; } #letterbox .bar.bot { bottom: 0; }
+  #letterbox .bar.lft { top: 0; bottom: 0; left: 0; } #letterbox .bar.rgt { top: 0; bottom: 0; right: 0; }
+  #cine-badge {
+    position: fixed; left: 14px; top: 12px; z-index: 8; display: none;
+    font-family: 'Courier New', monospace; font-size: .72rem; color: #eee;
+    background: rgba(0,0,0,.35); padding: 3px 10px; border-radius: 4px; pointer-events: none;
+    letter-spacing: 1px;
+  }
+  #cine-badge.visible { display: block; }
+  #cine-badge.rec::before { content: '● REC '; color: #f44; }
+  /* ===== modo Cinema: painel vira dock lateral em escala de cinza ===== */
+  body.cine-dock #panel {
+    left: 0; right: auto; top: 0; bottom: 0; max-height: 100vh; height: 100vh;
+    width: 300px; border-radius: 0; border-left: none; border-top: none; border-bottom: none;
+    border-right: 1px solid #333; background: #14151a;
+    /* recolore os acentos verde/roxo para escala de cinza */
+    --verde: #d0d2d6; --roxo: #3a3d45; --roxo-claro: #565a63;
+  }
+  body.cine-dock #panel h3 { color: #cfd2d7; border-bottom-color: rgba(255,255,255,.06); }
+  body.cine-dock #panel h4 { color: #b6b9bf; }
+  body.cine-dock #panel .panel-btn.on { background: #4a4d55; border-color: #6b6f79; color: #fff; }
+  body.cine-dock #panel .ax-btn.on { background: #cfd2d7; border-color: #cfd2d7; color: #14151a; }
+  body.cine-dock #panel input[type=range]::-webkit-slider-thumb { background: #cfd2d7; }
+  body.cine-dock #panel input[type=range]::-moz-range-thumb { background: #cfd2d7; }
+  body.cine-dock #panel .val { color: #cfd2d7; }
+  body.cine-dock #panel .fx-tab.active { background: #4a4d55; border-color: #6b6f79; }
   #hint {
     position: fixed; right: 14px; bottom: 14px; z-index: 21;
     font-size: .72rem; color: rgba(255,255,255,.4); text-align: right; display: none;
@@ -312,6 +347,7 @@
 <!-- ===== SPLASH ===== -->
 <div id="dropzone">
   <div id="dz-glow"></div>
+  <button id="btn-lang-splash" style="position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:15; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); color:#eee; padding:7px 16px; border-radius:999px; cursor:pointer; font-size:.85rem;">🌐 ENGLISH</button>
   <div class="dz-particles" id="dz-particles">
     <div class="dz-particle" style="top:14%; left:70%; width:5px; height:5px; background:#9ee05a; opacity:.5; animation: dzDrift1 9s ease-in-out infinite; box-shadow:0 0 12px 2px rgba(158,224,90,.5);"></div>
     <div class="dz-particle" style="top:62%; left:82%; width:4px; height:4px; background:#b47af0; opacity:.45; animation: dzDrift2 11s ease-in-out infinite; box-shadow:0 0 10px 2px rgba(180,122,240,.5);"></div>
@@ -363,6 +399,7 @@
             <a class="btn verde" id="btn-criar" href="criar.html">Começar agora →</a>
             <a class="btn ghost" href="criar.html">📖 Ver guia passo a passo</a>
             <button class="btn ghost" id="btn-ex0">🎁 Exemplo — Coffee ☕</button>
+            <a class="btn ghost" id="btn-bruxosplat" href="COLE_AQUI_O_LINK_DO_APP.exe" download>🪄 BruxoSplat Windows x64</a>
           </div>
         </div>
       </div>
@@ -383,6 +420,7 @@
 <div id="topbar">
   <span class="title"><span class="b">Bruxos</span> do <span class="v">VFX</span> · 3DGS</span>
   <span class="spacer"></span>
+  <button class="tb-btn" id="btn-lang">🌐 ENGLISH</button>
   <button class="tb-btn" id="btn-panel">✦ Editar</button>
   <button class="tb-btn rec" id="btn-rec">⏺ Gravar MP4</button>
   <button class="tb-btn" id="btn-new">Importar outro</button>
@@ -399,11 +437,23 @@
     <button class="fx-tab" data-tab="tab-trans">✨ Transição</button>
     <button class="fx-tab" data-tab="tab-misc">🧪 Diversos</button>
     <button class="fx-tab" data-tab="tab-inter">🕹 Interativo</button>
+    <button class="fx-tab" data-tab="tab-cine">🎬 Cinema</button>
     <button class="fx-tab" data-tab="tab-vfx">🔮 VFX</button>
   </div>
 
   <!-- ========== EDITAR GAUSSIANS ========== -->
   <div class="tab-page visible" id="tab-edit">
+    <h3>🎨 Fundo</h3>
+    <button class="panel-btn" id="bg-toggle">▶ Fundo colorido</button>
+    <div class="row"><label>Cor</label><input type="color" id="bg-color" value="#101018" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
+    <div class="row"><label>Gradiente</label><input type="range" id="bg-grad" min="0" max="1" step="0.02" value="0.3"><span class="val" id="v-bggrad">0.30</span></div>
+    <div class="btn-pair">
+      <button class="panel-btn" id="bg-white">Branco</button>
+      <button class="panel-btn" id="bg-gray">Cinza</button>
+      <button class="panel-btn" id="bg-chroma">Chroma</button>
+    </div>
+    <p class="note">Troca o fundo preto por cor sólida ou gradiente. Aparece na gravação e no modo Cinema; "Chroma" facilita recortar depois.</p>
+
     <h3>Tamanho do splat</h3>
     <div class="row"><label>Tamanho</label><input type="range" id="p-splatscale" min="0.05" max="3" step="0.05" value="1"><span class="val" id="v-splatscale">1.00</span></div>
     <div class="axis-row"><span class="lbl">🎧 Áudio</span>
@@ -517,7 +567,7 @@
     <button class="panel-btn" id="d-toggle">▶ Desfoque</button>
     <div class="row"><label>Foco (dist.)</label><input type="range" id="d-dist" min="0.1" max="20" step="0.1" value="3"><span class="val" id="v-ddist">3.0</span></div>
     <div class="row"><label>Faixa nítida</label><input type="range" id="d-range" min="0.1" max="10" step="0.1" value="1.5"><span class="val" id="v-drange">1.5</span></div>
-    <div class="row"><label>Intensidade</label><input type="range" id="d-blur" min="0.5" max="12" step="0.5" value="6"><span class="val" id="v-dblur">6.0</span></div>
+    <div class="row"><label>Intensidade</label><input type="range" id="d-blur" min="0.5" max="30" step="0.5" value="8"><span class="val" id="v-dblur">6.0</span></div>
 
     <h3>Aberração cromática</h3>
     <button class="panel-btn" id="ca-toggle">▶ Aberração cromática</button>
@@ -760,6 +810,70 @@
     <p class="note" id="hand-status">MediaPipe Hands: a ponta do indicador move a força do mouse (escolha o modo acima) e a <b>pinça</b> (indicador + polegar) aplica/solta a força. No modo Puxar, pince para agarrar e solte para ver a mola.</p>
   </div>
 
+  <!-- ========== CINEMA ========== -->
+  <div class="tab-page" id="tab-cine">
+    <div class="axis-row"><span class="lbl">Câmera</span>
+      <button class="ax-btn" id="cine-off">Off</button>
+      <button class="ax-btn" id="cine-vhs">VHS</button>
+      <button class="ax-btn" id="cine-cin">Cinema</button>
+      <button class="ax-btn" id="cine-phone">Celular</button>
+    </div>
+    <div class="row"><label>Modelo</label><select class="au-sel" id="cine-model"></select></div>
+    <div class="row"><label>Aspecto</label><select class="au-sel" id="cine-aspect"></select></div>
+
+    <div id="cine-lens-row" class="row" style="display:none"><label>Lente</label><select class="au-sel" id="cine-lens"></select></div>
+    <div id="cine-zoom-row" class="row" style="display:none"><label>Zoom</label><select class="au-sel" id="cine-zoom"></select></div>
+
+    <h3 id="cine-look-h">Look</h3>
+    <div class="row"><label>LUT / cor</label><select class="au-sel" id="cine-lut"></select></div>
+    <div class="row"><label>Intensidade</label><input type="range" id="cine-strength" min="0" max="1.5" step="0.05" value="1"><span class="val" id="v-cinestrength">1.00</span></div>
+
+    <h3>Pós (todos os modos)</h3>
+    <div class="row"><label>Aberração</label><input type="range" id="post-chroma" min="0" max="1" step="0.02" value="0.2"><span class="val" id="v-postchroma">0.20</span></div>
+    <div class="row"><label>Glow</label><input type="range" id="post-glow" min="0" max="1" step="0.02" value="0.15"><span class="val" id="v-postglow">0.15</span></div>
+    <div class="row"><label>8-bit / dither</label><input type="range" id="post-bit" min="0" max="1" step="0.02" value="0"><span class="val" id="v-postbit">0.00</span></div>
+
+    <div id="cine-vhs-box">
+      <h3>Pós VHS (NTSC)</h3>
+      <div class="row"><label>Ruído</label><input type="range" id="vhs-noise" min="0" max="1" step="0.02" value="0.35"><span class="val" id="v-vhsnoise">0.35</span></div>
+      <div class="row"><label>Chroma</label><input type="range" id="vhs-chroma" min="0" max="1" step="0.02" value="0.4"><span class="val" id="v-vhschroma">0.40</span></div>
+      <div class="row"><label>Distorção</label><input type="range" id="vhs-warp" min="0" max="1" step="0.02" value="0.3"><span class="val" id="v-vhswarp">0.30</span></div>
+      <div class="row"><label>Unsharp</label><input type="range" id="vhs-unsharp" min="0" max="2" step="0.05" value="0.8"><span class="val" id="v-vhsunsharp">0.80</span></div>
+      <div class="row"><label>Dither</label><input type="range" id="vhs-dither" min="0" max="1" step="0.02" value="0.5"><span class="val" id="v-vhsdither">0.50</span></div>
+      <div class="row"><label>Scanlines</label><input type="range" id="vhs-scan" min="0" max="1" step="0.02" value="0.5"><span class="val" id="v-vhsscan">0.50</span></div>
+      <div class="row"><label>Dither modul.</label><input type="range" id="vhs-dithermod" min="0" max="1" step="0.02" value="0.4"><span class="val" id="v-vhsdithermod">0.40</span></div>
+      <div class="row"><label>Resolução ↓</label><input type="range" id="vhs-pixel" min="0" max="1" step="0.02" value="0.4"><span class="val" id="v-vhspixel">0.40</span></div>
+      <div class="row"><label>CRT</label><input type="range" id="vhs-crt" min="0" max="1" step="0.02" value="0"><span class="val" id="v-vhscrt">0.00</span></div>
+      <button class="panel-btn" id="vhs-zoom">▶ Zoom automático (VHS)</button>
+      <div class="row"><label>Vel. zoom</label><input type="range" id="vhs-zoomspd" min="-1" max="1" step="0.02" value="0.15"><span class="val" id="v-vhszoomspd">0.15</span></div>
+    </div>
+
+    <div id="cine-phone-box" style="display:none">
+      <h3>Celular FX</h3>
+      <button class="panel-btn" id="phone-glitch-on">▶ Glitch</button>
+      <div class="row"><label>Glitch</label><input type="range" id="phone-glitch" min="0" max="1" step="0.02" value="0.4"><span class="val" id="v-phoneglitch">0.40</span></div>
+      <button class="panel-btn" id="phone-mosh-on">▶ Datamosh</button>
+      <div class="row"><label>Datamosh</label><input type="range" id="phone-mosh" min="0" max="1" step="0.02" value="0.4"><span class="val" id="v-phonemosh">0.40</span></div>
+      <div class="row"><label>Pixel</label><input type="range" id="phone-pixel" min="0" max="1" step="0.02" value="0"><span class="val" id="v-phonepixel">0.00</span></div>
+      <p class="note">Glitch salta blocos de linhas e rotaciona cores; Datamosh arrasta a imagem como compressão quebrada.</p>
+    </div>
+    <div id="cine-cin-box" style="display:none">
+      <h3>Cinema</h3>
+      <button class="panel-btn" id="cin-dof">▶ Desfoque de lente</button>
+      <div class="row"><label>Foco (dist.)</label><input type="range" id="cin-focus" min="0.1" max="20" step="0.1" value="3"><span class="val" id="v-cinfocus">3.0</span></div>
+      <div class="row"><label>Abertura</label><input type="range" id="cin-aperture" min="0.5" max="30" step="0.5" value="10"><span class="val" id="v-cinaperture">10.0</span></div>
+      <div class="row"><label>Faixa foco</label><input type="range" id="cin-range" min="0.1" max="8" step="0.1" value="0.8"><span class="val" id="v-cinrange">0.8</span></div>
+      <div class="row"><label>Grão</label><input type="range" id="cin-grain" min="0" max="0.6" step="0.02" value="0.1"><span class="val" id="v-cingrain">0.10</span></div>
+      <div class="row"><label>Tam. grão</label><input type="range" id="cin-grainsize" min="0.5" max="6" step="0.1" value="1.5"><span class="val" id="v-cingrainsize">1.5</span></div>
+      <div class="row"><label>Halation</label><input type="range" id="cin-halation" min="0" max="1" step="0.02" value="0.25"><span class="val" id="v-cinhalation">0.25</span></div>
+      <div class="row"><label>Dither modul.</label><input type="range" id="cin-dithermod" min="0" max="1" step="0.02" value="0"><span class="val" id="v-cindithermod">0.00</span></div>
+      <div class="row"><label>Pixel</label><input type="range" id="cin-pixel" min="0" max="1" step="0.02" value="0"><span class="val" id="v-cinpixel">0.00</span></div>
+      <div class="row"><label>CRT</label><input type="range" id="cin-crt" min="0" max="1" step="0.02" value="0"><span class="val" id="v-cincrt">0.00</span></div>
+    </div>
+
+    <p class="note" id="cine-note">Escolha um corpo de câmera para trocar a cara do splat ao vivo. A gravação MP4 captura o look aplicado.</p>
+  </div>
+
   <h3>Gravação</h3>
   <div class="row"><label>Resolução</label><select class="au-sel" id="rec-res">
     <option value="win">Janela</option>
@@ -778,6 +892,9 @@
 <div id="err"></div>
 <div class="logo-wrap" id="corner-logo"></div>
 <div id="hint">arrastar: orbitar · scroll: zoom · botão direito: pan</div>
+<canvas id="postfx-canvas"></canvas>
+<div id="letterbox"><div class="bar top"></div><div class="bar bot"></div><div class="bar lft"></div><div class="bar rgt"></div></div>
+<div id="cine-badge"></div>
 <div id="criar-overlay">
   <button id="criar-close">✕ Fechar</button>
   <iframe id="criar-frame" title="Criar meu splat"></iframe>
@@ -825,7 +942,7 @@
 document.querySelectorAll('a[href="criar.html"]').forEach(function (a) {
   a.addEventListener('click', function (e) {
     e.preventDefault();
-    document.getElementById('criar-frame').src = 'criar.html';
+    document.getElementById('criar-frame').src = 'criar.html?lang=' + bxLang;
     document.getElementById('criar-overlay').classList.add('visible');
   });
 });
@@ -1363,12 +1480,24 @@ if (uBxSmoke > 0.001) {
 vColor.a *= bxFade;
 `;
 const BX_DOF_GLSL = `
+// Desfoque de campo REAL (modelo de lente fina): cada Gaussian fora do plano de
+// foco cresce em um disco de bokeh proporcional ao seu círculo de confusão (CoC),
+// usando a profundidade real do splat. Conserva energia e forma bolas de bokeh
+// nas altas luzes — como uma lente de cinema.
 if (uBxDofOn > 0.5) {
   float bxDepth = -viewCenter.z;
-  float bxCoc = clamp(abs(bxDepth - uBxFocusDist) / max(uBxFocusRange, 0.001) - 1.0, 0.0, uBxBlurMax);
-  basisVector1 *= (1.0 + bxCoc);
-  basisVector2 *= (1.0 + bxCoc);
-  vColor.a /= (1.0 + bxCoc * bxCoc);
+  float bxDF = abs(bxDepth - uBxFocusDist);
+  // zona nítida = uBxFocusRange; fora dela o borrão cresce de forma suave
+  float bxCoc = clamp((bxDF - uBxFocusRange) / max(uBxFocusRange, 0.01), 0.0, 1.0);
+  bxCoc = bxCoc * bxCoc;
+  float bxScale = 1.0 + bxCoc * uBxBlurMax;        // uBxBlurMax = abertura/força
+  basisVector1 *= bxScale;
+  basisVector2 *= bxScale;
+  // splat maior espalha a mesma luz → fica mais transparente (conserva energia)
+  vColor.a /= (1.0 + bxCoc * uBxBlurMax * 0.7);
+  // realça bokeh nas altas luzes (bolas de bokeh brilhantes)
+  float bxLum = max(max(vColor.r, vColor.g), vColor.b);
+  vColor.a *= 1.0 + bxCoc * smoothstep(0.55, 1.0, bxLum) * 1.6;
 }
 `;
 const BX_REVEAL_GLSL = `
@@ -1632,7 +1761,7 @@ function disposeViewer() {
 
 // cria o viewer com renderer próprio: preserveDrawingBuffer permite gravação sem flicker
 function makeViewer(extra = {}) {
-  const renderer = new THREE.WebGLRenderer({ antialias: !IS_MOBILE, preserveDrawingBuffer: true });
+  const renderer = new THREE.WebGLRenderer({ antialias: !IS_MOBILE, preserveDrawingBuffer: true, alpha: true });
   // captura erros de compilação de shader (para reverter os efeitos se preciso)
   renderer.debug.checkShaderErrors = true;
   renderer.debug.onShaderError = (gl, prog, vsh, fsh) => {
@@ -1729,6 +1858,7 @@ async function loadScene(buffer, format, name) {
   const ok = bxPatchShader(viewer.splatMesh);
   if (ok) syncFxUniforms();
   centerControls();
+  applyBackground();
 }
 
 // ===== helpers de geometria (bbox, boxes, wireframes) =====
@@ -1985,6 +2115,37 @@ function updateLightGizmo() {
   if (g.object !== mk) g.attach(mk);
   g.visible = true; g.enabled = true;
 }
+
+// --- fundo colorido (troca o preto por cor/gradiente) ---
+const bgState = { on: false };
+function applyBackground() {
+  const vc = $('viewer-container');
+  if (!vc) return;
+  if (!bgState.on) {
+    vc.style.background = '';
+    if (viewer?.renderer) { try { viewer.renderer.setClearColor(0x000000, 1); viewer.renderer.setClearAlpha(1); } catch(e){} }
+    return;
+  }
+  const hex = $('bg-color').value, g = parseFloat($('bg-grad').value);
+  const c = new THREE.Color(hex);
+  const dark = '#' + new THREE.Color(c.r*0.35, c.g*0.35, c.b*0.42).getHexString();
+  vc.style.background = g > 0.01
+    ? `radial-gradient(ellipse at 50% 42%, ${hex} 0%, ${dark} ${Math.round(100-g*70)}%)`
+    : hex;
+  if (viewer?.renderer) { try { viewer.renderer.setClearColor(0x000000, 0); viewer.renderer.setClearAlpha(0); } catch(e){} }
+}
+$('bg-toggle').addEventListener('click', () => {
+  bgState.on = !bgState.on;
+  $('bg-toggle').classList.toggle('on', bgState.on);
+  $('bg-toggle').textContent = bgState.on ? '⏸ Fundo colorido (ligado)' : '▶ Fundo colorido';
+  applyBackground();
+});
+$('bg-color').addEventListener('input', () => { if (bgState.on) applyBackground(); });
+bindSlider('bg-grad', 'v-bggrad', v => v.toFixed(2), () => { if (bgState.on) applyBackground(); });
+const bgPreset = hex => { $('bg-color').value = hex; if (!bgState.on) $('bg-toggle').click(); else applyBackground(); };
+$('bg-white').addEventListener('click', () => bgPreset('#e8e8ee'));
+$('bg-gray').addEventListener('click', () => bgPreset('#555560'));
+$('bg-chroma').addEventListener('click', () => bgPreset('#00b140'));
 
 // sincroniza sliders do painel → uniforms do shader
 function syncFxUniforms() {
@@ -2892,6 +3053,583 @@ function lfoWave(kind, t) {
   if (kind === 'tri') { const f = t - Math.floor(t); return 4 * Math.abs(f - 0.5) - 1; }
   return Math.sin(t*6.28)*0.5 + Math.sin(t*13.7+1.3)*0.3 + Math.sin(t*29.1+4.1)*0.2; // noise suave
 }
+
+
+// ============================================================
+// 🌐 Idioma PT-BR / EN — troca os rótulos visíveis por dicionário
+// ============================================================
+const I18N = {
+  // topbar / splash
+  '✦ Editar':'✦ Edit', '⏺ Gravar MP4':'⏺ Record MP4', 'Importar outro':'Import another',
+  'Importar Gaussians':'Import Gaussians',
+  // abas
+  '✂️ Editar':'✂️ Edit','🌀 Distorção':'🌀 Distortion','🎥 Câmera':'🎥 Camera',
+  '💡 Luz/Cor':'💡 Light/Color','✨ Transição':'✨ Transition','🧪 Diversos':'🧪 Misc',
+  '🕹 Interativo':'🕹 Interactive','🔮 VFX':'🔮 VFX','🎬 Cinema':'🎬 Cinema',
+  // seções comuns (h3/h4)
+  'Tamanho do splat':'Splat size','Posição dos Gaussians':'Gaussian position',
+  'Escala / Rotação (no pivô)':'Scale / Rotation (pivot)','Anchor Point (pivô)':'Anchor Point (pivot)',
+  'Crop (box 3D)':'Crop (3D box)','Lente':'Lens','Órbita X / Y / Z':'Orbit X / Y / Z',
+  'Vertigo (dolly zoom)':'Vertigo (dolly zoom)','Dolly':'Dolly','Tilt':'Tilt',
+  'Handheld (shake)':'Handheld (shake)','Aberração cromática':'Chromatic aberration',
+  'Correção de cor / LUT':'Color grading / LUT','Luz pontual (point light)':'Point light',
+  'Relight (2 luzes + sombra)':'Relight (2 lights + shadow)','Desfoque de fundo (DoF)':'Background blur (DoF)',
+  'Dissolve (difusão)':'Dissolve (diffuse)','Reveal':'Reveal','Fumaça (difusão global)':'Smoke (global diffuse)',
+  'Dissolve (escala)':'Dissolve (scale)','Weather (clima)':'Weather','Pontos P&B':'B&W points',
+  'Pontos por profundidade':'Points by depth','Paint (pincel)':'Paint (brush)','Time Slice (4D)':'Time Slice (4D)',
+  '🎵 Audio reactive':'🎵 Audio reactive','Rastro (atraso por partícula)':'Trail (per-particle delay)',
+  '🔮 Ball Chrome / HDRI':'🔮 Chrome Ball / HDRI','🔤 Texto 3D (splats)':'🔤 3D Text (splats)',
+  '🖱 Mouse como força':'🖱 Mouse as force','🎹 MIDI':'🎹 MIDI','🖐 Mão (webcam)':'🖐 Hand (webcam)',
+  'Gravação':'Recording','Look':'Look','Pós VHS':'VHS post','Cinema':'Cinema',
+  // labels frequentes
+  'Tamanho':'Size','Pos X':'Pos X','Pos Y':'Pos Y','Pos Z':'Pos Z',
+  'Escala X':'Scale X','Escala Y':'Scale Y','Escala Z':'Scale Z',
+  'Rotação Y':'Rotation Y','Rotação Z':'Rotation Z','Rot X':'Rot X','Rot Y':'Rot Y','Rot Z':'Rot Z',
+  'Pivô X':'Pivot X','Pivô Y':'Pivot Y','Pivô Z':'Pivot Z','Raio':'Radius',
+  'Amplitude':'Amplitude','Freq.':'Freq.','Velocidade':'Speed','Frequência':'Frequency',
+  'Intensidade':'Intensity','Duração':'Duration','Cor':'Color','Foco (dist.)':'Focus (dist.)',
+  'Faixa nítida':'Sharp range','Exposição':'Exposure','Contraste':'Contrast','Saturação':'Saturation',
+  'Temperatura':'Temperature','Tint':'Tint','Ambiente':'Ambient','Sombra':'Shadow','Azimute':'Azimuth',
+  'Altura':'Height','Alcance':'Range','Início':'Start','Fim':'End','Quantidade':'Amount','Reação':'Reaction',
+  'Graves':'Bass','Médios':'Mids','Agudos':'Treble','Trim início':'Trim start','Trim fim':'Trim end',
+  'Resolução':'Resolution','Bitrate':'Bitrate','Eixos':'Axes','Eixo':'Axis','Modo':'Mode',
+  'Câmera':'Camera','Modelo':'Model','Aspecto':'Aspect','Zoom':'Zoom','LUT / cor':'LUT / color',
+  'Ruído':'Noise','Chroma':'Chroma','Distorção':'Distortion','Unsharp':'Unsharp','Dither':'Dither',
+  'Scanlines':'Scanlines','Vel. zoom':'Zoom speed','Desfoque de lente':'Lens blur','Abertura':'Aperture',
+  'Grão':'Grain','Halation':'Halation','Curvatura':'Curvature','Afunilar':'Taper','Vel X':'Speed X',
+  'Vel Y':'Speed Y','Vel Z':'Speed Z','Texto':'Text','Fonte':'Font','Estilo':'Style','Profundidade':'Depth',
+  'Densidade':'Density','Baixas':'Lows','Altas':'Highs','Atraso':'Delay','Rate (Hz)':'Rate (Hz)',
+  'Profund.':'Depth','Onda':'Wave','Alvo':'Target','Força':'Force','Cor perto':'Near color','Cor longe':'Far color',
+  'Deslocar':'Shift','FOV':'FOV',
+  // botões comuns
+  'Resetar transformações':'Reset transforms','▶ Crop radial no pivô':'▶ Radial crop at pivot',
+  '🎯 Resetar câmera (posição inicial)':'🎯 Reset camera (initial)','Off':'Off',
+  'Aplicar (permanente)':'Apply (permanent)','Resetar':'Reset','🎬 Cine':'🎬 Cine',
+  '🕹 Gizmo da luz (arrastar)':'🕹 Light gizmo (drag)','🕹 Gizmo da ball (arrastar)':'🕹 Ball gizmo (drag)',
+  '🔄 Atualizar reflexo':'🔄 Update reflection','📤 Exportar 360':'📤 Export 360',
+  '✨ Gerar texto 3D':'✨ Generate 3D text','💾 Baixar .splat':'💾 Download .splat',
+  'Limpar pinceladas':'Clear strokes','🖌 Modo pincel':'🖌 Brush mode','Repele':'Repel','Atrai':'Attract',
+  'Puxar':'Pull','Ativar MIDI':'Enable MIDI','🎹 Ativar MIDI':'🎹 Enable MIDI','Mapear (mexa um knob)':'Map (turn a knob)',
+  'Limpar':'Clear','🖐 Controlar com a mão':'🖐 Control with hand','Zoom automático (VHS)':'Auto zoom (VHS)',
+  '▶ Zoom automático (VHS)':'▶ Auto zoom (VHS)','▶ Desfoque de lente':'▶ Lens blur',
+  'Janela':'Window','Tam. grão':'Grain size','8-bit / dither':'8-bit / dither','Celular FX':'Phone FX','Datamosh':'Datamosh','Glitch':'Glitch','Modelo':'Model',
+  'Look':'Look','Pós (todos os modos)':'Post (all modes)','Pós VHS (NTSC)':'VHS post (NTSC)',
+  'Aberração':'Aberration','Glow':'Glow','Dither modul.':'Dither modul.','Resolução ↓':'Resolution ↓',
+  'CRT':'CRT','Pixel':'Pixel','Celular':'Phone','VHS':'VHS','Aspecto':'Aspect',
+  'Escolha o tipo de captura. A página te guia do começo ao fim.':'Choose a capture type. The page guides you end to end.',
+  'Criar meu splat':'Create my splat',
+  'Transforme suas fotos, vídeos ou dados 4D em Gaussian Splatting.':'Turn your photos, videos or 4D data into Gaussian Splatting.',
+  'Começar agora →':'Start now →','📖 Ver guia passo a passo':'📖 See step-by-step guide',
+  'Dicas rápidas':'Quick tips','🎁 Exemplo — Coffee ☕':'🎁 Example — Coffee ☕',
+  '🪄 BruxoSplat Windows x64':'🪄 BruxoSplat Windows x64'
+};
+const I18N_REV = Object.fromEntries(Object.entries(I18N).map(([k,v]) => [v,k]));
+let bxLang = 'pt';
+function bxTranslateNode(root, dict) {
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  let n; while ((n = walk.nextNode())) nodes.push(n);
+  for (const t of nodes) {
+    const raw = t.nodeValue, key = raw.trim();
+    if (!key) continue;
+    if (dict[key]) t.nodeValue = raw.replace(key, dict[key]);
+  }
+  // também traduz <option> e placeholders/valores dinâmicos são recriados no toggle das abas
+  root.querySelectorAll('option').forEach(o => { if (dict[o.textContent.trim()]) o.textContent = dict[o.textContent.trim()]; });
+}
+function bxSetLang(lang) {
+  if (lang === bxLang) return;
+  const dict = lang === 'en' ? I18N : I18N_REV;
+  ['topbar','panel','dropzone','seqbar'].forEach(id => { const el = $(id); if (el) bxTranslateNode(el, dict); });
+  bxLang = lang;
+  const lbl = lang === 'en' ? '🌐 Português' : '🌐 ENGLISH';
+  const cf = $('criar-frame'); if (cf && cf.contentWindow) try { cf.contentWindow.postMessage({ bxLang: lang }, '*'); } catch(e){}
+  const cc = $('criar-close'); if (cc) cc.textContent = lang === 'en' ? '✕ Close' : '✕ Fechar';
+  $('btn-lang').textContent = lbl;
+  if ($('btn-lang-splash')) $('btn-lang-splash').textContent = lbl;
+}
+
+function bxToggleLang(){ bxSetLang(bxLang === 'pt' ? 'en' : 'pt'); }
+$('btn-lang').addEventListener('click', bxToggleLang);
+$('btn-lang-splash').addEventListener('click', bxToggleLang);
+
+// ============================================================
+// 🎬 MODO CINEMA — corpos de câmera (VHS / Cinema / Celular)
+// com pós-processo WebGL real (grão, chroma, unsharp, dither, scanlines),
+// letterbox, LUTs (grading) e zoom animado.
+// ============================================================
+const CINE = {
+  mode: 'off', // off | vhs | cin | phone
+  vhsZoom: false, vhsZoomT: 0,
+  cinDof: false,
+  gl: null, prog: null, tex: null, u: {}, raf: false
+};
+// --- catálogos ---
+const CINE_BODIES = {
+  vhs: {
+    models: [
+      { id:'jvc43', name:'JVC GR (4:3)', aspect:'4:3', lut:'vhs' },
+      { id:'sonyhi8', name:'Sony Hi8', aspect:'4:3', lut:'camcorder' },
+      { id:'panvhsc', name:'Panasonic VHS-C', aspect:'4:3', lut:'vhsworn' },
+      { id:'betamax', name:'Betamax', aspect:'4:3', lut:'beta' }
+    ],
+    aspects: ['4:3','16:9'],
+    luts: [
+      { id:'vhs', name:'VHS clássico' },
+      { id:'vhsworn', name:'VHS gasto (quente)' },
+      { id:'camcorder', name:'Camcorder frio' },
+      { id:'beta', name:'Betamax (frio)' }
+    ]
+  },
+  cin: {
+    lenses: [
+      { id:'l18', name:'18mm ultra-wide', mm:18 },
+      { id:'l25', name:'25mm wide', mm:25 },
+      { id:'l35', name:'35mm', mm:35 },
+      { id:'l50', name:'50mm normal', mm:50 },
+      { id:'l85', name:'85mm retrato', mm:85 },
+      { id:'l135', name:'135mm tele', mm:135 }
+    ],
+    aspects: ['2.39:1','2:1','16:9'],
+    luts: [
+      { id:'arri_to', name:'ARRI Teal & Orange' },
+      { id:'arri_log', name:'LogC → visual (ACES-ish)' },
+      { id:'arri_natural', name:'ARRI Natural' },
+      { id:'bleach', name:'Bleach Bypass' }
+    ]
+  },
+  phone: {
+    zooms: [
+      { id:'z05', name:'0.5× ultra-wide', mm:14 },
+      { id:'z1',  name:'1× principal', mm:26 },
+      { id:'z2',  name:'2× tele', mm:52 },
+      { id:'z5',  name:'5× tele', mm:120 }
+    ],
+    aspects: ['4:3','16:9','9:16'],
+    luts: [ { id:'none', name:'Sem LUT (natural)' } ]
+  }
+};
+// LUTs → parâmetros do grading (exp, con, sat, temp, tint)
+const CINE_LUTS = {
+  none:        [1.00, 1.00, 1.00, 0.00, 0.00],
+  vhs:         [1.05, 0.92, 0.80, 0.06, 0.04],
+  vhsworn:     [1.10, 0.88, 0.72, 0.14,-0.02],
+  camcorder:   [1.00, 1.05, 0.85,-0.10, 0.04],
+  arri_to:     [1.03, 1.18, 0.92, 0.10,-0.04],
+  arri_log:    [1.00, 0.82, 0.78, 0.02, 0.00],
+  arri_natural:[1.02, 1.05, 1.00, 0.01, 0.00],
+  bleach:      [1.08, 1.30, 0.55, 0.00, 0.00],
+  beta:        [0.98, 1.02, 0.90,-0.06, 0.06],
+  alexa_to:    [1.03, 1.18, 0.92, 0.10,-0.04]
+};
+function cineParseAspect(a) { const [w,h] = a.split(':').map(Number); return w / h; }
+
+// --- pós-processo WebGL2 (lê o canvas do viewer como textura e reprocessa) ---
+const POSTFX_FS = `#version 300 es
+precision highp float;
+uniform sampler2D uTex;
+uniform vec2 uRes;
+uniform float uTime;
+uniform float uNoise, uChroma, uWarp, uUnsharp, uDither, uScan, uGrain, uHalation, uMode;
+uniform float uGlow, uPixel, uChromaAll, uDitherMod, uCrt;
+uniform float uGrainSize, uGlitch, uMosh, uBit;
+out vec4 frag;
+float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }
+float h13(vec3 p){ p = fract(p*vec3(443.897,441.423,437.195)); p += dot(p, p.yzx+19.19); return fract((p.x+p.y)*p.z); }
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  uv.y = 1.0 - uv.y;                       // canvas WebGL vem invertido → corrige
+  // CRT: curvatura de tela (barrel) — encurva a imagem como um tubo
+  float crtEdge = 1.0;
+  if (uCrt > 0.001){
+    vec2 cc = uv*2.0 - 1.0;
+    float r2 = dot(cc,cc);
+    cc *= 1.0 + uCrt*0.18*r2;
+    uv = cc*0.5 + 0.5;
+    crtEdge = (uv.x<0.0||uv.x>1.0||uv.y<0.0||uv.y>1.0) ? 0.0 : 1.0;
+    uv = clamp(uv, 0.0, 1.0);
+  }
+  // pixelate / queda de resolução (VHS): amostra em blocos
+  if (uPixel > 0.001){
+    vec2 px = mix(uRes, uRes * mix(1.0, 0.12, uPixel), 1.0);
+    uv = (floor(uv * px) + 0.5) / px;
+  }
+  vec2 duv = uv;
+  // GLITCH (celular): blocos de linhas saltam horizontalmente + faixas de cor
+  if (uGlitch > 0.001){
+    float band = floor(uv.y * 24.0);
+    float t = floor(uTime * 8.0);
+    float jump = h21(vec2(band, t));
+    if (jump > 1.0 - uGlitch*0.6) duv.x += (h21(vec2(band, t+1.0))-0.5) * uGlitch * 0.3;
+  }
+  // DATAMOSH (celular): arrasta a imagem na direção de um "movimento" pseudo-aleatório
+  if (uMosh > 0.001){
+    vec2 mv = vec2(h21(vec2(floor(uv.y*12.0), floor(uTime*2.0)))-0.5,
+                   h21(vec2(floor(uv.x*12.0), floor(uTime*2.0)+9.0))-0.5);
+    duv += mv * uMosh * 0.08 * (0.5 + 0.5*sin(uTime*3.0 + uv.y*10.0));
+  }
+  // distorção horizontal (jitter de linha) — VHS
+  if (uWarp > 0.001){
+    float line = h21(vec2(floor(uv.y*uRes.y*0.5), floor(uTime*12.0)));
+    duv.x += (line-0.5) * uWarp * 0.012;
+    duv.x += sin(uv.y*40.0 + uTime*4.0) * uWarp * 0.002;
+  }
+  // aberração cromática lateral
+  float ca = uChroma * 0.006 + uChromaAll * 0.010;
+  vec3 col;
+  col.r = texture(uTex, duv + vec2(ca,0.0)).r;
+  col.g = texture(uTex, duv).g;
+  col.b = texture(uTex, duv - vec2(ca,0.0)).b;
+  // GLITCH: faixa de cor saltada
+  if (uGlitch > 0.001){
+    float band2 = floor(uv.y*24.0);
+    if (h21(vec2(band2, floor(uTime*8.0)+5.0)) > 1.0 - uGlitch*0.4)
+      col.rgb = col.gbr; // rotaciona canais na faixa
+  }
+  // unsharp (realce): center + amt*(center - blur dos vizinhos)
+  if (uUnsharp > 0.001){
+    vec2 px = 1.0/uRes;
+    vec3 blur = (
+      texture(uTex, duv+vec2(px.x,0)).rgb + texture(uTex, duv-vec2(px.x,0)).rgb +
+      texture(uTex, duv+vec2(0,px.y)).rgb + texture(uTex, duv-vec2(0,px.y)).rgb) * 0.25;
+    col += (col - blur) * uUnsharp;
+  }
+  // halation (cinema): brilho vaza nas altas luzes
+  if (uHalation > 0.001){
+    vec2 px = 2.5/uRes;
+    vec3 g = (texture(uTex,duv+px).rgb + texture(uTex,duv-px).rgb +
+              texture(uTex,duv+vec2(px.x,-px.y)).rgb + texture(uTex,duv+vec2(-px.x,px.y)).rgb)*0.25;
+    float lum = max(max(g.r,g.g),g.b);
+    col += g * smoothstep(0.6,1.0,lum) * uHalation * vec3(1.0,0.6,0.4);
+  }
+  // scanlines + rolagem (VHS)
+  if (uScan > 0.001){
+    float s = 0.5 + 0.5*sin(uv.y*uRes.y*3.14159);
+    col *= mix(1.0, 0.75 + 0.25*s, uScan);
+    float roll = smoothstep(0.0,0.06, abs(fract(uv.y + uTime*0.05)-0.5)-0.44);
+    col *= mix(1.0, 0.85+0.15*roll, uScan*0.6);
+  }
+  float gsz = max(uGrainSize, 0.5);
+  // ruído VHS (grosso, uniforme)
+  if (uNoise > 0.001){
+    float n = h13(vec3(floor(gl_FragCoord.xy/gsz), fract(uTime)*971.0)) - 0.5;
+    col += n * uNoise * 0.35;
+  }
+  // grão de filme ORGÂNICO (cinema): 2 escalas de ruído + resposta por luminância
+  if (uGrain > 0.001){
+    float lum = dot(col, vec3(0.299, 0.587, 0.114));
+    vec2 gc = gl_FragCoord.xy / gsz;
+    float t = fract(uTime) * 54.0;
+    float nn = (h13(vec3(floor(gc), t)) - 0.5) * 0.65
+             + (h13(vec3(floor(gc*0.5) + 0.5, t + 7.0)) - 0.5) * 0.35;
+    float resp = 4.0 * lum * (1.0 - lum) + 0.12;   // curva de resposta do filme
+    col += nn * uGrain * 1.5 * resp;
+  }
+  // dither ordenado (reduz banding, dá textura de vídeo)
+  if (uDither > 0.001){
+    float b = h21(floor(gl_FragCoord.xy) + uTime);
+    col += (b-0.5) * uDither * (1.0/64.0);
+    col = floor(col * 64.0 + 0.5) / 64.0;
+  }
+  // glow / bloom (todos os modos): espalha as altas luzes
+  if (uGlow > 0.001){
+    vec2 px = 3.0/uRes;
+    vec3 g2 = vec3(0.0);
+    for (int i=-2;i<=2;i++) for (int j=-2;j<=2;j++)
+      g2 += texture(uTex, duv + vec2(float(i),float(j))*px).rgb;
+    g2 /= 25.0;
+    float lum = max(max(g2.r,g2.g),g2.b);
+    col += g2 * smoothstep(0.55,1.0,lum) * uGlow * 1.4;
+  }
+  // modulação de linhas VHS: bandas horizontais claras/escuras que rolam pela tela
+  if (uDitherMod > 0.001){
+    float fine = sin(uv.y*uRes.y*0.5 - uTime*6.0);
+    float band = sin(uv.y*16.0 + uTime*1.5);
+    float drop = smoothstep(0.97, 1.0, h13(vec3(0.0, floor(uv.y*uRes.y*0.5), floor(uTime*10.0))));
+    col *= 1.0 + uDitherMod * (fine*0.10 + band*0.07);
+    col = mix(col, col*0.3, drop * uDitherMod);   // dropout ocasional de linha
+  }
+  // CRT: máscara de abertura (faixas RGB) + scanline forte + cantos escuros
+  if (uCrt > 0.001){
+    float mx = mod(gl_FragCoord.x, 3.0);
+    vec3 mask = mx < 1.0 ? vec3(1.0,0.7,0.7) : (mx < 2.0 ? vec3(0.7,1.0,0.7) : vec3(0.7,0.7,1.0));
+    col *= mix(vec3(1.0), mask, uCrt*0.6);
+    col *= mix(1.0, 0.6 + 0.4*sin(uv.y*uRes.y*3.14159*0.5), uCrt*0.5);
+    col *= crtEdge;
+  }
+  // 8-bit: quantização com dithering ordenado (Bayer 4×4)
+  if (uBit > 0.001){
+    float levels = mix(64.0, 4.0, uBit);
+    int bx = int(mod(gl_FragCoord.x, 4.0)), by = int(mod(gl_FragCoord.y, 4.0));
+    float bayer[16] = float[16](0.,8.,2.,10., 12.,4.,14.,6., 3.,11.,1.,9., 15.,7.,13.,5.);
+    float th = (bayer[by*4+bx]/16.0 - 0.5);
+    col += th / levels;
+    col = floor(col*levels + 0.5) / levels;
+  }
+  // vinheta suave
+  float vig = smoothstep(1.15, 0.35, length(uv-0.5)*1.3);
+  col *= mix(1.0, vig, 0.35 + uScan*0.2);
+  frag = vec4(clamp(col,0.0,1.0), 1.0);
+}`;
+const POSTFX_VS = `#version 300 es
+in vec2 p; void main(){ gl_Position = vec4(p,0.0,1.0); }`;
+function cineInitGL(){
+  if (CINE.gl) return CINE.gl;
+  const cv = $('postfx-canvas');
+  const gl = cv.getContext('webgl2', { premultipliedAlpha:false });
+  if (!gl) { showError('WebGL2 indisponível — pós-processo Cinema desativado.'); return null; }
+  const mk = (t,src)=>{ const sh=gl.createShader(t); gl.shaderSource(sh,src); gl.compileShader(sh);
+    if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(sh)); return sh; };
+  const prog = gl.createProgram();
+  gl.attachShader(prog, mk(gl.VERTEX_SHADER, POSTFX_VS));
+  gl.attachShader(prog, mk(gl.FRAGMENT_SHADER, POSTFX_FS));
+  gl.bindAttribLocation(prog, 0, 'p');
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  const U = n => gl.getUniformLocation(prog, n);
+  CINE.u = { tex:U('uTex'), res:U('uRes'), time:U('uTime'), noise:U('uNoise'),
+    chroma:U('uChroma'), warp:U('uWarp'), unsharp:U('uUnsharp'), dither:U('uDither'),
+    scan:U('uScan'), grain:U('uGrain'), halation:U('uHalation'), mode:U('uMode'),
+    glow:U('uGlow'), pixel:U('uPixel'), chromaAll:U('uChromaAll'), ditherMod:U('uDitherMod'), crt:U('uCrt'),
+    grainSize:U('uGrainSize'), glitch:U('uGlitch'), mosh:U('uMosh'), bit:U('uBit') };
+  CINE.gl = gl; CINE.prog = prog; CINE.tex = tex;
+  return gl;
+}
+function cinePostTick(){
+  if (CINE.mode === 'off') { $('postfx-canvas').classList.remove('visible'); return; }
+  const gl = cineInitGL();
+  const src = $('viewer-container').querySelector('canvas');
+  if (!gl || !src) return;
+  const cv = $('postfx-canvas');
+  const w = src.width, h = src.height;
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  cv.classList.add('visible');
+  gl.viewport(0,0,w,h);
+  gl.useProgram(CINE.prog);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, CINE.tex);
+  try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src); } catch(e){ return; }
+  gl.uniform1i(CINE.u.tex, 0);
+  gl.uniform2f(CINE.u.res, w, h);
+  gl.uniform1f(CINE.u.time, anim.fxTime);
+  const g = id => $(id) ? parseFloat($(id).value) : 0;
+  const str = g('cine-strength');
+  if (CINE.mode === 'phone') {
+    ['noise','chroma','warp','unsharp','dither','scan','grain','halation','pixel','ditherMod','crt'].forEach(k => gl.uniform1f(CINE.u[k], 0.0));
+    gl.uniform1f(CINE.u.grainSize, 1.0);
+    gl.uniform1f(CINE.u.glitch, g('phone-glitch'));
+    gl.uniform1f(CINE.u.mosh, g('phone-mosh'));
+    gl.uniform1f(CINE.u.pixel, g('phone-pixel'));
+    gl.uniform1f(CINE.u.mode, 3.0);
+    gl.uniform1f(CINE.u.chromaAll, g('post-chroma'));
+    gl.uniform1f(CINE.u.glow, g('post-glow'));
+    gl.uniform1f(CINE.u.bit, g('post-bit'));
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    return;
+  }
+  if (CINE.mode === 'vhs') {
+    gl.uniform1f(CINE.u.noise, g('vhs-noise')*str);
+    gl.uniform1f(CINE.u.chroma, g('vhs-chroma')*str);
+    gl.uniform1f(CINE.u.warp, g('vhs-warp')*str);
+    gl.uniform1f(CINE.u.unsharp, g('vhs-unsharp')*str);
+    gl.uniform1f(CINE.u.dither, g('vhs-dither')*str);
+    gl.uniform1f(CINE.u.scan, g('vhs-scan')*str);
+    gl.uniform1f(CINE.u.grain, 0.0);
+    gl.uniform1f(CINE.u.halation, 0.0);
+    gl.uniform1f(CINE.u.pixel, g('vhs-pixel')*str);
+    gl.uniform1f(CINE.u.ditherMod, g('vhs-dithermod')*str);
+    gl.uniform1f(CINE.u.crt, g('vhs-crt')*str);
+    gl.uniform1f(CINE.u.grainSize, 1.0);
+    gl.uniform1f(CINE.u.glitch, 0.0);
+    gl.uniform1f(CINE.u.mosh, 0.0);
+    gl.uniform1f(CINE.u.mode, 1.0);
+  } else { // cinema
+    gl.uniform1f(CINE.u.noise, 0.0);
+    gl.uniform1f(CINE.u.chroma, 0.05*str);
+    gl.uniform1f(CINE.u.warp, 0.0);
+    gl.uniform1f(CINE.u.unsharp, 0.15*str);
+    gl.uniform1f(CINE.u.dither, 0.0);
+    gl.uniform1f(CINE.u.scan, 0.0);
+    gl.uniform1f(CINE.u.grain, g('cin-grain')*str);
+    gl.uniform1f(CINE.u.halation, g('cin-halation')*str);
+    gl.uniform1f(CINE.u.pixel, g('cin-pixel')*str);
+    gl.uniform1f(CINE.u.ditherMod, g('cin-dithermod')*str);
+    gl.uniform1f(CINE.u.crt, g('cin-crt')*str);
+    gl.uniform1f(CINE.u.grainSize, g('cin-grainsize'));
+    gl.uniform1f(CINE.u.glitch, 0.0);
+    gl.uniform1f(CINE.u.mosh, 0.0);
+    gl.uniform1f(CINE.u.mode, 2.0);
+  }
+  // pós global (todos os modos): aberração cromática + glow + 8-bit
+  gl.uniform1f(CINE.u.chromaAll, g('post-chroma'));
+  gl.uniform1f(CINE.u.glow, g('post-glow'));
+  gl.uniform1f(CINE.u.bit, g('post-bit'));
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+// --- letterbox (barras pretas conforme aspect ratio) ---
+function cineApplyLetterbox(aspectStr) {
+  const lb = $('letterbox');
+  if (!aspectStr || CINE.mode === 'off') { lb.classList.remove('visible'); return; }
+  const target = cineParseAspect(aspectStr);
+  const W = window.innerWidth, H = window.innerHeight, cur = W / H;
+  let barV = 0, barH = 0;
+  if (target > cur) barV = (H - W / target) / 2;   // mais largo → barras em cima/baixo
+  else barH = (W - H * target) / 2;                // mais alto → barras laterais
+  lb.querySelector('.top').style.height = barV + 'px';
+  lb.querySelector('.bot').style.height = barV + 'px';
+  lb.querySelector('.lft').style.width = barH + 'px';
+  lb.querySelector('.rgt').style.width = barH + 'px';
+  lb.classList.add('visible');
+}
+window.addEventListener('resize', () => { if (CINE.mode !== 'off') cineApplyLetterbox($('cine-aspect').value); });
+
+// --- aplica LUT (grading) e lente (FOV) ---
+function cineApplyLut(id) {
+  const p = CINE_LUTS[id] || CINE_LUTS.none;
+  const str = parseFloat($('cine-strength').value);
+  const mix1 = (base, v) => base + (v - base) * str; // interpola do neutro conforme intensidade
+  $('cg-exp').value = mix1(1, p[0]); $('cg-con').value = mix1(1, p[1]);
+  $('cg-sat').value = mix1(1, p[2]); $('cg-temp').value = mix1(0, p[3]); $('cg-tint').value = mix1(0, p[4]);
+  ['cg-exp','cg-con','cg-sat','cg-temp','cg-tint'].forEach(i => $('v-'+i.replace('-','')).textContent = parseFloat($(i).value).toFixed(2));
+  const on = id !== 'none' && str > 0.01;
+  anim.grade = on; $('cg-toggle').classList.toggle('on', on);
+  $('cg-toggle').textContent = on ? '⏸ Grading (ligado)' : '▶ Grading';
+  syncFxUniforms();
+}
+function cineSetFovFromMM(mm) {
+  const fov = 2 * Math.atan(21.6 / (2 * mm)) * 180 / Math.PI; // sensor ~36mm horizontal
+  const c = Math.max(15, Math.min(120, fov));
+  $('cam-fov').value = c; applyFov();
+}
+
+// --- popula selects conforme o corpo escolhido ---
+function cineFill(mode) {
+  const fill = (sel, arr, label='name') => { $(sel).innerHTML = arr.map(o => `<option value="${o.id||o}">${o[label]||o}</option>`).join(''); };
+  $('cine-lens-row').style.display = 'none';
+  $('cine-zoom-row').style.display = 'none';
+  $('cine-vhs-box').style.display = 'none';
+  $('cine-cin-box').style.display = 'none';
+  $('cine-phone-box').style.display = 'none';
+  if (mode === 'vhs') {
+    fill('cine-model', CINE_BODIES.vhs.models);
+    fill('cine-aspect', CINE_BODIES.vhs.aspects);
+    fill('cine-lut', CINE_BODIES.vhs.luts);
+    $('cine-vhs-box').style.display = '';
+  } else if (mode === 'cin') {
+    fill('cine-model', [{id:'alexa',name:'ARRI Alexa',lut:'arri_to'},{id:'mini',name:'Alexa Mini',lut:'arri_natural'},{id:'venice',name:'Sony Venice',lut:'arri_log'}]);
+    fill('cine-aspect', CINE_BODIES.cin.aspects);
+    fill('cine-lut', CINE_BODIES.cin.luts);
+    fill('cine-lens', CINE_BODIES.cin.lenses);
+    $('cine-lens-row').style.display = '';
+    $('cine-cin-box').style.display = '';
+  } else if (mode === 'phone') {
+    fill('cine-model', [{id:'ph',name:'Smartphone'}]);
+    fill('cine-aspect', CINE_BODIES.phone.aspects);
+    fill('cine-lut', CINE_BODIES.phone.luts);
+    fill('cine-zoom', CINE_BODIES.phone.zooms);
+    $('cine-zoom-row').style.display = '';
+    $('cine-phone-box').style.display = '';
+  }
+}
+function cineApply() {
+  const m = CINE.mode;
+  const active = m !== 'off';
+  document.body.classList.toggle('cine-dock', active);
+  if (active && !panel.classList.contains('visible')) {
+    // abre o painel na aba Cinema (mas as abas seguem livres — Editar coexiste)
+    panel.classList.add('visible'); $('btn-panel').classList.add('active');
+    document.querySelectorAll('.fx-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === 'tab-cine'));
+    document.querySelectorAll('.tab-page').forEach(pg => pg.classList.toggle('visible', pg.id === 'tab-cine'));
+  }
+  $('cine-badge').classList.toggle('visible', m !== 'off');
+  if (m === 'off') {
+    $('postfx-canvas').classList.remove('visible');
+    $('letterbox').classList.remove('visible');
+    cineApplyLut('none');
+    return;
+  }
+  cineApplyLut($('cine-lut').value);
+  cineApplyLetterbox($('cine-aspect').value);
+  if (m === 'cin') cineSetFovFromMM(CINE_BODIES.cin.lenses.find(l => l.id === $('cine-lens').value)?.mm || 50);
+  if (m === 'phone') cineSetFovFromMM(CINE_BODIES.phone.zooms.find(z => z.id === $('cine-zoom').value)?.mm || 26);
+  // badge
+  const model = $('cine-model').selectedOptions[0]?.textContent || '';
+  $('cine-badge').textContent = model + ' · ' + $('cine-aspect').value;
+}
+[['cine-off','off'],['cine-vhs','vhs'],['cine-cin','cin'],['cine-phone','phone']].forEach(([id, mode]) => {
+  $(id).addEventListener('click', () => {
+    CINE.mode = mode;
+    [['cine-off','off'],['cine-vhs','vhs'],['cine-cin','cin'],['cine-phone','phone']].forEach(([i,m]) => $(i).classList.toggle('on', m === CINE.mode));
+    if (mode !== 'off') cineFill(mode);
+    cineApply();
+  });
+});
+$('cine-model').addEventListener('change', () => {
+  // cada câmera tem sua LUT característica
+  const list = CINE.mode === 'vhs' ? CINE_BODIES.vhs.models
+             : CINE.mode === 'cin' ? [{id:'alexa',lut:'arri_to'},{id:'mini',lut:'arri_natural'},{id:'venice',lut:'arri_log'}] : [];
+  const md = list.find(m => m.id === $('cine-model').value);
+  if (md && md.lut && $('cine-lut').querySelector(`option[value="${md.lut}"]`)) $('cine-lut').value = md.lut;
+  cineApply();
+});
+['cine-aspect','cine-lens','cine-zoom','cine-lut'].forEach(id => $(id).addEventListener('change', cineApply));
+bindSlider('cine-strength', 'v-cinestrength', v => v.toFixed(2), () => cineApply());
+['vhs-noise','vhs-chroma','vhs-warp','vhs-unsharp','vhs-dither','vhs-scan'].forEach(id =>
+  bindSlider(id, 'v-'+id.replace('-',''), v => v.toFixed(2), () => {}));
+['cin-grain','cin-halation'].forEach(id => bindSlider(id, 'v-'+id.replace('-',''), v => v.toFixed(2), () => {}));
+bindSlider('vhs-zoomspd', 'v-vhszoomspd', v => v.toFixed(2), () => {});
+['vhs-dithermod','vhs-pixel','vhs-crt','cin-dithermod','cin-pixel','cin-crt'].forEach(id => bindSlider(id, 'v-'+id.replace('-',''), v => v.toFixed(2), () => {}));
+bindSlider('cin-grainsize', 'v-cingrainsize', v => v.toFixed(1), () => {});
+['phone-glitch','phone-mosh','phone-pixel'].forEach(id => bindSlider(id, 'v-'+id.replace('-',''), v => v.toFixed(2), () => {}));
+$('phone-glitch-on').addEventListener('click', () => { const on = $('phone-glitch').value>0; $('phone-glitch').value = on?0:0.4; $('v-phoneglitch').textContent=(on?0:0.4).toFixed(2); $('phone-glitch-on').classList.toggle('on',!on); });
+$('phone-mosh-on').addEventListener('click', () => { const on = $('phone-mosh').value>0; $('phone-mosh').value = on?0:0.4; $('v-phonemosh').textContent=(on?0:0.4).toFixed(2); $('phone-mosh-on').classList.toggle('on',!on); });
+['post-chroma','post-glow','post-bit'].forEach(id => bindSlider(id, 'v-'+id.replace('-',''), v => v.toFixed(2), () => {}));
+$('vhs-zoom').addEventListener('click', () => {
+  CINE.vhsZoom = !CINE.vhsZoom;
+  $('vhs-zoom').classList.toggle('on', CINE.vhsZoom);
+  $('vhs-zoom').textContent = CINE.vhsZoom ? '⏸ Zoom automático (ligado)' : '▶ Zoom automático (VHS)';
+});
+// Cinema: desfoque de lente + foco/abertura mapeiam no DoF
+bindSlider('cin-focus', 'v-cinfocus', v => v.toFixed(1), v => { $('d-dist').value = v; if (anim.dof) syncFxUniforms(); });
+bindSlider('cin-aperture', 'v-cinaperture', v => v.toFixed(1), v => { $('d-blur').value = v; if (anim.dof) syncFxUniforms(); });
+bindSlider('cin-range', 'v-cinrange', v => v.toFixed(1), v => { $('d-range').value = v; if (anim.dof) syncFxUniforms(); });
+$('cin-dof').addEventListener('click', () => {
+  CINE.cinDof = !CINE.cinDof;
+  anim.dof = CINE.cinDof;
+  $('cin-dof').classList.toggle('on', CINE.cinDof);
+  $('cin-dof').textContent = CINE.cinDof ? '⏸ Desfoque de lente (ligado)' : '▶ Desfoque de lente';
+  $('d-toggle').classList.toggle('on', CINE.cinDof);
+  $('d-dist').value = parseFloat($('cin-focus').value);
+  $('d-blur').value = parseFloat($('cin-aperture').value);
+  $('d-range').value = parseFloat($('cin-range').value);
+  syncFxUniforms();
+});
+
+// tick do modo Cinema (pós-processo + zoom VHS)
+function cineTick(dt) {
+  if (CINE.mode === 'off') return;
+  // zoom automático estilo VHS (dolly suave para dentro)
+  if (CINE.vhsZoom && viewer?.camera && viewer?.controls) {
+    const fwd = new THREE.Vector3(); viewer.camera.getWorldDirection(fwd);
+    const s = parseFloat($('vhs-zoomspd').value) * dt * bxDiag() * 0.03;
+    viewer.camera.position.addScaledVector(fwd, s);
+    viewer.controls.target.addScaledVector(fwd, s);
+  }
+  cinePostTick();
+}
+
 function tickInteractive() {
   // mola do modo Puxar: volta ao lugar oscilando (wiggle amortecido)
   if (grab.spring) {
@@ -3839,6 +4577,7 @@ function tickBody(now) {
   const uT = bxU('uBxTime'); if (uT) uT.value = anim.fxTime;
   tickAudio(); // 🎵 modulação por áudio (graves/médios/agudos)
   tickInteractive(); // 🕹 LFOs
+  cineTick(dt); // 🎬 Cinema (pós-processo + zoom)
   // animação da fumaça
   if (anim.smoke) {
     const s = anim.smoke;
@@ -3905,7 +4644,10 @@ function pickMime(withAudio) {
 function record(durationMs, withOrbit) {
   if (!viewer) { showError('Carregue uma cena primeiro.'); return; }
   if (recorder) { recorder.stop(); return; }
-  const canvas = $('viewer-container').querySelector('canvas');
+  let canvas = $('viewer-container').querySelector('canvas');
+  // com Cinema (VHS/Cinema) o look mora no canvas de pós-processo — grava esse
+  if ((CINE.mode === 'vhs' || CINE.mode === 'cin') && $('postfx-canvas').classList.contains('visible'))
+    canvas = $('postfx-canvas');
   if (!canvas) { showError('Canvas não encontrado.'); return; }
 
   // resolução de saída: 720p/1080p renderizam o canvas no tamanho exato do vídeo

@@ -75,6 +75,22 @@
             </div>
           </sc-for>
         </div>
+
+        <!-- ===== APP DESKTOP ===== -->
+        <div style="margin-top: 26px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,.08);">
+          <div data-i18n-h style="font-size: .8rem; color: #7a7886; margin-bottom: 10px; font-weight: 600; letter-spacing: .02em;">App de treino (offline)</div>
+          <a id="bruxosplat-dl" href="COLE_AQUI_O_LINK_DO_APP.exe" download
+             style="display: inline-flex; align-items: center; gap: 12px; text-decoration: none;
+                    background: linear-gradient(135deg, #1f2937, #2d2f3a); border: 1px solid rgba(158,224,90,.35);
+                    border-radius: 14px; padding: 16px 22px; cursor: pointer;">
+            <span style="font-size: 1.6rem;">🪄</span>
+            <span>
+              <span style="display:block; font-family:'Poppins',sans-serif; font-weight:700; font-size:1rem; color:#f2f0f6;">BruxoSplat <span style="color:#9ee05a;">Windows x64</span></span>
+              <span data-i18n-p style="display:block; font-size:.78rem; color:#9a97a6; margin-top:2px;">Treine seus splats no seu PC com GPU NVIDIA — sem nuvem, sem limite de tempo.</span>
+            </span>
+            <span data-i18n-b style="margin-left:auto; background:#9ee05a; color:#0a0912; font-weight:700; font-size:.82rem; padding:9px 18px; border-radius:999px; white-space:nowrap;">⬇ Baixar .exe</span>
+          </a>
+        </div>
       </div>
     </sc-if>
 
@@ -210,20 +226,6 @@ const FLOWS = {
     capText: 'Aqui o movimento fica na cena: grave alguém dançando, algo caindo, etc. Câmera o mais parada possível.',
     colab: 'https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_4DGS.ipynb',
     ext: '.splat4d', accept: 'video/*'
-  },
-  asset: {
-    key: 'asset', icon: '🧱', title: 'Imagem → Asset 3D', mode: 'photo',
-    capTitle: 'Consiga uma imagem do objeto',
-    capText: 'Foto, render ou ilustração — o TripoSplat gera o objeto completo em 360° (não só o que aparece na foto), com o fundo removido automaticamente.',
-    colab: 'https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_TripoSplat.ipynb',
-    ext: '.splat', accept: 'image/*'
-  },
-  rosto: {
-    key: 'rosto', icon: '🎭', title: 'Rosto em 4D', mode: 'video',
-    capTitle: 'Grave as expressões do rosto',
-    capText: 'Vídeo curto (3-8s) do rosto bem enquadrado e iluminado. Cada frame vira um splat — as expressões viram uma sequência 4D pronta para distorcer no viewer.',
-    colab: 'https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_FaceAnything4D.ipynb',
-    ext: '.zip (frames .splat)', accept: 'video/*'
   }
 };
 
@@ -231,9 +233,7 @@ const CARD_META = {
   foto: { desc: 'Uma única foto vira um splat 3D em segundos. O jeito mais fácil de começar.', tag: 'Mais fácil · ~5 min', tagBg: 'rgba(158,224,90,.15)', tagColor: '#9ee05a', iconBg: 'rgba(158,224,90,.18)' },
   video: { desc: 'Filme orbitando um objeto ou lugar e gere um splat de alta qualidade com treino completo.', tag: 'Melhor qualidade · ~1h', tagBg: 'rgba(180,122,240,.15)', tagColor: '#c896f7', iconBg: 'rgba(180,122,240,.18)' },
   light: { desc: 'Igual ao anterior, mas com poda LightGaussian: arquivo ~3× menor com a mesma cara.', tag: 'Arquivo leve · ~1h', tagBg: 'rgba(180,122,240,.15)', tagColor: '#c896f7', iconBg: 'rgba(180,122,240,.18)' },
-  quatro: { desc: 'Cada frame do vídeo vira um splat — uma cena que se move no tempo (.splat4d).', tag: 'Experimental · ~30 min', tagBg: 'rgba(158,224,90,.15)', tagColor: '#9ee05a', iconBg: 'rgba(158,224,90,.18)' },
-  asset: { desc: 'Uma imagem vira um asset 3D completo em 360° (TripoSplat, até 262k gaussians).', tag: 'Asset 360° · ~15 min', tagBg: 'rgba(158,224,90,.15)', tagColor: '#9ee05a', iconBg: 'rgba(158,224,90,.18)' },
-  rosto: { desc: 'Expressões de um vídeo viram um rosto 4D denso e consistente (FaceAnything).', tag: 'Rosto 4D · ~40 min', tagBg: 'rgba(180,122,240,.15)', tagColor: '#c896f7', iconBg: 'rgba(180,122,240,.18)' }
+  quatro: { desc: 'Cada frame do vídeo vira um splat — uma cena que se move no tempo (.splat4d).', tag: 'Experimental · ~30 min', tagBg: 'rgba(158,224,90,.15)', tagColor: '#9ee05a', iconBg: 'rgba(158,224,90,.18)' }
 };
 
 function stepNum(color, filled, isMobile) {
@@ -383,7 +383,7 @@ class Component extends DCLogic {
       return {
         key: k, icon: f.icon, title: f.title, desc: m.desc, tag: m.tag,
         tagBg: m.tagBg, tagColor: m.tagColor, iconBg: m.iconBg,
-        select: () => this.selectFlow(k)
+        select: () => window.open(FLOWS[k].colab, "_blank", "noopener")
       };
     });
 
@@ -463,6 +463,51 @@ class Component extends DCLogic {
   }
 }
 
+</script>
+<script>
+(function(){
+  var DICT = {
+    'Criar':'Create','meu':'my','Splat':'Splat',
+    'Escolha o tipo de captura. A página te guia do começo ao fim — a parte pesada roda de graça na nuvem (Google Colab), sem instalar nada.':
+      'Choose a capture type. The page guides you end to end — the heavy lifting runs free in the cloud (Google Colab), nothing to install.',
+    'Tipo de captura':'Capture type','← voltar ao viewer':'← back to viewer',
+    'App de treino (offline)':'Training app (offline)',
+    'Treine seus splats no seu PC com GPU NVIDIA — sem nuvem, sem limite de tempo.':
+      'Train your splats on your PC with an NVIDIA GPU — no cloud, no time limit.',
+    '⬇ Baixar .exe':'⬇ Download .exe',
+    'Foto → 3D':'Photo → 3D','Vídeo → 3D':'Video → 3D','Vídeo → 3D compacto':'Video → 3D compact',
+    'Vídeo → 4D':'Video → 4D','Imagem → Asset 3D':'Image → 3D Asset','Rosto em 4D':'Face in 4D',
+    'Uma única foto vira um splat 3D em segundos. O jeito mais fácil de começar.':
+      'A single photo becomes a 3D splat in seconds. The easiest way to start.',
+    'Filme orbitando um objeto ou lugar e gere um splat de alta qualidade com treino completo.':
+      'Film orbiting an object or place and generate a high-quality splat with full training.',
+    'Igual ao anterior, mas com poda LightGaussian: arquivo ~3× menor com a mesma cara.':
+      'Same as above, but with LightGaussian pruning: ~3× smaller file, same look.',
+    'Cada frame do vídeo vira um splat — uma cena que se move no tempo (.splat4d).':
+      'Each video frame becomes a splat — a scene that moves in time (.splat4d).',
+    'Uma imagem vira um asset 3D completo em 360° (TripoSplat, até 262k gaussians).':
+      'An image becomes a full 360° 3D asset (TripoSplat, up to 262k gaussians).',
+    'Expressões de um vídeo viram um rosto 4D denso e consistente (FaceAnything).':
+      'Expressions from a video become a dense, consistent 4D face (FaceAnything).',
+    'Mais fácil · ~5 min':'Easiest · ~5 min','Melhor qualidade · ~1h':'Best quality · ~1h',
+    'Arquivo leve · ~1h':'Light file · ~1h','Experimental · ~30 min':'Experimental · ~30 min',
+    'Asset 360° · ~15 min':'360° Asset · ~15 min','Rosto 4D · ~40 min':'4D Face · ~40 min',
+    'renderização 3D do splat':'3D splat render'
+  };
+  var lang = 'pt';
+  function walk(dict){
+    var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT), nodes=[], n;
+    while ((n = w.nextNode())) nodes.push(n);
+    nodes.forEach(function(t){ var k=t.nodeValue.trim(); if(k && dict[k]) t.nodeValue = t.nodeValue.replace(k, dict[k]); });
+  }
+  var REV = {}; Object.keys(DICT).forEach(function(k){ REV[DICT[k]] = k; });
+  function apply(l){ if(l===lang) return; walk(l==='en'?DICT:REV); lang=l; }
+  var mo = new MutationObserver(function(){ if(lang==='en') walk(DICT); });
+  function start(){ mo.observe(document.body, {childList:true, subtree:true});
+    var q = new URLSearchParams(location.search).get('lang'); if(q==='en') apply('en'); }
+  window.addEventListener('message', function(e){ if(e.data && e.data.bxLang) apply(e.data.bxLang); });
+  if(document.readyState!=='loading') setTimeout(start,120); else document.addEventListener('DOMContentLoaded', function(){ setTimeout(start,120); });
+})();
 </script>
 </body>
 </html>

@@ -199,6 +199,11 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 const FLOWS = {
+  navegador: {
+    key:'navegador', icon:'⚡', title:'Foto → 3D (no navegador)', mode:'photo',
+    capTitle:'Gera na hora, sem nuvem', capText:'Roda o SHARP no seu dispositivo com WebGPU — sem Colab.',
+    colab:'foto3d.html', ext:'.splat', accept:'image/*'
+  },
   foto: {
     key: 'foto', icon: '🖼️', title: 'Foto → 3D', mode: 'photo',
     capTitle: 'Consiga uma boa foto',
@@ -230,6 +235,7 @@ const FLOWS = {
 };
 
 const CARD_META = {
+  navegador: { desc:'Uma foto vira splat na hora, 100% no seu navegador (SHARP + WebGPU). Sem Colab.', tag:'Instantâneo · no navegador', tagBg:'rgba(158,224,90,.15)', tagColor:'#9ee05a', iconBg:'rgba(158,224,90,.18)' },
   foto: { desc: 'Uma única foto vira um splat 3D em segundos. O jeito mais fácil de começar.', tag: 'Mais fácil · ~5 min', tagBg: 'rgba(158,224,90,.15)', tagColor: '#9ee05a', iconBg: 'rgba(158,224,90,.18)' },
   video: { desc: 'Filme orbitando um objeto ou lugar e gere um splat de alta qualidade com treino completo.', tag: 'Melhor qualidade · ~1h', tagBg: 'rgba(180,122,240,.15)', tagColor: '#c896f7', iconBg: 'rgba(180,122,240,.18)' },
   light: { desc: 'Igual ao anterior, mas com poda LightGaussian: arquivo ~3× menor com a mesma cara.', tag: 'Arquivo leve · ~1h', tagBg: 'rgba(180,122,240,.15)', tagColor: '#c896f7', iconBg: 'rgba(180,122,240,.18)' },

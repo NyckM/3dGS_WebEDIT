@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bruxos do VFX — Foto → 3D no navegador</title>
+<style>
+  :root { --roxo:#7b2d8e; --roxo-claro:#b064c4; --verde:#96c93d; --bg:#0d0a12; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; background:radial-gradient(ellipse at 50% 0%, #1c1226 0%, var(--bg) 60%); color:#fff; font-family:'Segoe UI',system-ui,sans-serif; }
+  .wrap { max-width:720px; margin:0 auto; padding:26px 18px 60px; }
+  a.back { color:#888; text-decoration:none; font-size:.85rem; } a.back:hover { color:var(--verde); }
+  h1 { font-size:clamp(1.6rem,4vw,2.3rem); margin:12px 0 6px; }
+  h1 .b { color:var(--verde); } h1 .v { color:var(--roxo-claro); }
+  .sub { color:#9a97a6; font-size:.92rem; line-height:1.5; margin-bottom:22px; }
+  #drop { border:2px dashed rgba(150,201,61,.4); border-radius:18px; padding:40px 20px; text-align:center; cursor:pointer; transition:.15s; background:rgba(255,255,255,.02); }
+  #drop:hover, #drop.over { border-color:var(--verde); background:rgba(150,201,61,.06); }
+  #drop .emo { font-size:2.4rem; }
+  #drop h2 { font-size:1.05rem; margin:10px 0 4px; }
+  #drop p { font-size:.82rem; color:#9a97a6; }
+  .btn { display:inline-block; background:linear-gradient(135deg,var(--roxo),#9b3db0); border:none; color:#fff; font-size:.92rem; font-weight:600; text-decoration:none; padding:11px 24px; border-radius:999px; cursor:pointer; margin-top:10px; }
+  .btn.verde { background:linear-gradient(135deg,#7ba32e,var(--verde)); color:#0d0a12; }
+  .btn.ghost { background:transparent; border:2px solid rgba(255,255,255,.25); }
+  #status { margin-top:16px; font-size:.9rem; color:var(--verde); min-height:1.3em; }
+  #bar { height:6px; background:rgba(255,255,255,.1); border-radius:3px; overflow:hidden; margin-top:8px; display:none; }
+  #bar.on { display:block; }
+  #bar > div { height:100%; width:0; background:var(--verde); transition:width .2s; }
+  #stage { margin-top:18px; display:none; }
+  #stage.on { display:block; }
+  #view { width:100%; height:min(58vh,460px); border-radius:14px; background:#000; overflow:hidden; position:relative; }
+  .actions { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
+  .warn { background:#5c1a1a; border:1px solid #a33; color:#fdd; padding:10px 14px; border-radius:10px; font-size:.84rem; margin-top:14px; display:none; }
+  .warn.on { display:block; }
+  .cfg { font-size:.72rem; color:#666; margin-top:20px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← voltar ao viewer</a>
+  <h1><span class="b">Foto</span> → <span class="v">3D</span> no navegador</h1>
+  <p class="sub">Gera o splat <b>inteiramente no seu dispositivo</b> com o modelo SHARP da Apple (ONNX + WebGPU). Nenhuma imagem sai do seu computador. Sem Colab, sem espera de servidor.</p>
+
+  <div id="drop">
+    <div class="emo">🖼️</div>
+    <h2>Solte uma foto aqui ou clique</h2>
+    <p>Objeto/pessoa centralizado, boa luz. JPG/PNG.</p>
+    <input type="file" id="file" accept="image/*" hidden>
+  </div>
+
+  <div id="status"></div>
+  <div id="bar"><div></div></div>
+  <div class="warn" id="warn"></div>
+
+  <div id="stage">
+    <div id="view"></div>
+    <div class="actions">
+      <button class="btn verde" id="dl">⬇ Baixar .splat</button>
+      <a class="btn" id="open" href="index.html">✦ Abrir no viewer completo</a>
+      <button class="btn ghost" id="again">🔄 Outra foto</button>
+    </div>
+  </div>
+
+  <p class="cfg">Modelo: <span id="cfg-model">—</span> · Backend: <span id="cfg-backend">detectando…</span>.
+  Configure a URL do modelo em <code>SHARP_ONNX_URL</code> no código (gere com o notebook <b>Exportar SHARP → ONNX</b>).</p>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "@mkkellogg/gaussian-splats-3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.js",
+  "onnxruntime-web": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.webgpu.mjs"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import * as GS from '@mkkellogg/gaussian-splats-3d';
+import * as ort from 'onnxruntime-web';
+
+// ============================================================
+// CONFIG — modelo SHARP já exportado por pristinaai (ONNX + WebGPU).
+// fp16 = ~1.2 GB (baixa 1x e fica em cache). Cada .onnx puxa o .data ao lado.
+// ============================================================
+const MODEL_BASE = 'https://huggingface.co/sentiantai/sharp-onnx-webgpu-weights/resolve/main/';
+const MODEL_URL = MODEL_BASE + 'sharp_web_predictor_fp16.onnx';   // ou sharp_web_predictor.onnx (fp32, 2.5 GB)
+let INPUT_RES = 512;              // ajustado automaticamente pela forma de entrada do modelo
+document.getElementById('cfg-model').textContent = 'SHARP fp16 (pristinaai)';
+
+const $ = id => document.getElementById(id);
+const setStatus = (t, pct) => { $('status').textContent = t || ''; if (pct != null) { $('bar').classList.add('on'); $('bar').firstElementChild.style.width = pct + '%'; } };
+const warn = t => { const w = $('warn'); w.textContent = t; w.classList.add('on'); };
+
+// backend: WebGPU se houver, senão WASM
+const hasWebGPU = !!navigator.gpu;
+$('cfg-backend').textContent = hasWebGPU ? 'WebGPU (GPU local)' : 'WASM (CPU — mais lento)';
+ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
+
+// baixa com barra de progresso (arquivos grandes: o .data tem ~1.2 GB)
+async function fetchProgress(url, label) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(label + ' HTTP ' + r.status);
+  const total = +r.headers.get('content-length') || 0;
+  const reader = r.body.getReader();
+  const chunks = []; let got = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value); got += value.length;
+    setStatus(`Baixando ${label}… ${(got/1e6).toFixed(0)}MB${total?(' / '+(total/1e6).toFixed(0)+'MB'):''} (só na 1ª vez)`, total ? (got/total*100) : null);
+  }
+  const buf = new Uint8Array(got); let off = 0;
+  for (const c of chunks) { buf.set(c, off); off += c.length; }
+  return buf;
+}
+let session = null;
+async function loadModel() {
+  if (session) return session;
+  setStatus('Carregando o modelo SHARP…', 2);
+  // modelo + pesos externos (sidecar .data) — carregados juntos
+  const modelBuf = await fetchProgress(MODEL_URL, 'modelo');
+  const dataBuf = await fetchProgress(MODEL_URL + '.data', 'pesos');
+  session = await ort.InferenceSession.create(modelBuf, {
+    executionProviders: hasWebGPU ? ['webgpu', 'wasm'] : ['wasm'],
+    graphOptimizationLevel: 'all',
+    externalData: [{ path: MODEL_URL.split('/').pop() + '.data', data: dataBuf }]
+  });
+  // mostra a especificação real do modelo (para calibrar o parsing)
+  console.log('SHARP inputs:', session.inputNames, '| outputs:', session.outputNames);
+  window.__sharpSession = session;
+  return session;
+}
+
+// pré-processa a imagem → tensor [1,3,RES,RES] float 0..1 (CHW)
+async function imageToTensor(file) {
+  const img = await createImageBitmap(file);
+  const c = document.createElement('canvas'); c.width = c.height = INPUT_RES;
+  const x = c.getContext('2d');
+  // "cover" central
+  const s = Math.max(INPUT_RES / img.width, INPUT_RES / img.height);
+  const w = img.width * s, h = img.height * s;
+  x.drawImage(img, (INPUT_RES - w) / 2, (INPUT_RES - h) / 2, w, h);
+  const d = x.getImageData(0, 0, INPUT_RES, INPUT_RES).data;
+  const N = INPUT_RES * INPUT_RES;
+  const arr = new Float32Array(3 * N);
+  for (let i = 0; i < N; i++) {
+    arr[i] = d[i*4] / 255;           // R plane
+    arr[N + i] = d[i*4+1] / 255;     // G plane
+    arr[2*N + i] = d[i*4+2] / 255;   // B plane
+  }
+  return new ort.Tensor('float32', arr, [1, 3, INPUT_RES, INPUT_RES]);
+}
+
+// ============================================================
+// PARSE — converte a saída do SHARP em buffer .splat (32 bytes/splat).
+// Layout assumido por splat: [x,y,z, sx,sy,sz, qx,qy,qz,qw, op, r,g,b] (14 canais).
+// AJUSTE conforme a saída impressa pelo notebook (nomes/ordem/normalização).
+// ============================================================
+function gaussiansToSplat(outputs) {
+  // pega o primeiro tensor de saída
+  const key = Object.keys(outputs)[0];
+  const t = outputs[key];
+  const data = t.data;                 // Float32Array
+  const dims = t.dims;
+  // tenta descobrir N e canais
+  let N, C;
+  if (dims.length === 3) { N = dims[1]; C = dims[2]; }       // [1,N,C]
+  else if (dims.length === 2) { N = dims[0]; C = dims[1]; }  // [N,C]
+  else { N = Math.floor(data.length / 14); C = 14; }
+  const get = (i, ch) => data[i * C + ch];
+  const clamp8 = v => Math.max(0, Math.min(255, v));
+  const buf = new ArrayBuffer(N * 32);
+  const f = new Float32Array(buf), u = new Uint8Array(buf);
+  for (let i = 0; i < N; i++) {
+    f[i*8]   = get(i,0); f[i*8+1] = get(i,1); f[i*8+2] = get(i,2);        // posição
+    f[i*8+3] = Math.exp(get(i,3)); f[i*8+4] = Math.exp(get(i,4)); f[i*8+5] = Math.exp(get(i,5)); // escala (log→lin; ajuste se já vier linear)
+    // cor (canais 11..13) — se vierem 0..1, ×255; se já 0..255, remova o ×255
+    u[i*32+24] = clamp8(get(i,11) * 255);
+    u[i*32+25] = clamp8(get(i,12) * 255);
+    u[i*32+26] = clamp8(get(i,13) * 255);
+    u[i*32+27] = clamp8((1 / (1 + Math.exp(-get(i,10)))) * 255);          // opacidade (sigmoid; ajuste)
+    // rotação (quaternion canais 6..9) → bytes
+    u[i*32+28] = clamp8(get(i,6) * 128 + 128);
+    u[i*32+29] = clamp8(get(i,7) * 128 + 128);
+    u[i*32+30] = clamp8(get(i,8) * 128 + 128);
+    u[i*32+31] = clamp8(get(i,9) * 128 + 128);
+  }
+  return buf;
+}
+
+// mini-viewer para o preview inline
+let viewer = null;
+async function preview(splatBuf) {
+  if (viewer) { try { viewer.dispose(); } catch(e){} $('view').innerHTML = ''; viewer = null; }
+  viewer = new GS.Viewer({
+    rootElement: $('view'),
+    cameraUp: [0,-1,0], initialCameraPosition: [0,0,-4], initialCameraLookAt: [0,0,0],
+    selfDrivenMode: true, useBuiltInControls: true
+  });
+  const url = URL.createObjectURL(new Blob([splatBuf]));
+  await viewer.addSplatScene(url, { format: GS.SceneFormat.Splat, showLoadingUI: false });
+  viewer.start();
+  URL.revokeObjectURL(url);
+}
+
+let lastSplat = null;
+async function run(file) {
+  $('warn').classList.remove('on');
+  try {
+    await loadModel();
+    setStatus('Processando no seu dispositivo…', 40);
+    const input = await imageToTensor(file);
+    const feeds = {}; feeds[session.inputNames[0]] = input;
+    const t0 = performance.now();
+    const outputs = await session.run(feeds);
+    // mostra a forma real das saídas (para calibrar o parsing na 1ª rodada)
+    const spec = session.outputNames.map(n => `${n}[${outputs[n].dims.join('×')}] ${outputs[n].type}`).join('  ·  ');
+    console.log('SHARP saída:', spec);
+    $('cfg-model').textContent = 'SHARP fp16 · saída: ' + spec;
+    setStatus('Montando os Gaussians…', 85);
+    lastSplat = gaussiansToSplat(outputs);
+    setStatus(`Pronto! ${(lastSplat.byteLength/32/1000).toFixed(0)}k splats em ${((performance.now()-t0)/1000).toFixed(1)}s`, 100);
+    $('stage').classList.add('on');
+    await preview(lastSplat);
+    setTimeout(() => $('bar').classList.remove('on'), 800);
+  } catch (e) {
+    console.error(e);
+    warn('Erro ao gerar: ' + (e.message || e));
+    setStatus('');
+  }
+}
+
+// UI
+$('drop').addEventListener('click', () => $('file').click());
+$('file').addEventListener('change', () => { if ($('file').files[0]) run($('file').files[0]); });
+['dragenter','dragover'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('over'); }));
+['dragleave','drop'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.remove('over'); }));
+$('drop').addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f && f.type.startsWith('image/')) run(f); });
+$('dl').addEventListener('click', () => {
+  if (!lastSplat) return;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lastSplat])); a.download = 'bruxos_foto3d.splat'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+});
+$('again').addEventListener('click', () => { $('stage').classList.remove('on'); $('file').value=''; setStatus(''); });
+
+if (!hasWebGPU) warn('Seu navegador não tem WebGPU — vai rodar em CPU (WASM), bem mais lento. Use Chrome/Edge recentes para a versão rápida.');
+</script>
+</body>
+</html>

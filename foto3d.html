@@ -47,6 +47,11 @@
     <input type="file" id="file" accept="image/*" hidden>
   </div>
 
+  <div style="display:flex; align-items:center; gap:10px; margin-top:14px; font-size:.82rem; color:#9a97a6;">
+    <label for="disp" style="white-space:nowrap;">Profundidade</label>
+    <input type="range" id="disp" min="0.2" max="3" step="0.05" value="1" style="flex:1; accent-color:var(--verde);">
+    <span id="dispv" style="color:var(--verde); width:34px;">1.00</span>
+  </div>
   <div id="status"></div>
   <div id="bar"><div></div></div>
   <div class="warn" id="warn"></div>
@@ -126,6 +131,8 @@ async function loadModel() {
   });
   // mostra a especificação real do modelo (para calibrar o parsing)
   console.log('SHARP inputs:', session.inputNames, '| outputs:', session.outputNames);
+  document.getElementById('cfg-model').textContent =
+    'SHARP fp16 · entradas: ' + session.inputNames.join(', ') + ' · saídas: ' + session.outputNames.join(', ');
   window.__sharpSession = session;
   return session;
 }
@@ -209,9 +216,32 @@ async function run(file) {
     await loadModel();
     setStatus('Processando no seu dispositivo…', 40);
     const input = await imageToTensor(file);
-    const feeds = {}; feeds[session.inputNames[0]] = input;
+    const disp = parseFloat(document.getElementById('disp').value);
+    // alimenta TODAS as entradas do modelo: a imagem + escalares (ex.: disparity_factor)
+    const buildFeeds = (scalarDims) => {
+      const f = {};
+      let imgDone = false;
+      for (const name of session.inputNames) {
+        const n = name.toLowerCase();
+        if (!imgDone && (n.includes('image') || n.includes('img') || n === 'input' || n.includes('rgb'))) {
+          f[name] = input; imgDone = true;
+        } else if (n.includes('disparity') || n.includes('depth') || n.includes('scale') || n.includes('factor')) {
+          f[name] = new ort.Tensor('float32', new Float32Array([disp]), scalarDims);
+        } else {
+          f[name] = new ort.Tensor('float32', new Float32Array([1]), scalarDims);
+        }
+      }
+      if (!imgDone) f[session.inputNames[0]] = input;   // fallback: 1ª entrada é a imagem
+      return f;
+    };
     const t0 = performance.now();
-    const outputs = await session.run(feeds);
+    let outputs;
+    try {
+      outputs = await session.run(buildFeeds([1]));         // escalares como [1]
+    } catch (e1) {
+      console.warn('tentando escalares como [] :', e1.message);
+      outputs = await session.run(buildFeeds([]));          // fallback: escalar puro
+    }
     // mostra a forma real das saídas (para calibrar o parsing na 1ª rodada)
     const spec = session.outputNames.map(n => `${n}[${outputs[n].dims.join('×')}] ${outputs[n].type}`).join('  ·  ');
     console.log('SHARP saída:', spec);
@@ -230,6 +260,7 @@ async function run(file) {
 }
 
 // UI
+document.getElementById('disp').addEventListener('input', e => document.getElementById('dispv').textContent = (+e.target.value).toFixed(2));
 $('drop').addEventListener('click', () => $('file').click());
 $('file').addEventListener('change', () => { if ($('file').files[0]) run($('file').files[0]); });
 ['dragenter','dragover'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('over'); }));

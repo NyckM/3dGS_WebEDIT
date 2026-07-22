@@ -1860,8 +1860,9 @@ function makeViewer(extra = {}) {
     antialiased: !IS_MOBILE,
     halfPrecisionCovariancesOnGPU: !IS_IOS,  // iOS tem artefatos/erros com half precision
     integerBasedSort: IS_IOS,        // iOS: sort inteiro (mais compatível); desktop: float
-    splatSortDistMapPrecision: 32,   // máxima precisão na ordenação por distância
-    dynamicScene: true               // reordena os splats a cada frame → sem "pulos de luz" ao mover
+    splatSortDistMapPrecision: 32    // máxima precisão na ordenação por distância
+    // (nota: dynamicScene:true reduzia o popping, mas impede a lib de montar a
+    //  splat tree → quebrava o carregamento com erro "visitLeaves de null")
   }, extra));
   // "Voo para dentro": o zoom orbital para no alvo — quando você já está colado
   // nele e continua dando scroll, empurramos alvo + câmera para frente juntos.

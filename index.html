@@ -569,8 +569,8 @@
     <button class="panel-btn" id="cam-reset">🎯 Resetar câmera (posição inicial)</button>
     <div class="row"><label>Suavizar giro</label>
       <select id="cam-smooth" style="flex:1;">
-        <option value="off">Padrão (reordena a cada ~8°)</option>
-        <option value="on" selected>Suave (reordena todo quadro)</option>
+        <option value="off" selected>Padrão (reordena a cada ~8°)</option>
+        <option value="on">Suave (reordena todo quadro)</option>
       </select>
     </div>
 
@@ -1916,9 +1916,7 @@ function makeViewer(extra = {}) {
     // ATENÇÃO ao nome: 'splatSortDistMapPrecision' (sem 'ance') era ignorado
     // pela lib e caía no padrão 16 → buckets grossos de profundidade = popping.
     // Máximo real: 20 no sort inteiro, 24 no de ponto flutuante.
-    splatSortDistanceMapPrecision: IS_IOS ? 20 : 24,
-    kernel2DSize: 0.45,              // borda um pouco mais macia (padrão 0.3)
-    sceneFadeInRateMultiplier: 0.6   // aparição das cenas mais suave
+    splatSortDistanceMapPrecision: IS_IOS ? 20 : 24
     // (nota: dynamicScene:true reduzia o popping, mas impede a lib de montar a
     //  splat tree → quebrava o carregamento com erro "visitLeaves de null")
   }, extra));
@@ -5015,8 +5013,14 @@ function tickBody(now) {
   // (angleDiff <= 0.99). Entre uma ordenação e outra a ordem fica velha e os
   // splats "piscam" ao girar. Forçando o sort todo quadro, a transição fica
   // contínua — custa mais GPU/CPU, por isso é opcional.
-  if (viewer && $('cam-smooth') && $('cam-smooth').value === 'on') {
-    try { viewer.runSplatSort(true); } catch (e) {}
+  if (viewer && viewer.initialized && !viewer.disposed &&
+      $('cam-smooth') && $('cam-smooth').value === 'on' &&
+      viewer.splatMesh && viewer.splatMesh.getSplatCount() > 0) {
+    try { viewer.runSplatSort(true); }
+    catch (e) {
+      console.warn('reordenação por quadro desligada:', e);
+      $('cam-smooth').value = 'off';       // não insiste se der problema
+    }
   }
   tickAudio(); // 🎵 modulação por áudio (graves/médios/agudos)
   tickInteractive(); // 🕹 LFOs

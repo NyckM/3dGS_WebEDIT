@@ -85,7 +85,7 @@
     </div>
   </details>
 
-  <div style="font-size:.7rem;color:#666;margin-top:10px;">build <b style="color:var(--verde)">v9</b> — se aqui não estiver v9, o navegador está com cache antigo (Ctrl+Shift+R)</div>
+  <div style="font-size:.7rem;color:#666;margin-top:10px;">build <b style="color:var(--verde)">v10</b> — se aqui não estiver v10, o navegador está com cache antigo (Ctrl+Shift+R)</div>
   <div id="status"></div>
   <div id="bar"><div></div></div>
   <div class="warn" id="warn"></div>
@@ -167,8 +167,9 @@ const mkTensor = (dtype, arr, dims) => {
 };
 
 // ============================================================
-// download com barra de progresso
+// (mantido para uso futuro; o modelo é buscado pelo próprio ORT)
 // ============================================================
+// eslint-disable-next-line no-unused-vars
 async function fetchProgress(url, label) {
   const r = await fetch(url);
   if (!r.ok) throw new Error(label + ' HTTP ' + r.status);
@@ -192,14 +193,23 @@ async function loadModel() {
   if (session && sessionKey === prec) return session;
   if (session) { try { await session.release(); } catch(e){} session = null; }
   const url = MODEL_BASE + MODEL_FILE[prec];
-  setStatus('Carregando o modelo SHARP…', 2);
-  const modelBuf = await fetchProgress(url, 'modelo');
-  const dataBuf  = await fetchProgress(url + '.data', 'pesos');
-  session = await ort.InferenceSession.create(modelBuf, {
-    executionProviders: hasWebGPU ? ['webgpu', 'wasm'] : ['wasm'],
-    graphOptimizationLevel: 'all',
-    externalData: [{ path: MODEL_FILE[prec] + '.data', data: dataBuf }]
-  });
+  // IMPORTANTE: o ORT precisa buscar o sidecar .data sozinho.
+  // Pré-baixar e entregar os bytes quebra a contabilidade interna de arquivos
+  // montados — o modelo carrega com PESOS ZERADOS e devolve saídas constantes.
+  const t0 = performance.now();
+  const hb = setInterval(() => {
+    const s = Math.floor((performance.now() - t0) / 1000);
+    setStatus(`Baixando o modelo SHARP ${prec} (${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}) — ${prec === 'fp32' ? '~2,5 GB' : '~1,2 GB'}, só na 1ª vez`, null);
+    $('bar').classList.add('on');
+    $('bar').firstElementChild.style.width = Math.min(95, 5 + s * 1.2) + '%';
+  }, 1000);
+  try {
+    session = await ort.InferenceSession.create(url, {
+      executionProviders: hasWebGPU ? ['webgpu', 'wasm'] : ['wasm'],
+      graphOptimizationLevel: 'all',
+      externalData: [{ path: MODEL_FILE[prec] + '.data', data: url + '.data' }]
+    });
+  } finally { clearInterval(hb); }
   sessionKey = prec;
   $('cfg-model').textContent = `SHARP ${prec} · entradas: ${session.inputNames.join(', ')} · saídas: ${session.outputNames.join(', ')}`;
   return session;
@@ -422,6 +432,13 @@ async function run(file) {
 
     const total = opac.length;
     if (total === 0) throw new Error('o modelo devolveu zero gaussians');
+    // saídas constantes = pesos não carregaram (sidecar .data ausente)
+    let varia = false;
+    for (let i = 3; i < Math.min(means.length, 30000); i += 3) if (means[i] !== means[0]) { varia = true; break; }
+    if (!varia) throw new Error(
+      'o modelo rodou com pesos vazios (todas as saídas iguais). ' +
+      'O arquivo .data não foi carregado — verifique a conexão e recarregue. ' +
+      'Se persistir, tente a outra precisão nas opções avançadas.');
 
     // ---- poda por opacidade + limite ----
     setStatus('Filtrando gaussians…', 75);
@@ -455,7 +472,7 @@ async function run(file) {
     setTimeout(() => $('bar').classList.remove('on'), 800);
   } catch (e) {
     console.error(e);
-    warn('[v9] Erro ao gerar: ' + (e.message || e));
+    warn('[v10] Erro ao gerar: ' + (e.message || e));
     $('bar').classList.remove('on');
     setStatus('');
   }

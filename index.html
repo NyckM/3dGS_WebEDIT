@@ -5416,5 +5416,206 @@ if (params.has('url')) {
   };
 })();
 </script>
+
+<style>
+/* ============================================================
+   MOBILE 9:16 — painéis como folha inferior arrastável
+   ============================================================ */
+@media (max-width: 720px), (pointer: coarse) and (max-width: 900px) {
+
+  /* ---------- TOPBAR: sempre visível, rolagem horizontal ---------- */
+  #topbar {
+    padding: calc(env(safe-area-inset-top, 0px) + 8px) 10px 8px;
+    gap: 7px; overflow-x: auto; overflow-y: hidden;
+    flex-wrap: nowrap; -webkit-overflow-scrolling: touch;
+    background: linear-gradient(to bottom, rgba(13,10,18,.96) 60%, rgba(13,10,18,0));
+    scrollbar-width: none;
+  }
+  #topbar::-webkit-scrollbar { display: none; }
+  #topbar .title { display: none; }          /* o nome come a largura toda */
+  #topbar .spacer { display: none; }
+  .tb-btn { padding: 9px 13px; font-size: .78rem; flex: 0 0 auto; }
+
+  /* ---------- PAINEL: folha que sobe de baixo ---------- */
+  #panel {
+    top: auto; right: 0; left: 0; bottom: 0;
+    width: auto; border-radius: 20px 20px 0 0;
+    border-left: none; border-right: none; border-bottom: none;
+    height: var(--sheet-h, 48vh); max-height: 90vh;
+    padding: 0 14px calc(env(safe-area-inset-bottom, 0px) + 16px);
+    transform: translateY(100%); transition: transform .22s ease, height .18s ease;
+    box-shadow: 0 -10px 30px rgba(0,0,0,.55);
+    overscroll-behavior: contain;
+  }
+  #panel.visible { display: block; transform: translateY(0); }
+
+  /* alça de arrasto, fixa no topo da folha */
+  .sheet-grip {
+    position: sticky; top: 0; z-index: 3; margin: 0 -14px 6px;
+    padding: 9px 0 7px; background: var(--panel);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    cursor: grab; touch-action: none;
+    border-radius: 20px 20px 0 0;
+  }
+  .sheet-grip::before {
+    content: ''; width: 42px; height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,.3);
+  }
+  .sheet-grip .sheet-close {
+    position: absolute; right: 12px; top: 6px;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+    color: #ddd; width: 28px; height: 28px; border-radius: 50%; font-size: .9rem; cursor: pointer;
+  }
+  @media (min-width: 721px) { .sheet-grip { display: none; } }
+
+  /* abas em uma linha só, roláveis e grudadas no topo */
+  .fx-tabs {
+    position: sticky; top: 40px; z-index: 2;
+    flex-wrap: nowrap; overflow-x: auto; gap: 6px;
+    margin: 0 -14px 10px; padding: 6px 14px;
+    background: var(--panel); scrollbar-width: none;
+  }
+  .fx-tabs::-webkit-scrollbar { display: none; }
+  .fx-tab { flex: 0 0 auto; padding: 9px 13px; font-size: .74rem; }
+
+  /* alvos de toque maiores */
+  .row { margin: 10px 0; gap: 10px; }
+  .row label { font-size: .8rem; }
+  input[type=range] { height: 26px; }
+  .panel-btn { padding: 11px 14px; font-size: .82rem; }
+  .rst { width: 24px; height: 24px; line-height: 22px; font-size: .78rem; opacity: .7; }
+  .val.editable { padding: 3px 2px; }
+
+  /* ---------- CINEMA: também vira folha, não dock de tela cheia ---------- */
+  body.cine-dock #panel {
+    left: 0; right: 0; top: auto; bottom: 0;
+    width: auto; height: var(--sheet-h, 48vh); max-height: 90vh;
+    border-radius: 20px 20px 0 0; border-right: none;
+    border-top: 1px solid #333; background: #14151a;
+  }
+  body.cine-dock .sheet-grip { background: #14151a; }
+  body.cine-dock .fx-tabs { background: #14151a; }
+
+  /* ---------- TIMELINE: faixa fina ---------- */
+  #timeline { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .tl-bar { gap: 6px; padding: 7px 10px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .tl-bar::-webkit-scrollbar { display: none; }
+  .tl-btn { padding: 8px 11px; font-size: .76rem; flex: 0 0 auto; }
+  #tl-track { min-width: 130px; height: 32px; }
+  .tl-key { width: 14px; height: 14px; top: 9px; }
+  #tl-time, #tl-dur { flex: 0 0 auto; }
+
+  /* layers vira tela cheia (arrastar keyframe em 190px no celular é inviável) */
+  #tl-layers {
+    position: fixed; inset: 0; z-index: 40; max-height: none;
+    background: rgba(13,10,18,.98); padding: calc(env(safe-area-inset-top,0px) + 46px) 0 20px;
+    border-top: none; overflow-y: auto;
+  }
+  #tl-layers.visible::before {
+    content: 'Keyframes — arraste para mover · toque em ✕ para apagar';
+    position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; z-index: 41;
+    padding: 12px 52px 12px 16px; font-size: .76rem; color: var(--verde);
+    background: #14111c; border-bottom: 1px solid rgba(255,255,255,.1);
+  }
+  #tl-layers-fs-close {
+    display: none; position: fixed; z-index: 42;
+    top: calc(env(safe-area-inset-top, 0px) + 6px); right: 12px;
+    width: 34px; height: 34px; border-radius: 50%; font-size: 1rem;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: #fff;
+  }
+  #tl-layers.visible ~ #tl-layers-fs-close, body.tl-layers-open #tl-layers-fs-close { display: block; }
+  .tl-layer { padding: 10px 14px; gap: 10px; }
+  .tl-layer .nm { width: 96px; font-size: .74rem; }
+  .tl-layer .lane { height: 30px; }
+  .tl-layer .lk { width: 16px; height: 16px; top: 7px; }
+  .tl-layer .del { font-size: 1rem; padding: 0 6px; }
+
+  /* ---------- diversos ---------- */
+  #hand-preview { width: 128px; bottom: calc(env(safe-area-inset-bottom,0px) + 40px); }
+  #seqbar { padding: 7px 12px; gap: 7px; max-width: calc(100vw - 20px); }
+  .sq-btn { width: 40px; height: 40px; }
+  #hint { display: none; }
+}
+</style>
+
+<script>
+/* ============================================================
+   MOBILE — alça de arrasto da folha inferior
+   ============================================================ */
+(function () {
+  const mobile = () => window.matchMedia('(max-width: 720px), (pointer: coarse) and (max-width: 900px)').matches;
+  const panel = document.getElementById('panel');
+  if (!panel) return;
+
+  // alça + botão de fechar
+  const grip = document.createElement('div');
+  grip.className = 'sheet-grip';
+  grip.innerHTML = '<button class="sheet-close" type="button" aria-label="fechar">✕</button>';
+  panel.insertBefore(grip, panel.firstChild);
+
+  const setH = vh => document.documentElement.style.setProperty('--sheet-h', vh + 'vh');
+  const PARADAS = [42, 68, 90];          // alturas em que a folha "encaixa"
+  let atual = 0;
+  setH(PARADAS[atual]);
+
+  const fechar = () => {
+    panel.classList.remove('visible');
+    const b = document.getElementById('btn-panel');
+    if (b) b.classList.remove('active');
+  };
+  grip.querySelector('.sheet-close').addEventListener('click', ev => { ev.stopPropagation(); fechar(); });
+
+  let y0 = 0, h0 = 0, arrastando = false;
+  grip.addEventListener('pointerdown', ev => {
+    if (!mobile()) return;
+    if (ev.target.closest('.sheet-close')) return;
+    arrastando = true; y0 = ev.clientY;
+    h0 = panel.getBoundingClientRect().height / window.innerHeight * 100;
+    grip.setPointerCapture(ev.pointerId);
+    panel.style.transition = 'none';
+  });
+  grip.addEventListener('pointermove', ev => {
+    if (!arrastando) return;
+    const delta = (y0 - ev.clientY) / window.innerHeight * 100;   // subir = crescer
+    setH(Math.max(14, Math.min(92, h0 + delta)));
+  });
+  const soltar = () => {
+    if (!arrastando) return;
+    arrastando = false;
+    panel.style.transition = '';
+    const h = panel.getBoundingClientRect().height / window.innerHeight * 100;
+    if (h < 26) { setH(PARADAS[0]); fechar(); return; }        // arrastou para baixo = fecha
+    // encaixa na parada mais próxima
+    let melhor = 0;
+    PARADAS.forEach((v, i) => { if (Math.abs(v - h) < Math.abs(PARADAS[melhor] - h)) melhor = i; });
+    atual = melhor; setH(PARADAS[atual]);
+  };
+  grip.addEventListener('pointerup', soltar);
+  grip.addEventListener('pointercancel', soltar);
+  // toque simples na alça alterna entre as alturas
+  grip.addEventListener('click', ev => {
+    if (!mobile() || ev.target.closest('.sheet-close')) return;
+    atual = (atual + 1) % PARADAS.length;
+    setH(PARADAS[atual]);
+  });
+
+  // ---- layers em tela cheia: botão de fechar próprio ----
+  const btnFs = document.createElement('button');
+  btnFs.id = 'tl-layers-fs-close';
+  btnFs.type = 'button';
+  btnFs.textContent = '✕';
+  document.body.appendChild(btnFs);
+  const layers = document.getElementById('tl-layers');
+  const btnLayers = document.getElementById('tl-layers-btn');
+  btnFs.addEventListener('click', () => { if (btnLayers) btnLayers.click(); });
+  if (layers) {
+    new MutationObserver(() => {
+      document.body.classList.toggle('tl-layers-open',
+        layers.classList.contains('visible') && mobile());
+    }).observe(layers, { attributes: true, attributeFilter: ['class'] });
+  }
+})();
+</script>
+
 </body>
 </html>

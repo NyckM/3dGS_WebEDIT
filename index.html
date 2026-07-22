@@ -567,6 +567,12 @@
   <!-- ========== EFEITOS DE CÂMERA ========== -->
   <div class="tab-page" id="tab-cam">
     <button class="panel-btn" id="cam-reset">🎯 Resetar câmera (posição inicial)</button>
+    <div class="row"><label>Suavizar giro</label>
+      <select id="cam-smooth" style="flex:1;">
+        <option value="off">Padrão (reordena a cada ~8°)</option>
+        <option value="on" selected>Suave (reordena todo quadro)</option>
+      </select>
+    </div>
 
     <h3>Lente</h3>
     <div class="row"><label>FOV</label><input type="range" id="cam-fov" min="15" max="120" step="1" value="60"><span class="val" id="v-fov">60°</span></div>
@@ -1907,7 +1913,12 @@ function makeViewer(extra = {}) {
     antialiased: !IS_MOBILE,
     halfPrecisionCovariancesOnGPU: !IS_IOS,  // iOS tem artefatos/erros com half precision
     integerBasedSort: IS_IOS,        // iOS: sort inteiro (mais compatível); desktop: float
-    splatSortDistMapPrecision: 32    // máxima precisão na ordenação por distância
+    // ATENÇÃO ao nome: 'splatSortDistMapPrecision' (sem 'ance') era ignorado
+    // pela lib e caía no padrão 16 → buckets grossos de profundidade = popping.
+    // Máximo real: 20 no sort inteiro, 24 no de ponto flutuante.
+    splatSortDistanceMapPrecision: IS_IOS ? 20 : 24,
+    kernel2DSize: 0.45,              // borda um pouco mais macia (padrão 0.3)
+    sceneFadeInRateMultiplier: 0.6   // aparição das cenas mais suave
     // (nota: dynamicScene:true reduzia o popping, mas impede a lib de montar a
     //  splat tree → quebrava o carregamento com erro "visitLeaves de null")
   }, extra));
@@ -3406,6 +3417,8 @@ const I18N = {
   // botões comuns
   'Resetar transformações':'Reset transforms','▶ Crop radial no pivô':'▶ Radial crop at pivot',
   '🎯 Resetar câmera (posição inicial)':'🎯 Reset camera (initial)','Off':'Off',
+  'Suavizar giro':'Smooth rotation','Padrão (reordena a cada ~8°)':'Default (re-sorts every ~8°)',
+  'Suave (reordena todo quadro)':'Smooth (re-sorts every frame)',
   'Aplicar (permanente)':'Apply (permanent)','Resetar':'Reset','🎬 Cine':'🎬 Cine',
   '🕹 Gizmo da luz (arrastar)':'🕹 Light gizmo (drag)','🕹 Gizmo da ball (arrastar)':'🕹 Ball gizmo (drag)',
   '🔄 Atualizar reflexo':'🔄 Update reflection','📤 Exportar 360':'📤 Export 360',
@@ -4998,6 +5011,13 @@ function tickBody(now) {
   // tempo global dos efeitos GPU
   anim.fxTime += dt;
   const uT = bxU('uBxTime'); if (uT) uT.value = anim.fxTime;
+  // 🔄 Reordenação por quadro: a lib só reordena quando a câmera gira ~8°
+  // (angleDiff <= 0.99). Entre uma ordenação e outra a ordem fica velha e os
+  // splats "piscam" ao girar. Forçando o sort todo quadro, a transição fica
+  // contínua — custa mais GPU/CPU, por isso é opcional.
+  if (viewer && $('cam-smooth') && $('cam-smooth').value === 'on') {
+    try { viewer.runSplatSort(true); } catch (e) {}
+  }
   tickAudio(); // 🎵 modulação por áudio (graves/médios/agudos)
   tickInteractive(); // 🕹 LFOs
   cineTick(dt); // 🎬 Cinema (pós-processo + zoom)

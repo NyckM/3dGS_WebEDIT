@@ -52,7 +52,7 @@
     <input type="range" id="disp" min="0.2" max="3" step="0.05" value="1" style="flex:1; accent-color:var(--verde);">
     <span id="dispv" style="color:var(--verde); width:34px;">1.00</span>
   </div>
-  <div style="font-size:.7rem;color:#666;margin-top:6px;">build <b id="buildid" style="color:var(--verde)">v5</b> — se aqui não estiver <b>v5</b>, o navegador está com cache antigo (Ctrl+Shift+R)</div>
+  <div style="font-size:.7rem;color:#666;margin-top:6px;">build <b id="buildid" style="color:var(--verde)">v6</b> — se aqui não estiver <b>v6</b>, o navegador está com cache antigo (Ctrl+Shift+R)</div>
   <div id="status"></div>
   <div id="bar"><div></div></div>
   <div class="warn" id="warn"></div>
@@ -156,7 +156,16 @@ function f16to32(h) {
   if (e === 0x1F) return f ? NaN : (s ? -1 : 1) * Infinity;
   return (s ? -1 : 1) * Math.pow(2, e - 15) * (1 + f / 1024);
 }
-const toF16Array = arr => { const o = new Uint16Array(arr.length); for (let i = 0; i < arr.length; i++) o[i] = f32to16(arr[i]); return o; };
+const HAS_F16 = (typeof Float16Array !== 'undefined');
+// navegadores modernos exigem Float16Array nativo; nos antigos, Uint16Array com os bits
+const toF16Array = arr => {
+  if (HAS_F16) return Float16Array.from(arr);
+  const o = new Uint16Array(arr.length);
+  for (let i = 0; i < arr.length; i++) o[i] = f32to16(arr[i]);
+  return o;
+};
+// saída float16 → Float32Array (Float16Array já guarda floats; Uint16Array guarda bits)
+const fromF16 = d => (d instanceof Uint16Array) ? Float32Array.from(d, h => f16to32(h)) : Float32Array.from(d);
 // tensor no dtype pedido
 function mkTensor(dtype, floatArr, dims) {
   return dtype === 'float16'
@@ -198,7 +207,7 @@ function gaussiansToSplat(outputs) {
   // tensor → { get(i,c), N, C }
   const acc = (t, fallbackC) => {
     if (!t) return null;
-    const d = (t.type === 'float16') ? Float32Array.from(t.data, h => f16to32(h)) : t.data;
+    const d = (t.type === 'float16') ? fromF16(t.data) : t.data;
     const dims = t.dims.filter(x => x !== 1);
     let C = fallbackC, N;
     if (dims.length >= 2) {
@@ -340,7 +349,7 @@ async function run(file) {
     setTimeout(() => $('bar').classList.remove('on'), 800);
   } catch (e) {
     console.error(e);
-    warn('[v5] Erro ao gerar: ' + (e.message || e));
+    warn('[v6] Erro ao gerar: ' + (e.message || e));
     setStatus('');
   }
 }

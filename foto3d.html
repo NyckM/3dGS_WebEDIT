@@ -52,6 +52,7 @@
     <input type="range" id="disp" min="0.2" max="3" step="0.05" value="1" style="flex:1; accent-color:var(--verde);">
     <span id="dispv" style="color:var(--verde); width:34px;">1.00</span>
   </div>
+  <div style="font-size:.7rem;color:#666;margin-top:6px;">build <b id="buildid" style="color:var(--verde)">v5</b> — se aqui não estiver <b>v5</b>, o navegador está com cache antigo (Ctrl+Shift+R)</div>
   <div id="status"></div>
   <div id="bar"><div></div></div>
   <div class="warn" id="warn"></div>
@@ -189,36 +190,77 @@ async function imageToTensor(file) {
 // AJUSTE conforme a saída impressa pelo notebook (nomes/ordem/normalização).
 // ============================================================
 function gaussiansToSplat(outputs) {
-  // pega o primeiro tensor de saída
-  const key = Object.keys(outputs)[0];
-  const t = outputs[key];
-  // saídas fp16 vêm como Uint16Array → converte para float
-  const data = (t.type === 'float16')
-    ? Float32Array.from(t.data, h => f16to32(h))
-    : t.data;
-  const dims = t.dims;
-  // tenta descobrir N e canais
-  let N, C;
-  if (dims.length === 3) { N = dims[1]; C = dims[2]; }       // [1,N,C]
-  else if (dims.length === 2) { N = dims[0]; C = dims[1]; }  // [N,C]
-  else { N = Math.floor(data.length / 14); C = 14; }
-  const get = (i, ch) => data[i * C + ch];
-  const clamp8 = v => Math.max(0, Math.min(255, v));
+  // saídas reais do SHARP: mean_vectors_ndc, singular_values_ndc, quaternions_ndc, colors, opacities
+  const pick = (...cands) => {
+    for (const c of cands) for (const k of Object.keys(outputs)) if (k.toLowerCase().includes(c)) return outputs[k];
+    return null;
+  };
+  // tensor → { get(i,c), N, C }
+  const acc = (t, fallbackC) => {
+    if (!t) return null;
+    const d = (t.type === 'float16') ? Float32Array.from(t.data, h => f16to32(h)) : t.data;
+    const dims = t.dims.filter(x => x !== 1);
+    let C = fallbackC, N;
+    if (dims.length >= 2) {
+      // canal é a menor dimensão (3, 4, 1); a outra é N
+      C = Math.min(dims[dims.length - 1], dims[0]) <= 4 ? Math.min(dims[dims.length - 1], dims[0]) : fallbackC;
+      N = Math.floor(d.length / C);
+      const channelLast = dims[dims.length - 1] === C;
+      return channelLast
+        ? { N, C, get: (i, c) => d[i * C + c] }        // [N, C]
+        : { N, C, get: (i, c) => d[c * N + i] };       // [C, N] / [C, H, W]
+    }
+    N = Math.floor(d.length / C);
+    return { N, C, get: (i, c) => d[i * C + c] };
+  };
+  const P  = acc(pick('mean_vectors', 'mean', 'position', 'xyz'), 3);
+  const S  = acc(pick('singular_values', 'scale', 'sigma'), 3);
+  const Q  = acc(pick('quaternion', 'rot'), 4);
+  const CO = acc(pick('color', 'rgb', 'sh'), 3);
+  const OP = acc(pick('opacit', 'alpha'), 1);
+  if (!P) throw new Error('não achei a saída de posições');
+  const N = P.N;
+  const clamp8 = v => Math.max(0, Math.min(255, Math.round(v)));
+  const sig = v => 1 / (1 + Math.exp(-v));
+  // as posições vêm em NDC (x,y em -1..1; z = profundidade) → espaço de mundo simples
   const buf = new ArrayBuffer(N * 32);
   const f = new Float32Array(buf), u = new Uint8Array(buf);
+  // detecta se cor/opacidade já estão em 0..1 (senão aplica sigmoid)
+  let maxC = 0, maxO = 0;
+  for (let i = 0; i < Math.min(N, 2000); i++) {
+    if (CO) maxC = Math.max(maxC, CO.get(i, 0));
+    if (OP) maxO = Math.max(maxO, OP.get(i, 0));
+  }
+  const corNorm = maxC > 1.5 ? (v => v)          : (maxC <= 1.01 ? (v => v * 255) : (v => sig(v) * 255));
+  const opNorm  = maxO > 1.5 ? (v => v)          : (maxO <= 1.01 ? (v => v * 255) : (v => sig(v) * 255));
+  // escala: se vier negativa em média, está em log
+  let sMean = 0, sn = 0;
+  if (S) { for (let i = 0; i < Math.min(N, 2000); i++) { sMean += S.get(i, 0); sn++; } sMean /= (sn || 1); }
+  const escNorm = sMean < 0 ? (v => Math.exp(v)) : (v => v);
   for (let i = 0; i < N; i++) {
-    f[i*8]   = get(i,0); f[i*8+1] = get(i,1); f[i*8+2] = get(i,2);        // posição
-    f[i*8+3] = Math.exp(get(i,3)); f[i*8+4] = Math.exp(get(i,4)); f[i*8+5] = Math.exp(get(i,5)); // escala (log→lin; ajuste se já vier linear)
-    // cor (canais 11..13) — se vierem 0..1, ×255; se já 0..255, remova o ×255
-    u[i*32+24] = clamp8(get(i,11) * 255);
-    u[i*32+25] = clamp8(get(i,12) * 255);
-    u[i*32+26] = clamp8(get(i,13) * 255);
-    u[i*32+27] = clamp8((1 / (1 + Math.exp(-get(i,10)))) * 255);          // opacidade (sigmoid; ajuste)
-    // rotação (quaternion canais 6..9) → bytes
-    u[i*32+28] = clamp8(get(i,6) * 128 + 128);
-    u[i*32+29] = clamp8(get(i,7) * 128 + 128);
-    u[i*32+30] = clamp8(get(i,8) * 128 + 128);
-    u[i*32+31] = clamp8(get(i,9) * 128 + 128);
+    f[i*8]   =  P.get(i, 0);
+    f[i*8+1] = -P.get(i, 1);              // NDC tem Y para cima; o viewer usa Y para baixo
+    f[i*8+2] =  P.get(i, 2);
+    const sx = S ? escNorm(S.get(i, 0)) : 0.01;
+    const sy = S ? escNorm(S.get(i, 1)) : 0.01;
+    const sz = S ? escNorm(S.get(i, 2)) : 0.01;
+    f[i*8+3] = sx; f[i*8+4] = sy; f[i*8+5] = sz;
+    u[i*32+24] = clamp8(CO ? corNorm(CO.get(i, 0)) : 200);
+    u[i*32+25] = clamp8(CO ? corNorm(CO.get(i, 1)) : 200);
+    u[i*32+26] = clamp8(CO ? corNorm(CO.get(i, 2)) : 200);
+    u[i*32+27] = clamp8(OP ? opNorm(OP.get(i, 0)) : 255);
+    // quaternion: .splat guarda (w,x,y,z) normalizado em bytes
+    let qw = 1, qx = 0, qy = 0, qz = 0;
+    if (Q) {
+      let a = Q.get(i,0), b = Q.get(i,1), c = Q.get(i,2), d2 = Q.get(i,3);
+      const len = Math.hypot(a,b,c,d2) || 1;
+      a/=len; b/=len; c/=len; d2/=len;
+      qw = a; qx = b; qy = c; qz = d2;
+    }
+    u[i*32+28] = clamp8(qw * 128 + 128);
+    u[i*32+29] = clamp8(qx * 128 + 128);
+    u[i*32+30] = clamp8(qy * 128 + 128);
+    u[i*32+31] = clamp8(qz * 128 + 128);
   }
   return buf;
 }
@@ -247,41 +289,44 @@ async function run(file) {
     let imgArr = await imageToTensor(file);
     let imgArr2 = imgArr; const imgRes = INPUT_RES;
     const disp = parseFloat(document.getElementById('disp').value);
-    // alimenta TODAS as entradas: imagem + escalares (ex.: disparity_factor), no dtype do modelo
-    const buildFeeds = (dtype, scalarDims) => {
+    // alimenta TODAS as entradas: imagem + escalares (ex.: disparity_factor).
+    // o dtype da imagem e o dos escalares podem ser diferentes → testamos as combinações.
+    const buildFeeds = (imgDtype, scDtype, scalarDims) => {
       const f = {};
       let imgDone = false;
       for (const name of session.inputNames) {
         const n = name.toLowerCase();
         if (!imgDone && (n.includes('image') || n.includes('img') || n === 'input' || n.includes('rgb'))) {
-          f[name] = mkTensor(dtype, imgArr2, [1, 3, INPUT_RES, INPUT_RES]); imgDone = true;
+          f[name] = mkTensor(imgDtype, imgArr2, [1, 3, INPUT_RES, INPUT_RES]); imgDone = true;
         } else if (n.includes('disparity') || n.includes('depth') || n.includes('scale') || n.includes('factor')) {
-          f[name] = mkTensor(dtype, new Float32Array([disp]), scalarDims);
+          f[name] = mkTensor(scDtype, new Float32Array([disp]), scalarDims);
         } else {
-          f[name] = mkTensor(dtype, new Float32Array([1]), scalarDims);
+          f[name] = mkTensor(scDtype, new Float32Array([1]), scalarDims);
         }
       }
-      if (!imgDone) f[session.inputNames[0]] = mkTensor(dtype, imgArr2, [1, 3, INPUT_RES, INPUT_RES]);
+      if (!imgDone) f[session.inputNames[0]] = mkTensor(imgDtype, imgArr2, [1, 3, INPUT_RES, INPUT_RES]);
       return f;
     };
     const t0 = performance.now();
     let outputs = null; const tries = [];
-    // combina dtype (fp16/fp32) × forma do escalar × resolução da imagem
+    const RES_LIST = [INPUT_RES, 384, 256, 448];
+    const baseRes = INPUT_RES;
     outer:
-    for (const res of [INPUT_RES, 384, 256, 448, 336]) {
-      if (res !== INPUT_RES) { INPUT_RES = res; }             // reprocessa a imagem nessa resolução
-      const arr = (res === imgRes) ? imgArr : await imageToTensor(file);
-      imgArr2 = arr;
-      for (const dtype of ['float16', 'float32']) {
-        for (const dims of [[1], []]) {
-          try { outputs = await session.run(buildFeeds(dtype, dims)); break outer; }
-          catch (err) { tries.push(`${res}px/${dtype}/[${dims}]: ${err.message}`); }
+    for (const res of RES_LIST) {
+      INPUT_RES = res;
+      imgArr2 = (res === baseRes) ? imgArr : await imageToTensor(file);
+      for (const imgDtype of ['float16', 'float32']) {
+        for (const scDtype of ['float16', 'float32']) {
+          for (const dims of [[1], []]) {
+            try { outputs = await session.run(buildFeeds(imgDtype, scDtype, dims)); break outer; }
+            catch (err) { tries.push(`${res}px img:${imgDtype} esc:${scDtype}[${dims}] → ${err.message}`); }
+          }
         }
       }
     }
     if (!outputs) {
       console.error(tries.join('\n'));
-      throw new Error('nenhuma combinação funcionou. Detalhe: ' + tries[0]);
+      throw new Error('nenhuma das ' + tries.length + ' combinações passou. 1ª: ' + tries[0]);
     }
     // mostra a forma real das saídas (para calibrar o parsing na 1ª rodada)
     const spec = session.outputNames.map(n => `${n}[${outputs[n].dims.join('×')}] ${outputs[n].type}`).join('  ·  ');
@@ -295,7 +340,7 @@ async function run(file) {
     setTimeout(() => $('bar').classList.remove('on'), 800);
   } catch (e) {
     console.error(e);
-    warn('Erro ao gerar: ' + (e.message || e));
+    warn('[v5] Erro ao gerar: ' + (e.message || e));
     setStatus('');
   }
 }

@@ -591,25 +591,6 @@
   <!-- ========== EFEITOS DE CÂMERA ========== -->
   <div class="tab-page" id="tab-cam">
     <button class="panel-btn" id="cam-reset">🎯 Resetar câmera (posição inicial)</button>
-    <h3>🚁 Voo FPV (drone)</h3>
-    <button class="panel-btn" id="fpv-toggle">🚁 Ligar modo FPV drone</button>
-    <div class="row"><label>Velocidade</label><input type="range" id="fpv-speed" min="0.2" max="3" step="0.05" value="1"><span class="val" id="v-fpvspeed">1.0×</span></div>
-    <div class="row"><label>Agilidade</label><input type="range" id="fpv-agility" min="0.3" max="3" step="0.05" value="1"><span class="val" id="v-fpvagility">1.0×</span></div>
-    <div class="row"><label>Inclinação cam</label><input type="range" id="fpv-tilt" min="0" max="45" step="1" value="20"><span class="val" id="v-fpvtilt">20°</span></div>
-    <div class="row"><label>Gravidade</label><input type="range" id="fpv-grav" min="0" max="2" step="0.05" value="0.6"><span class="val" id="v-fpvgrav">0.60</span></div>
-    <div class="axis-row"><span class="lbl">Estilo</span>
-      <button class="ax-btn on" id="fpv-arcade">Arcade</button>
-      <button class="ax-btn" id="fpv-acro">Acro</button>
-    </div>
-    <p class="note">Voe pela cena como um drone FPV. <b>W/S</b> acelera/freia · <b>A/D</b> gira (yaw) · <b>setas</b> inclinam (pitch/roll) · <b>Q/E</b> sobe/desce · <b>Esc</b> sai. A gravação (⏺) captura o voo. No Acro a inclinação não se auto-nivela.</p>
-
-    <h3>🥽 Realidade virtual / aumentada</h3>
-    <div class="btn-pair">
-      <button class="panel-btn" id="xr-vr">🥽 Entrar em VR</button>
-      <button class="panel-btn" id="xr-ar">👓 Entrar em AR</button>
-    </div>
-    <button class="panel-btn" id="xr-exit" style="display:none;">↩ Sair do modo XR</button>
-    <p class="note" id="xr-note">Abre a cena no óculos (WebXR). Precisa de um headset/óculos com navegador compatível e a página em HTTPS. Ao entrar, surge o botão "ENTER VR/AR" sobre a cena.</p>
     <div class="row"><label>Suavizar giro</label>
       <select id="cam-smooth" style="flex:1;">
         <option value="off" selected>Econômico (padrão)</option>
@@ -662,6 +643,22 @@
     <button class="panel-btn" id="ca-toggle">▶ Aberração cromática</button>
     <div class="row"><label>Intensidade</label><input type="range" id="ca-amt" min="0" max="0.3" step="0.005" value="0.06"><span class="val" id="v-caamt">0.060</span></div>
     <p class="note">Dispersão por cor: tons quentes deslocam para fora e frios para dentro, crescendo nas bordas do quadro.</p>
+
+    <h3>🚁 Voo FPV (drone)</h3>
+    <button class="panel-btn" id="fpv-toggle">🚁 Ligar modo FPV drone</button>
+    <div class="row"><label>Velocidade</label><input type="range" id="fpv-speed" min="0.2" max="3" step="0.05" value="1"><span class="val" id="v-fpvspeed">1.0×</span></div>
+    <div class="row"><label>Agilidade</label><input type="range" id="fpv-agility" min="0.3" max="3" step="0.05" value="1"><span class="val" id="v-fpvagility">1.0×</span></div>
+    <div class="row"><label>Inclinação cam</label><input type="range" id="fpv-tilt" min="0" max="45" step="1" value="20"><span class="val" id="v-fpvtilt">20°</span></div>
+    <div class="row"><label>Gravidade</label><input type="range" id="fpv-grav" min="0" max="2" step="0.05" value="0.6"><span class="val" id="v-fpvgrav">0.60</span></div>
+    <div class="axis-row"><span class="lbl">Estilo</span>
+      <button class="ax-btn on" id="fpv-arcade">Arcade</button>
+      <button class="ax-btn" id="fpv-acro">Acro</button>
+    </div>
+    <p class="note">Voe pela cena como um drone FPV. <b>W/S</b> acelera/freia · <b>A/D</b> gira (yaw) · <b>setas</b> inclinam (pitch/roll) · <b>Q/E</b> sobe/desce · <b>Esc</b> sai. A gravação (⏺) captura o voo. No Acro a inclinação não se auto-nivela.</p>
+
+    <h3>🥽 Realidade virtual / aumentada</h3>
+    <button class="panel-btn" id="xr-vr">🥽 Entrar em VR</button>
+    <p class="note" id="xr-note">Abre a cena no óculos (WebXR). Precisa de um headset/óculos com navegador compatível e a página em HTTPS. Se o dispositivo não suportar VR, tenta AR automaticamente.</p>
   </div>
 
   <!-- ========== ILUMINAÇÃO / COR ========== -->
@@ -3558,7 +3555,7 @@ const I18N = {
   'Velocidade':'Speed','Agilidade':'Agility','Inclinação cam':'Cam tilt','Gravidade':'Gravity',
   'Estilo':'Style','Arcade':'Arcade','Acro':'Acro',
   '🥽 Realidade virtual / aumentada':'🥽 Virtual / augmented reality',
-  '🥽 Entrar em VR':'🥽 Enter VR','👓 Entrar em AR':'👓 Enter AR','↩ Sair do modo XR':'↩ Exit XR mode',
+  '🥽 Entrar em VR':'🥽 Enter VR','↩ Sair do modo VR':'↩ Exit VR mode','↩ Sair do modo AR':'↩ Exit AR mode',
   '🦴 Rig':'🦴 Rig','🦴 Handles (pontos de deformação)':'🦴 Handles (deform points)',
   '➕ Criar handle (clicar no splat)':'➕ Add handle (click the splat)',
   '✋ Toque no modelo para criar':'✋ Tap the model to place','Raio do novo':'New radius',
@@ -5569,28 +5566,30 @@ if (params.has('url')) {
     loadFile(new File([currentBuffer], (typeof currentName !== 'undefined' && currentName) || 'cena.splat'));
     return true;
   }
-  async function enterXR(mode) {
-    const sess = mode === 'ar' ? 'immersive-ar' : 'immersive-vr';
+  async function sessionSupported(sess) {
+    if (!navigator.xr) return false;
+    try { return await navigator.xr.isSessionSupported(sess); } catch(e) { return false; }
+  }
+  async function toggleXR() {
+    if (bxWantXR) {
+      bxWantXR = null;
+      reloadCurrentScene();
+      $f('xr-vr').textContent = '🥽 Entrar em VR';
+      $f('xr-note').textContent = 'Abre a cena no óculos (WebXR). Precisa de um headset/óculos com navegador compatível e a página em HTTPS. Se o dispositivo não suportar VR, tenta AR automaticamente.';
+      return;
+    }
     if (!navigator.xr) { $f('xr-note').textContent = 'Este navegador não tem WebXR. Use o navegador do seu headset (Meta Quest, etc.) em HTTPS.'; return; }
-    let ok = false;
-    try { ok = await navigator.xr.isSessionSupported(sess); } catch(e) {}
-    if (!ok) { $f('xr-note').textContent = mode==='ar' ? 'AR não disponível neste dispositivo/navegador.' : 'VR não disponível. Abra pelo navegador do headset (HTTPS).'; return; }
+    let mode = null;
+    if (await sessionSupported('immersive-vr')) mode = 'vr';
+    else if (await sessionSupported('immersive-ar')) mode = 'ar';
+    if (!mode) { $f('xr-note').textContent = 'Nenhum modo XR disponível neste dispositivo/navegador. Abra pelo navegador do headset (HTTPS).'; return; }
     bxWantXR = mode;
     if (reloadCurrentScene()) {
-      $f('xr-vr').style.display = 'none'; $f('xr-ar').style.display = 'none';
-      $f('xr-exit').style.display = 'block';
+      $f('xr-vr').textContent = '↩ Sair do modo ' + mode.toUpperCase();
       $f('xr-note').textContent = 'Modo ' + mode.toUpperCase() + ' ativo — toque em "ENTER ' + mode.toUpperCase() + '" sobre a cena para colocar o óculos.';
     }
   }
-  $f('xr-vr').addEventListener('click', () => enterXR('vr'));
-  $f('xr-ar').addEventListener('click', () => enterXR('ar'));
-  $f('xr-exit').addEventListener('click', () => {
-    bxWantXR = null;
-    reloadCurrentScene();
-    $f('xr-vr').style.display = ''; $f('xr-ar').style.display = '';
-    $f('xr-exit').style.display = 'none';
-    $f('xr-note').textContent = 'Abre a cena no óculos (WebXR). Precisa de um headset/óculos com navegador compatível e a página em HTTPS.';
-  });
+  $f('xr-vr').addEventListener('click', toggleXR);
 })();
 
 /* ============================================================

@@ -202,6 +202,27 @@
   }
   #panel h3:first-child { margin-top: 0; }
   .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .rig-list { display: flex; flex-direction: column; gap: 5px; margin: 6px 0; }
+  /* overlay dos handles (projetado sobre o canvas — sempre visível) */
+  #rig-overlay { position: fixed; inset: 0; z-index: 18; pointer-events: none; display: none; }
+  #rig-overlay.on { display: block; }
+  .rig-dot {
+    position: absolute; transform: translate(-50%, -50%);
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.6), 0 2px 8px rgba(0,0,0,.7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .68rem; font-weight: 700; color: #0d0a12; cursor: pointer; pointer-events: auto;
+    transition: width .1s, height .1s;
+  }
+  .rig-dot.sel { width: 30px; height: 30px; border-color: var(--verde); box-shadow: 0 0 0 3px rgba(150,201,61,.5), 0 2px 10px rgba(0,0,0,.8); }
+  .rig-dot.behind { opacity: .35; }
+  .rig-dot .ring { position: absolute; border: 1px dashed rgba(255,255,255,.35); border-radius: 50%; pointer-events: none; }
+  .rig-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); cursor: pointer; font-size: .8rem; }
+  .rig-item.sel { border-color: var(--verde); background: rgba(150,201,61,.12); }
+  .rig-item .dot { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 auto; }
+  .rig-item .nm { flex: 1; }
+  .rig-item .x { color: #a66; cursor: pointer; }
   /* botão de reset ao lado de cada controle */
   /* valor clicável para digitar um número exato */
   .val.editable { cursor: text; border-bottom: 1px dashed rgba(255,255,255,.22); }
@@ -349,7 +370,8 @@
   #letterbox .bar.top { top: 0; } #letterbox .bar.bot { bottom: 0; }
   #letterbox .bar.lft { top: 0; bottom: 0; left: 0; } #letterbox .bar.rgt { top: 0; bottom: 0; right: 0; }
   #cine-badge {
-    position: fixed; left: 14px; top: 12px; z-index: 8; display: none;
+    position: fixed; left: 50%; transform: translateX(-50%); top: 12px; z-index: 8; display: none;
+    text-align: center; white-space: nowrap;
     font-family: 'Courier New', monospace; font-size: .72rem; color: #eee;
     background: rgba(0,0,0,.35); padding: 3px 10px; border-radius: 4px; pointer-events: none;
     letter-spacing: 1px;
@@ -382,6 +404,7 @@
 <body>
 
 <div id="viewer-container"></div>
+<div id="rig-overlay"></div>
 
 <!-- ===== SPLASH ===== -->
 <div id="dropzone">
@@ -479,6 +502,7 @@
     <button class="fx-tab" data-tab="tab-inter">🕹 Interativo</button>
     <button class="fx-tab" data-tab="tab-cine">🎬 Cinema</button>
     <button class="fx-tab" data-tab="tab-vfx">🔮 VFX</button>
+    <button class="fx-tab" data-tab="tab-rig">🦴 Rig</button>
   </div>
 
   <!-- ========== EDITAR GAUSSIANS ========== -->
@@ -567,10 +591,29 @@
   <!-- ========== EFEITOS DE CÂMERA ========== -->
   <div class="tab-page" id="tab-cam">
     <button class="panel-btn" id="cam-reset">🎯 Resetar câmera (posição inicial)</button>
+    <h3>🚁 Voo FPV (drone)</h3>
+    <button class="panel-btn" id="fpv-toggle">🚁 Ligar modo FPV drone</button>
+    <div class="row"><label>Velocidade</label><input type="range" id="fpv-speed" min="0.2" max="3" step="0.05" value="1"><span class="val" id="v-fpvspeed">1.0×</span></div>
+    <div class="row"><label>Agilidade</label><input type="range" id="fpv-agility" min="0.3" max="3" step="0.05" value="1"><span class="val" id="v-fpvagility">1.0×</span></div>
+    <div class="row"><label>Inclinação cam</label><input type="range" id="fpv-tilt" min="0" max="45" step="1" value="20"><span class="val" id="v-fpvtilt">20°</span></div>
+    <div class="row"><label>Gravidade</label><input type="range" id="fpv-grav" min="0" max="2" step="0.05" value="0.6"><span class="val" id="v-fpvgrav">0.60</span></div>
+    <div class="axis-row"><span class="lbl">Estilo</span>
+      <button class="ax-btn on" id="fpv-arcade">Arcade</button>
+      <button class="ax-btn" id="fpv-acro">Acro</button>
+    </div>
+    <p class="note">Voe pela cena como um drone FPV. <b>W/S</b> acelera/freia · <b>A/D</b> gira (yaw) · <b>setas</b> inclinam (pitch/roll) · <b>Q/E</b> sobe/desce · <b>Esc</b> sai. A gravação (⏺) captura o voo. No Acro a inclinação não se auto-nivela.</p>
+
+    <h3>🥽 Realidade virtual / aumentada</h3>
+    <div class="btn-pair">
+      <button class="panel-btn" id="xr-vr">🥽 Entrar em VR</button>
+      <button class="panel-btn" id="xr-ar">👓 Entrar em AR</button>
+    </div>
+    <button class="panel-btn" id="xr-exit" style="display:none;">↩ Sair do modo XR</button>
+    <p class="note" id="xr-note">Abre a cena no óculos (WebXR). Precisa de um headset/óculos com navegador compatível e a página em HTTPS. Ao entrar, surge o botão "ENTER VR/AR" sobre a cena.</p>
     <div class="row"><label>Suavizar giro</label>
       <select id="cam-smooth" style="flex:1;">
-        <option value="off" selected>Padrão (reordena a cada ~8°)</option>
-        <option value="on">Suave (reordena todo quadro)</option>
+        <option value="off" selected>Econômico (padrão)</option>
+        <option value="on">Suave (segue a câmera)</option>
       </select>
     </div>
 
@@ -823,6 +866,51 @@
       <button class="panel-btn" id="t3-save">💾 Baixar .splat</button>
     </div>
     <p class="note">Gera o texto como splats de verdade (fontes ★ baixam do Google Fonts). Abre como cena nova — todos os efeitos, áudio e gravação funcionam nele. O .splat baixado pode ser reaberto ou combinado depois.</p>
+  </div>
+
+  <!-- ========== RIG (Fase 1) ========== -->
+  <div class="tab-page" id="tab-rig">
+    <h3>🦴 Handles (pontos de deformação)</h3>
+    <button class="panel-btn" id="rig-add">➕ Criar handle (clicar no splat)</button>
+    <div class="row"><label>Raio do novo</label><input type="range" id="rig-newr" min="0.0005" max="1" step="0.0005" value="0.05" data-norst><span class="val" id="v-rignewr">5.0%</span></div>
+    <p class="note">Ligue e toque no modelo: nasce um ponto ali. Ele puxa e gira os gaussians num raio suave à volta. Vários handles se somam (skinning). Longe de todos, os gaussians ficam parados.</p>
+
+    <h3>✨ Auto-rig</h3>
+    <div class="row"><label>Nº de ossos</label><input type="range" id="rig-auto-n" min="2" max="12" step="1" value="6" data-norst><span class="val" id="v-rigauton">6</span></div>
+    <div class="axis-row"><span class="lbl">Encadear</span>
+      <button class="ax-btn on" id="rig-auto-chain">Esqueleto</button>
+      <button class="ax-btn" id="rig-auto-free">Soltos</button>
+    </div>
+    <button class="panel-btn" id="rig-auto">🦴 Gerar esqueleto automático</button>
+    <p class="note">Analisa a nuvem, agrupa em regiões e planta um handle no centro de cada — já ligados numa cadeia (pai→filho). É um ponto de partida: ajuste depois com os gizmos.</p>
+
+    <div id="rig-list" class="rig-list"></div>
+
+    <h3 id="rig-sel-h" style="display:none;">✎ Handle selecionado</h3>
+    <div id="rig-sel" style="display:none;">
+      <div class="axis-row"><span class="lbl">Gizmo</span>
+        <button class="ax-btn on" id="rig-mode-t">Mover</button>
+        <button class="ax-btn" id="rig-mode-r">Girar</button>
+      </div>
+      <div class="row"><label>Raio</label><input type="range" id="rig-r" min="0.0005" max="1.5" step="0.0005" value="0.05" data-norst><span class="val" id="v-rigr">5.0%</span></div>
+      <div class="row"><label>🦴 Osso pai</label>
+        <select id="rig-parent" style="flex:1;"><option value="-1">nenhum (raiz)</option></select>
+      </div>
+      <p class="note">Com um pai definido, este handle vira um "osso" preso a ele: mover ou girar o pai arrasta este junto (cadeia de esqueleto).</p>
+      <div class="btn-pair">
+        <button class="panel-btn" id="rig-reset-one">↺ Repouso deste</button>
+        <button class="panel-btn" id="rig-del">🗑 Apagar este</button>
+      </div>
+      <p class="note">Com a timeline gravando (⏺ REC), mover ou girar o handle cria keyframes — dá play e ele anima.</p>
+    </div>
+
+    <h3>Geral</h3>
+    <button class="panel-btn on" id="rig-show">👁 Mostrar pontos na tela</button>
+    <div class="axis-row"><span class="lbl">Gizmo 3D</span>
+      <button class="ax-btn on" id="rig-icons">Mostrar</button>
+    </div>
+    <button class="panel-btn" id="rig-clear">🧹 Apagar todos os handles</button>
+    <p class="note">Fase 1: os pontos movem e giram a nuvem por regiões. Ideal para dobrar um braço, virar uma cabeça, esticar. Deformações muito grandes revelam que cada splat é rígido.</p>
   </div>
 
   <!-- ========== INTERATIVO ========== -->
@@ -1386,6 +1474,14 @@ uniform float uBxTimeSliceOn;
 uniform float uBxSliceAxis;
 uniform float uBxSliceInvert;
 uniform float uBxSliceShift;
+// --- RIG (Fase 1): handles com influência por raio, transladam e giram a região ---
+uniform float uBxRigN;
+uniform vec3  uBxRigRest[12];   // posição de repouso do handle
+uniform vec3  uBxRigPos[12];    // posição atual do handle
+uniform mat3  uBxRigRot[12];    // rotação da região em torno do handle
+uniform float uBxRigSigma[12];  // raio de influência (desvio do gaussiano)
+uniform vec3  uBxRigBoneA[12];  // base do osso (posição de repouso do pai)
+uniform float uBxRigBoneOn[12]; // 1 = influência em cápsula ao longo do osso
 float bxFade = 1.0;
 float bxHash(vec3 p){ return fract(sin(dot(p, vec3(127.1,311.7,74.7)))*43758.5453); }
 float bxVN(vec3 p){
@@ -1411,6 +1507,33 @@ float bxDMask(int i, vec3 p){
   return m;
 }
 vec3 bruxosPos(vec3 p){
+  // RIG: mistura linear (LBS) dos handles. Cada handle transforma a região à
+  // sua volta rigidamente (gira + move); o peso cai suave com a distância.
+  // O peso residual (1 - soma) mantém as partes distantes paradas.
+  if (uBxRigN > 0.5) {
+    vec3 acc = vec3(0.0);
+    float wsum = 0.0;
+    for (int i = 0; i < 12; i++) {
+      if (float(i) >= uBxRigN) break;
+      vec3 rel0 = p - uBxRigRest[i];
+      float d;
+      if (uBxRigBoneOn[i] > 0.5) {
+        // distância ao segmento pai→filho (cápsula) = osso de verdade
+        vec3 a = uBxRigBoneA[i], b = uBxRigRest[i];
+        vec3 ab = b - a;
+        float t = clamp(dot(p - a, ab) / max(dot(ab, ab), 1e-6), 0.0, 1.0);
+        d = length(p - (a + t * ab));
+      } else {
+        d = length(rel0);
+      }
+      float s = max(uBxRigSigma[i], 0.0001);
+      float w = exp(-(d * d) / (2.0 * s * s));
+      acc += w * (uBxRigPos[i] + uBxRigRot[i] * rel0);
+      wsum += w;
+    }
+    float wr = max(0.0, 1.0 - wsum);      // resto = repouso
+    p = (acc + wr * p) / (wsum + wr + 1e-5);
+  }
   // rastro: cada splat responde com um atraso aleatório (eco no movimento)
   float bxTT = uBxTime - (uBxTrail > 0.001 ? bxHash(p*3.17) * uBxTrail : 0.0);
   // 0 — WOBBLE: oscilação de escala nos eixos escolhidos
@@ -1784,7 +1907,16 @@ function bxPatchShader(mesh) {
     uBxTimeSliceOn:   { value: 0 },
     uBxSliceAxis:     { value: 0 },
     uBxSliceInvert:   { value: 0 },
-    uBxSliceShift:    { value: 0 }
+    uBxSliceShift:    { value: 0 },
+    // rig (Fase 1)
+    uBxRigN:      { value: 0 },
+    uBxRigRest:   { value: Array.from({length:12}, () => v3()) },
+    uBxRigPos:    { value: Array.from({length:12}, () => v3()) },
+    uBxRigRot:    { value: Array.from({length:12}, () => new THREE.Matrix3()) },
+    uBxRigSigma:  { value: new Array(12).fill(1) },
+    uBxRigBoneA:  { value: Array.from({length:12}, () => v3()) },
+    uBxRigBoneOn:  { value: new Array(12).fill(0) },
+    uBxRigOrient: { value: 0 }
   });
   mat.needsUpdate = true;
   // testa a compilação; se os efeitos quebrarem o shader, reverte (nunca deixa tela preta)
@@ -1817,6 +1949,7 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const IS_MOBILE = IS_IOS || /Android/i.test(navigator.userAgent);
 let viewer = null;
+let bxWantXR = null;   // 'vr' | 'ar' | null — recria o viewer em modo XR
 let currentBuffer = null;   // ArrayBuffer original (para crop)
 let currentFormat = null;
 let currentName = '';
@@ -1901,6 +2034,10 @@ function makeViewer(extra = {}) {
   renderer.setPixelRatio(IS_MOBILE ? 1 : Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   $('viewer-container').appendChild(renderer.domElement);
+  const xrExtra = {};
+  if (bxWantXR && GaussianSplats3D.WebXRMode) {
+    xrExtra.webXRMode = (bxWantXR === 'ar') ? GaussianSplats3D.WebXRMode.AR : GaussianSplats3D.WebXRMode.VR;
+  }
   const v = new GaussianSplats3D.Viewer(Object.assign({
     renderer,
     cameraUp: [0, -1, 0],
@@ -1919,7 +2056,7 @@ function makeViewer(extra = {}) {
     splatSortDistanceMapPrecision: IS_IOS ? 20 : 24
     // (nota: dynamicScene:true reduzia o popping, mas impede a lib de montar a
     //  splat tree → quebrava o carregamento com erro "visitLeaves de null")
-  }, extra));
+  }, extra, xrExtra));
   // "Voo para dentro": o zoom orbital para no alvo — quando você já está colado
   // nele e continua dando scroll, empurramos alvo + câmera para frente juntos.
   renderer.domElement.addEventListener('wheel', (e) => {
@@ -1991,6 +2128,7 @@ async function loadScene(buffer, format, name) {
   viewer.splatMesh.setSplatScale(anim.splatScale);
   const ok = bxPatchShader(viewer.splatMesh);
   if (ok) syncFxUniforms();
+  if (window.__bxRigRefresh) window.__bxRigRefresh();
   centerControls();
   applyBackground();
 }
@@ -2685,6 +2823,7 @@ async function loadSequence(files) {
   seq = { count: list.length, current: 0, playing: false, fps: parseFloat($('sq-fps').value), timer: 0 };
   const ok = bxPatchShader(viewer.splatMesh);
   if (ok) syncFxUniforms();
+  if (window.__bxRigRefresh) window.__bxRigRefresh();
   applyTransforms(); // pivô com o bbox da sequência
   centerControls();  // zoom/órbita miram o centro real da cena
   setSeqFrame(0);
@@ -3415,6 +3554,22 @@ const I18N = {
   // botões comuns
   'Resetar transformações':'Reset transforms','▶ Crop radial no pivô':'▶ Radial crop at pivot',
   '🎯 Resetar câmera (posição inicial)':'🎯 Reset camera (initial)','Off':'Off',
+  '🚁 Voo FPV (drone)':'🚁 FPV flight (drone)','🚁 Ligar modo FPV drone':'🚁 Enable FPV drone mode',
+  'Velocidade':'Speed','Agilidade':'Agility','Inclinação cam':'Cam tilt','Gravidade':'Gravity',
+  'Estilo':'Style','Arcade':'Arcade','Acro':'Acro',
+  '🥽 Realidade virtual / aumentada':'🥽 Virtual / augmented reality',
+  '🥽 Entrar em VR':'🥽 Enter VR','👓 Entrar em AR':'👓 Enter AR','↩ Sair do modo XR':'↩ Exit XR mode',
+  '🦴 Rig':'🦴 Rig','🦴 Handles (pontos de deformação)':'🦴 Handles (deform points)',
+  '➕ Criar handle (clicar no splat)':'➕ Add handle (click the splat)',
+  '✋ Toque no modelo para criar':'✋ Tap the model to place','Raio do novo':'New radius',
+  '✎ Handle selecionado':'✎ Selected handle','Gizmo':'Gizmo','Mover':'Move','Girar':'Rotate',
+  'Raio':'Radius','↺ Repouso deste':'↺ Rest this one','🗑 Apagar este':'🗑 Delete this',
+  '🧹 Apagar todos os handles':'🧹 Delete all handles','Ícones':'Icons','Mostrar':'Show','Ocultar':'Hide',
+  '🦴 Osso pai':'🦴 Parent bone','nenhum (raiz)':'none (root)','Gizmo 3D':'3D gizmo',
+  '✨ Auto-rig':'✨ Auto-rig','Nº de ossos':'Bone count','Encadear':'Chain',
+  'Esqueleto':'Skeleton','Soltos':'Loose','🦴 Gerar esqueleto automático':'🦴 Generate auto skeleton',
+  '🌀 Girar o grão junto (reorienta elipsoides)':'🌀 Rotate the grain too (reorient ellipsoids)',
+  '👁 Mostrar pontos na tela':'👁 Show points on screen',
   'Suavizar giro':'Smooth rotation','Padrão (reordena a cada ~8°)':'Default (re-sorts every ~8°)',
   'Suave (reordena todo quadro)':'Smooth (re-sorts every frame)',
   'Aplicar (permanente)':'Apply (permanent)','Resetar':'Reset','🎬 Cine':'🎬 Cine',
@@ -4988,6 +5143,29 @@ function tickAudio() {
   }
 }
 
+function rigTick() { if (window.__bxRigTick) { try { window.__bxRigTick(); } catch(e){} } }
+// reordena os splats enquanto a câmera se move (mata o popping ao girar)
+let bxLastCamQ = new THREE.Quaternion(), bxLastCamP = new THREE.Vector3(), bxSortSettle = 0;
+let bxSmoothDead = false;
+function bxCamSmoothSort() {
+  if (bxSmoothDead) return;
+  if (!$('cam-smooth') || $('cam-smooth').value !== 'on') return;   // opt-in explícito
+  if (!viewer || !viewer.initialized || viewer.disposed) return;
+  if (!viewer.camera || !viewer.splatMesh || typeof viewer.runSplatSort !== 'function') return;
+  if (viewer.splatMesh.getSplatCount() <= 0) return;
+  const q = viewer.camera.quaternion, pos = viewer.camera.position;
+  const dq = 1 - Math.abs(q.dot(bxLastCamQ));         // 0 = parada
+  const dp = pos.distanceTo(bxLastCamP);
+  const moving = dq > 1e-6 || dp > 1e-5;
+  bxLastCamQ.copy(q); bxLastCamP.copy(pos);
+  // reordena enquanto move + alguns quadros depois de parar (assenta a ordem)
+  if (moving) bxSortSettle = 8;
+  if (bxSortSettle > 0) {
+    bxSortSettle--;
+    try { viewer.runSplatSort(true); }
+    catch (e) { console.warn('sort suave desligado:', e); bxSmoothDead = true; if ($('cam-smooth')) $('cam-smooth').value = 'off'; }
+  }
+}
 function tick(now) {
   try { tickBody(now); }
   catch (e) { console.error('tick:', e); }
@@ -4996,7 +5174,7 @@ function tick(now) {
 function tickBody(now) {
   const dt = (now - lastTime) / 1000; lastTime = now;
   // efeitos de câmera (órbita XYZ, vertigo, dolly, truck, tilt, shake)
-  tickCamera(dt);
+  if (window.__bxFPV && window.__bxFPV.on) { if (window.__bxFPVTick) window.__bxFPVTick(dt); } else { tickCamera(dt); }
   // dissolve por escala
   if (anim.dissolve && viewer?.splatMesh) {
     const d = anim.dissolve;
@@ -5009,19 +5187,12 @@ function tickBody(now) {
   // tempo global dos efeitos GPU
   anim.fxTime += dt;
   const uT = bxU('uBxTime'); if (uT) uT.value = anim.fxTime;
-  // 🔄 Reordenação por quadro: a lib só reordena quando a câmera gira ~8°
-  // (angleDiff <= 0.99). Entre uma ordenação e outra a ordem fica velha e os
-  // splats "piscam" ao girar. Forçando o sort todo quadro, a transição fica
-  // contínua — custa mais GPU/CPU, por isso é opcional.
-  if (viewer && viewer.initialized && !viewer.disposed &&
-      $('cam-smooth') && $('cam-smooth').value === 'on' &&
-      viewer.splatMesh && viewer.splatMesh.getSplatCount() > 0) {
-    try { viewer.runSplatSort(true); }
-    catch (e) {
-      console.warn('reordenação por quadro desligada:', e);
-      $('cam-smooth').value = 'off';       // não insiste se der problema
-    }
-  }
+  rigTick();  // 🦴 rig: interpola handles pela timeline e atualiza uniforms/gizmo
+  // 🔄 Reordenação suave: a lib só reordena quando a câmera gira ~8°, então os
+  // splats "pulam" de ordem em saltos. Aqui detectamos que a câmera está em
+  // movimento e forçamos o re-sort a cada quadro ENQUANTO ela se move — a
+  // transição fica contínua e, parado, não gasta nada.
+  bxCamSmoothSort();
   tickAudio(); // 🎵 modulação por áudio (graves/médios/agudos)
   tickInteractive(); // 🕹 LFOs
   cineTick(dt); // 🎬 Cinema (pós-processo + zoom)
@@ -5282,6 +5453,745 @@ if (params.has('url')) {
     return loadFile(new File([buf], fakeName));
   }).catch(e => showError('Erro ao carregar URL: ' + e));
 }
+
+/* ============================================================
+   🚁 FPV DRONE — voo com física simples
+   ============================================================ */
+(function () {
+  const FPV = { on:false, keys:{}, style:'arcade',
+    pos:new THREE.Vector3(), vel:new THREE.Vector3(),
+    yaw:0, pitch:0, roll:0, savedCam:null };
+  window.__bxFPV = FPV;
+  const $f = id => document.getElementById(id);
+
+  function enter() {
+    if (!viewer?.camera) { showError('Carregue uma cena antes do FPV.'); return; }
+    FPV.on = true;
+    FPV.savedCam = { pos: viewer.camera.position.clone(), quat: viewer.camera.quaternion.clone(),
+                     ctrl: viewer.controls ? viewer.controls.enabled : true };
+    if (viewer.controls) viewer.controls.enabled = false;
+    FPV.pos.copy(viewer.camera.position);
+    FPV.vel.set(0,0,0);
+    const e = new THREE.Euler().setFromQuaternion(viewer.camera.quaternion, 'YXZ');
+    FPV.yaw = e.y; FPV.pitch = 0; FPV.roll = 0;
+    FPV.keys = {};
+    $f('fpv-toggle').classList.add('on');
+    $f('fpv-toggle').textContent = '\u{1F6D1} Sair do FPV (Esc)';
+    document.getElementById('viewer-container').style.cursor = 'none';
+    if (typeof hint !== 'undefined' && hint) hint.style.display = 'none';
+  }
+  function exit() {
+    if (!FPV.on) return;
+    FPV.on = false;
+    if (FPV.savedCam) {
+      viewer.camera.position.copy(FPV.savedCam.pos);
+      viewer.camera.quaternion.copy(FPV.savedCam.quat);
+      if (viewer.controls) viewer.controls.enabled = FPV.savedCam.ctrl;
+    }
+    $f('fpv-toggle').classList.remove('on');
+    $f('fpv-toggle').textContent = '\u{1F681} Ligar modo FPV drone';
+    document.getElementById('viewer-container').style.cursor = '';
+  }
+  window.__bxFPVExit = exit;
+
+  const FKEYS = new Set(['w','a','s','d','q','e','arrowup','arrowdown','arrowleft','arrowright']);
+  window.addEventListener('keydown', ev => {
+    if (ev.key === 'Escape' && FPV.on) { exit(); return; }
+    if (!FPV.on) return;
+    const k = ev.key.toLowerCase();
+    if (FKEYS.has(k)) { FPV.keys[k] = true; ev.preventDefault(); }
+  }, true);
+  window.addEventListener('keyup', ev => {
+    if (!FPV.on) return;
+    const k = ev.key.toLowerCase();
+    if (FKEYS.has(k)) { FPV.keys[k] = false; ev.preventDefault(); }
+  }, true);
+
+  window.__bxFPVTick = function (dt) {
+    if (!FPV.on || !viewer?.camera) return;
+    dt = Math.min(dt, 0.05);
+    const diag = (typeof bxDiag === 'function') ? bxDiag() : 5;
+    const spd = parseFloat($f('fpv-speed').value) || 1;
+    const agi = parseFloat($f('fpv-agility').value) || 1;
+    const grav = parseFloat($f('fpv-grav').value) || 0;
+    const k = FPV.keys;
+    const acro = FPV.style === 'acro';
+
+    const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(FPV.pitch, FPV.yaw, FPV.roll, 'YXZ'));
+    const fwd = new THREE.Vector3(0,0,-1).applyQuaternion(q);
+    const up  = new THREE.Vector3(0,1,0).applyQuaternion(q);
+
+    const yawRate = 1.8 * agi, tiltRate = 2.2 * agi, maxTilt = 0.6;
+    if (k['a']) FPV.yaw += yawRate * dt;
+    if (k['d']) FPV.yaw -= yawRate * dt;
+    let pIn = (k['arrowup']?-1:0) + (k['arrowdown']?1:0);
+    let rIn = (k['arrowleft']?-1:0) + (k['arrowright']?1:0);
+    if (acro) {
+      FPV.pitch += pIn * tiltRate * dt;
+      FPV.roll  += rIn * tiltRate * dt;
+    } else {
+      const tP = pIn * maxTilt, tR = rIn * maxTilt;
+      FPV.pitch += (tP - FPV.pitch) * Math.min(1, dt * 6);
+      FPV.roll  += (tR - FPV.roll)  * Math.min(1, dt * 6);
+    }
+
+    const thrust = diag * 1.2 * spd;
+    const a = new THREE.Vector3();
+    if (k['w']) a.addScaledVector(fwd, thrust);
+    if (k['s']) a.addScaledVector(fwd, -thrust);
+    if (k['e']) a.addScaledVector(up,  thrust);
+    if (k['q']) a.addScaledVector(up, -thrust);
+    a.y -= grav * diag;
+    a.addScaledVector(FPV.vel, -1.8);
+    FPV.vel.addScaledVector(a, dt);
+    FPV.pos.addScaledVector(FPV.vel, dt);
+
+    const tilt = (parseFloat($f('fpv-tilt').value) || 0) * Math.PI / 180;
+    const camQ = q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), -tilt));
+    viewer.camera.position.copy(FPV.pos);
+    viewer.camera.quaternion.copy(camQ);
+    if (viewer.controls) { viewer.controls.target.copy(FPV.pos).addScaledVector(fwd, diag*0.5); }
+  };
+
+  const bindF = (id, out, fmt) => { const el=$f(id); if(!el) return; const f=()=>$f(out).textContent=fmt(parseFloat(el.value)); el.addEventListener('input',f); f(); };
+  bindF('fpv-speed','v-fpvspeed', v=>v.toFixed(1)+'\u00d7');
+  bindF('fpv-agility','v-fpvagility', v=>v.toFixed(1)+'\u00d7');
+  bindF('fpv-tilt','v-fpvtilt', v=>Math.round(v)+'\u00b0');
+  bindF('fpv-grav','v-fpvgrav', v=>v.toFixed(2));
+  $f('fpv-toggle').addEventListener('click', () => FPV.on ? exit() : enter());
+  $f('fpv-arcade').addEventListener('click', () => { FPV.style='arcade'; $f('fpv-arcade').classList.add('on'); $f('fpv-acro').classList.remove('on'); });
+  $f('fpv-acro').addEventListener('click', () => { FPV.style='acro'; $f('fpv-acro').classList.add('on'); $f('fpv-arcade').classList.remove('on'); });
+
+  // ---- Modo VR / AR (WebXR) ----
+  function reloadCurrentScene() {
+    if (typeof currentBuffer === 'undefined' || !currentBuffer) { showError('Carregue uma cena primeiro.'); return false; }
+    if (typeof loadFile !== 'function') return false;
+    loadFile(new File([currentBuffer], (typeof currentName !== 'undefined' && currentName) || 'cena.splat'));
+    return true;
+  }
+  async function enterXR(mode) {
+    const sess = mode === 'ar' ? 'immersive-ar' : 'immersive-vr';
+    if (!navigator.xr) { $f('xr-note').textContent = 'Este navegador não tem WebXR. Use o navegador do seu headset (Meta Quest, etc.) em HTTPS.'; return; }
+    let ok = false;
+    try { ok = await navigator.xr.isSessionSupported(sess); } catch(e) {}
+    if (!ok) { $f('xr-note').textContent = mode==='ar' ? 'AR não disponível neste dispositivo/navegador.' : 'VR não disponível. Abra pelo navegador do headset (HTTPS).'; return; }
+    bxWantXR = mode;
+    if (reloadCurrentScene()) {
+      $f('xr-vr').style.display = 'none'; $f('xr-ar').style.display = 'none';
+      $f('xr-exit').style.display = 'block';
+      $f('xr-note').textContent = 'Modo ' + mode.toUpperCase() + ' ativo — toque em "ENTER ' + mode.toUpperCase() + '" sobre a cena para colocar o óculos.';
+    }
+  }
+  $f('xr-vr').addEventListener('click', () => enterXR('vr'));
+  $f('xr-ar').addEventListener('click', () => enterXR('ar'));
+  $f('xr-exit').addEventListener('click', () => {
+    bxWantXR = null;
+    reloadCurrentScene();
+    $f('xr-vr').style.display = ''; $f('xr-ar').style.display = '';
+    $f('xr-exit').style.display = 'none';
+    $f('xr-note').textContent = 'Abre a cena no óculos (WebXR). Precisa de um headset/óculos com navegador compatível e a página em HTTPS.';
+  });
+})();
+
+/* ============================================================
+   🦴 RIG — Fase 1: handles de deformação (translação + rotação)
+   ============================================================ */
+(function () {
+  const MAX = 12;
+  const RIG = { list: [], sel: -1, adding: false, mode: 'translate', iconsOn: true, showDots: true, orient: false, gizmo: null };
+  window.__bxRig = RIG;
+  const COLORS = [0x96c93d,0xb064c4,0xffa53d,0x3dc9c0,0xf05a7e,0xf0d23d,0x6a8cff,0x9df03d,0xff7ad6,0x7affc0,0xc0a0ff,0xffb0a0];
+
+  // ---- criação de handle a partir de um clique (plano no alvo, como o pincel) ----
+  function screenToLocal(e) {
+    if (!viewer?.camera || !viewer?.controls || !viewer?.splatMesh) return null;
+    const vc = $('viewer-container'), rect = vc.getBoundingClientRect();
+    const ndc = new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1, -(((e.clientY-rect.top)/rect.height)*2-1));
+    const ray = new THREE.Raycaster(); ray.setFromCamera(ndc, viewer.camera);
+    const n = new THREE.Vector3(); viewer.camera.getWorldDirection(n);
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(n, viewer.controls.target);
+    const pt = new THREE.Vector3();
+    if (!ray.ray.intersectPlane(plane, pt)) return null;
+    viewer.splatMesh.worldToLocal(pt);
+    return pt;
+  }
+
+  function addHandle(localPt) {
+    if (RIG.list.length >= MAX) { showError('Limite de ' + MAX + ' handles.'); return; }
+    const diag = (typeof bxDiag === 'function') ? bxDiag() : 5;
+    const r = diag * parseFloat($('rig-newr').value);
+    const h = {
+      rest: localPt.clone(),
+      pos: localPt.clone(),
+      rot: new THREE.Euler(0,0,0,'XYZ'),
+      parent: -1,
+      sigma: r,
+      color: COLORS[RIG.list.length % COLORS.length],
+      marker: null,
+      keys: []      // keyframes: {t, pos:Vector3, rot:Euler}
+    };
+    RIG.list.push(h);
+    RIG.sel = RIG.list.length - 1;
+    renderList(); syncRig(); refreshMarkers();
+  }
+
+  // ---- marcadores 3D (esferas coloridas), filhos do splatMesh ----
+  function refreshMarkers() {
+    const mesh = viewer?.splatMesh; if (!mesh) return;
+    RIG.list.forEach((h, i) => {
+      if (!h.marker) {
+        h.marker = new THREE.Mesh(
+          new THREE.SphereGeometry(1, 20, 14),
+          new THREE.MeshBasicMaterial({ color: h.color, depthTest: false, depthWrite: false, toneMapped: false }));
+        h.marker.renderOrder = 99990;
+        // halo escuro atrás, para o ponto aparecer mesmo sobre splats claros
+        const halo = new THREE.Mesh(
+          new THREE.SphereGeometry(1.35, 20, 14),
+          new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .5, depthTest: false, depthWrite: false, toneMapped: false }));
+        halo.renderOrder = 99989; h.marker.add(halo);
+      }
+      if (h.marker.parent !== mesh) { try { h.marker.parent?.remove(h.marker); } catch(e){} mesh.add(h.marker); }
+      const diag = (typeof bxDiag === 'function') ? bxDiag() : 5;
+      const rr = Math.max(diag * 0.02, 0.03) * (i === RIG.sel ? 1.5 : 1.0);
+      h.marker.scale.set(rr, rr, rr);
+      h.marker.position.copy(h.pos);
+      h.marker.material.color.set(i === RIG.sel ? 0xffffff : h.color);
+      h.marker.visible = RIG.iconsOn;
+    });
+    refreshBones();
+    updateGizmo();
+  }
+
+  const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _m = new THREE.Vector3(), _up = new THREE.Vector3(0,1,0), _q = new THREE.Quaternion(), _dir = new THREE.Vector3();
+  function refreshBones() {
+    const mesh = viewer?.splatMesh; if (!mesh) return;
+    RIG.list.forEach((h, i) => {
+      const hasBone = h.parent >= 0 && RIG.list[h.parent];
+      if (!hasBone) { if (h.bone) h.bone.visible = false; return; }
+      if (!h.bone) {
+        h.bone = new THREE.Mesh(new THREE.OctahedronGeometry(1, 0), new THREE.MeshBasicMaterial({
+          color: 0xffffff, transparent: true, opacity: .5, depthTest: false, depthWrite: false, toneMapped: false }));
+        h.bone.renderOrder = 99980;
+      }
+      if (h.bone.parent !== mesh) { try { h.bone.parent?.remove(h.bone); } catch(e){} mesh.add(h.bone); }
+      const par = RIG.list[h.parent];
+      _a.copy(par.pos); _b.copy(h.pos);
+      _m.copy(_a).add(_b).multiplyScalar(0.5);
+      _dir.copy(_b).sub(_a);
+      const len = _dir.length() || 1e-4;
+      h.bone.position.copy(_m);
+      _q.setFromUnitVectors(_up, _dir.clone().normalize());
+      h.bone.quaternion.copy(_q);
+      const thick = Math.max(len * 0.08, (typeof bxDiag==='function'?bxDiag():5) * 0.008);
+      h.bone.scale.set(thick, len * 0.5, thick);
+      h.bone.visible = RIG.iconsOn;
+      h.bone.material.color.set(i === RIG.sel ? 0x96c93d : 0xffffff);
+    });
+  }
+
+  // ============================================================
+  //  GIZMO 3D PRÓPRIO — setas (mover) + anéis (girar), sempre visível.
+  //  Vive como filho do splatMesh (mesmo espaço dos handles).
+  // ============================================================
+  const AXCOL = { x: 0xff5566, y: 0x66dd55, z: 0x5588ff };
+  const GIZ = { group: null, parts: [], drag: null };
+
+  function mkMat(col) {
+    return new THREE.MeshBasicMaterial({ color: col, depthTest: false, depthWrite: false, transparent: true, opacity: 0.95, toneMapped: false });
+  }
+  function buildGizmo() {
+    const g = new THREE.Group();
+    g.renderOrder = 100000;
+    const L = 1, r = 0.014;
+    const dirs = {
+      x: new THREE.Vector3(1,0,0), y: new THREE.Vector3(0,1,0), z: new THREE.Vector3(0,0,1)
+    };
+    // setas de translação
+    for (const ax of ['x','y','z']) {
+      const grp = new THREE.Group();
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(r, r, L, 10), mkMat(AXCOL[ax]));
+      shaft.position.y = L/2;
+      const head = new THREE.Mesh(new THREE.ConeGeometry(r*2.4, L*0.2, 12), mkMat(AXCOL[ax]));
+      head.position.y = L + L*0.14;
+      // colisor invisível mais grosso (facilita agarrar)
+      const hit = new THREE.Mesh(new THREE.CylinderGeometry(r*5, r*5, L*1.3, 6), new THREE.MeshBasicMaterial({ visible:false }));
+      hit.position.y = L*0.65;
+      [shaft, head, hit].forEach(m => { m.renderOrder = 100001; m.userData = { ax, type: 't' }; grp.add(m); });
+      // orienta +Y do grupo para o eixo
+      if (ax === 'x') grp.rotation.z = -Math.PI/2;
+      if (ax === 'z') grp.rotation.x = Math.PI/2;
+      grp.userData = { ax, type: 't' };
+      g.add(grp);
+      GIZ.parts.push({ grp, ax, type: 't', meshes: [shaft, head, hit] });
+    }
+    // anéis de rotação
+    for (const ax of ['x','y','z']) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(L*0.82, r*1.1, 10, 40), mkMat(AXCOL[ax]));
+      const hit = new THREE.Mesh(new THREE.TorusGeometry(L*0.82, r*4, 6, 30), new THREE.MeshBasicMaterial({ visible:false }));
+      if (ax === 'x') { ring.rotation.y = Math.PI/2; hit.rotation.y = Math.PI/2; }
+      if (ax === 'y') { ring.rotation.x = Math.PI/2; hit.rotation.x = Math.PI/2; }
+      [ring, hit].forEach(m => { m.renderOrder = 100001; m.userData = { ax, type: 'r' }; });
+      g.add(ring); g.add(hit);
+      GIZ.parts.push({ grp: ring, ax, type: 'r', meshes: [ring, hit], dir: dirs[ax] });
+    }
+    return g;
+  }
+
+  function updateGizmo() {
+    const mesh = viewer?.splatMesh;
+    const h = RIG.list[RIG.sel];
+    if (!mesh || !h) { if (GIZ.group) GIZ.group.visible = false; return; }
+    if (!GIZ.group) GIZ.group = buildGizmo();
+    if (GIZ.group.parent !== mesh) { try { GIZ.group.parent?.remove(GIZ.group); } catch(e){} mesh.add(GIZ.group); }
+    GIZ.group.visible = RIG.iconsOn;
+    GIZ.group.position.copy(h.pos);
+    // tamanho constante na tela: ~9% da altura da viewport, independente do zoom.
+    // Divide pela escala do splatMesh (o grupo é filho dele) p/ não herdar o zoom da cena.
+    let scMesh = new THREE.Vector3(); mesh.getWorldScale(scMesh);
+    const meshScale = (scMesh.x + scMesh.y + scMesh.z) / 3 || 1;
+    const hw = mesh.localToWorld(h.pos.clone());
+    const dist = viewer.camera.position.distanceTo(hw);
+    const fov = (viewer.camera.fov || 50) * Math.PI / 180;
+    const worldPerScreen = 2 * Math.tan(fov / 2) * dist;   // altura de mundo visível no plano do handle
+    const sc = (worldPerScreen * 0.09) / meshScale;
+    GIZ.group.scale.set(sc, sc, sc);
+    // mostra setas OU anéis conforme o modo
+    GIZ.parts.forEach(part => {
+      const show = (RIG.mode === 'translate') ? part.type === 't' : part.type === 'r';
+      part.grp.visible = show;
+    });
+  }
+  window.__bxRigEnsureGiz = updateGizmo;
+
+  // ---- arrasto do gizmo ----
+  const _ray = new THREE.Raycaster();
+  _ray.params.Line = { threshold: 0.1 };
+  function gizmoPick(e) {
+    if (!GIZ.group || !GIZ.group.visible || !viewer?.camera) return null;
+    const vc = $('viewer-container'), rect = vc.getBoundingClientRect();
+    const ndc = new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1, -(((e.clientY-rect.top)/rect.height)*2-1));
+    _ray.setFromCamera(ndc, viewer.camera);
+    const meshes = [];
+    GIZ.parts.forEach(part => { if (part.grp.visible) part.meshes.forEach(m => meshes.push(m)); });
+    const hits = _ray.intersectObjects(meshes, false);
+    return hits.length ? hits[0].object.userData : null;
+  }
+  function worldAxis(ax) {
+    const mesh = viewer.splatMesh;
+    const v = new THREE.Vector3(ax==='x'?1:0, ax==='y'?1:0, ax==='z'?1:0);
+    return v.transformDirection(mesh.matrixWorld).normalize();
+  }
+  function worldCenter() {
+    return viewer.splatMesh.localToWorld(RIG.list[RIG.sel].pos.clone());
+  }
+  function rayOnAxisPlane(e, Cw, Aw) {
+    const vc = $('viewer-container'), rect = vc.getBoundingClientRect();
+    const ndc = new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1, -(((e.clientY-rect.top)/rect.height)*2-1));
+    _ray.setFromCamera(ndc, viewer.camera);
+    // plano que contém o eixo e encara a câmera
+    const view = new THREE.Vector3().subVectors(viewer.camera.position, Cw).normalize();
+    let n = new THREE.Vector3().crossVectors(Aw, view);
+    n.crossVectors(n, Aw).normalize();
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(n, Cw);
+    const P = new THREE.Vector3();
+    return _ray.ray.intersectPlane(plane, P) ? P : null;
+  }
+  function rayOnRotPlane(e, Cw, Aw) {
+    const vc = $('viewer-container'), rect = vc.getBoundingClientRect();
+    const ndc = new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1, -(((e.clientY-rect.top)/rect.height)*2-1));
+    _ray.setFromCamera(ndc, viewer.camera);
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(Aw, Cw);
+    const P = new THREE.Vector3();
+    return _ray.ray.intersectPlane(plane, P) ? P : null;
+  }
+
+  $('viewer-container').addEventListener('pointerdown', e => {
+    if (RIG.adding) return;                 // clicar cria handle (outro handler)
+    const hit = gizmoPick(e);
+    if (!hit) return;
+    e.stopPropagation();
+    if (viewer?.controls) viewer.controls.enabled = false;
+    const h = RIG.list[RIG.sel];
+    const Cw = worldCenter(), Aw = worldAxis(hit.ax);
+    // descendentes seguem o handle (cadeia de ossos): guarda o estado inicial deles
+    const desc = descendants(RIG.sel).map(i => ({
+      i, pos0: RIG.list[i].pos.clone(), quat0: new THREE.Quaternion().setFromEuler(RIG.list[i].rot)
+    }));
+    if (hit.type === 't') {
+      const P = rayOnAxisPlane(e, Cw, Aw);
+      GIZ.drag = { type: 't', ax: hit.ax, Aw, Cw, startProj: P ? P.clone().sub(Cw).dot(Aw) : 0,
+                   startPos: h.pos.clone(), desc };
+    } else {
+      const P = rayOnRotPlane(e, Cw, Aw);
+      const ref = P ? P.clone().sub(Cw) : new THREE.Vector3(1,0,0);
+      GIZ.drag = { type: 'r', ax: hit.ax, Aw, Cw, ref, pivot: h.pos.clone(),
+                   startQuat: new THREE.Quaternion().setFromEuler(h.rot),
+                   localAxis: new THREE.Vector3(hit.ax==='x'?1:0, hit.ax==='y'?1:0, hit.ax==='z'?1:0), desc };
+    }
+  }, true);
+
+  window.addEventListener('pointermove', e => {
+    const d = GIZ.drag; if (!d) return;
+    const h = RIG.list[RIG.sel]; if (!h) return;
+    if (d.type === 't') {
+      const P = rayOnAxisPlane(e, d.Cw, d.Aw); if (!P) return;
+      const proj = P.clone().sub(d.Cw).dot(d.Aw);
+      // delta em espaço LOCAL do splatMesh (mesmo espaço dos handles)
+      const dLocal = viewer.splatMesh.worldToLocal(d.Cw.clone().addScaledVector(d.Aw, proj - d.startProj))
+                      .sub(viewer.splatMesh.worldToLocal(d.Cw.clone()));
+      h.pos.copy(d.startPos.clone().add(dLocal));
+      // filhos transladam junto
+      d.desc.forEach(o => RIG.list[o.i].pos.copy(o.pos0.clone().add(dLocal)));
+    } else {
+      const P = rayOnRotPlane(e, d.Cw, d.Aw); if (!P) return;
+      const cur = P.clone().sub(d.Cw);
+      let ang = Math.atan2(new THREE.Vector3().crossVectors(d.ref, cur).dot(d.Aw), d.ref.dot(cur));
+      const q = new THREE.Quaternion().setFromAxisAngle(d.localAxis, ang);
+      h.rot.setFromQuaternion(d.startQuat.clone().multiply(q));
+      // filhos giram em torno do pivô (posição do pai) — cinemática direta
+      const pivot = d.pivot;
+      d.desc.forEach(o => {
+        const rel = o.pos0.clone().sub(pivot).applyQuaternion(q);
+        RIG.list[o.i].pos.copy(pivot.clone().add(rel));
+        RIG.list[o.i].rot.setFromQuaternion(q.clone().multiply(o.quat0));
+      });
+    }
+    syncRig(); updateGizmo();
+  });
+  window.addEventListener('pointerup', () => {
+    if (GIZ.drag) { GIZ.drag = null; if (viewer?.controls) viewer.controls.enabled = !anim.paintMode; rigRecordKey(); }
+  });
+
+  // descendentes (filhos, netos…) de um handle — para a cadeia de ossos
+  function descendants(idx) {
+    const out = [];
+    let changed = true;
+    const mark = new Set([idx]);
+    while (changed) {
+      changed = false;
+      RIG.list.forEach((h, i) => {
+        if (!mark.has(i) && mark.has(h.parent)) { mark.add(i); out.push(i); changed = true; }
+      });
+    }
+    return out;
+  }
+  // evita ciclos ao escolher um pai
+  function wouldCycle(child, parent) {
+    let p = parent;
+    while (p >= 0) { if (p === child) return true; p = RIG.list[p] ? RIG.list[p].parent : -1; }
+    return false;
+  }
+
+  // ---- envia o estado atual para os uniforms ----
+  function syncRig() {
+    const uOri = bxU('uBxRigOrient'); if (uOri) uOri.value = RIG.orient ? 1 : 0;
+    const uN = bxU('uBxRigN'); if (!uN) return;
+    const uRest = bxU('uBxRigRest'), uPos = bxU('uBxRigPos'), uRot = bxU('uBxRigRot'), uSig = bxU('uBxRigSigma');
+    const uBoneA = bxU('uBxRigBoneA'), uBoneOn = bxU('uBxRigBoneOn');
+    const n = RIG.list.length;
+    uN.value = n;
+    const diagS = (typeof bxDiag === 'function') ? bxDiag() : 5;
+    for (let i = 0; i < n; i++) {
+      const h = RIG.list[i];
+      h.sigma = Math.min(Math.max(h.sigma, diagS * 0.0003), diagS * 1.5);   // trava o raio (0,03%–150%)
+      uRest.value[i].copy(h.rest);
+      uPos.value[i].copy(h.pos);
+      // mat3 da rotação (transposta: o shader multiplica rot * rel)
+      uRot.value[i].setFromMatrix4(new THREE.Matrix4().makeRotationFromEuler(h.rot));
+      uSig.value[i] = h.sigma;
+      const hasBone = h.parent >= 0 && RIG.list[h.parent];
+      if (uBoneOn) uBoneOn.value[i] = hasBone ? 1 : 0;
+      if (uBoneA)  uBoneA.value[i].copy(hasBone ? RIG.list[h.parent].rest : h.rest);
+    }
+  }
+
+  // ---- lista na UI ----
+  function renderList() {
+    const box = $('rig-list'); if (!box) return;
+    box.innerHTML = '';
+    RIG.list.forEach((h, i) => {
+      const el = document.createElement('div');
+      el.className = 'rig-item' + (i === RIG.sel ? ' sel' : '');
+      el.innerHTML = `<span class="dot" style="background:#${h.color.toString(16).padStart(6,'0')}"></span>`
+        + `<span class="nm">Handle ${i+1}${h.keys.length ? ' · '+h.keys.length+' ◆' : ''}</span><span class="x">✕</span>`;
+      el.addEventListener('click', ev => { if (ev.target.classList.contains('x')) { delHandle(i); ev.stopPropagation(); return; } selectHandle(i); });
+      box.appendChild(el);
+    });
+    const has = RIG.sel >= 0 && RIG.list[RIG.sel];
+    $('rig-sel').style.display = has ? 'block' : 'none';
+    $('rig-sel-h').style.display = has ? 'block' : 'none';
+    if (has) {
+      const h = RIG.list[RIG.sel];
+      const diag = (typeof bxDiag === 'function') ? bxDiag() : 5;
+      $('rig-r').value = Math.min(1.5, Math.max(0.0005, (h.sigma / diag) || 0.05));
+      $('v-rigr').textContent = (v => (v*100 < 0.1 ? (v*100).toFixed(3) : (v*100 < 1 ? (v*100).toFixed(2) : (v*100).toFixed(1))) + '%')(parseFloat($('rig-r').value));
+      // popula o seletor de pai (todos menos ele e seus descendentes)
+      const sel = $('rig-parent');
+      const desc = new Set(descendants(RIG.sel));
+      sel.innerHTML = '<option value="-1">nenhum (raiz)</option>' +
+        RIG.list.map((hh, i) => (i === RIG.sel || desc.has(i)) ? '' :
+          `<option value="${i}">Handle ${i+1}</option>`).join('');
+      sel.value = String(h.parent);
+    }
+  }
+  function selectHandle(i) { RIG.sel = i; renderList(); refreshMarkers(); }
+  function delHandle(i) {
+    const h = RIG.list[i];
+    try { h.marker?.parent?.remove(h.marker); } catch(e){}
+    try { h.bone?.parent?.remove(h.bone); } catch(e){}
+    RIG.list.splice(i, 1);
+    if (RIG.sel >= RIG.list.length) RIG.sel = RIG.list.length - 1;
+    renderList(); syncRig(); refreshMarkers();
+  }
+
+  // ---- keyframes (usa o estado da timeline existente: TL.time / TL.rec) ----
+  function keyOne(h) {
+    const t = TL.time;
+    const i = h.keys.findIndex(k => Math.abs(k.t - t) < 0.02);
+    const key = { t, pos: h.pos.clone(), rot: h.rot.clone() };
+    if (i >= 0) h.keys[i] = key; else h.keys.push(key);
+    h.keys.sort((a,b) => a.t - b.t);
+  }
+  function rigRecordKey() {
+    if (typeof TL === 'undefined' || !TL.rec) return;
+    const h = RIG.list[RIG.sel]; if (!h) return;
+    keyOne(h);
+    descendants(RIG.sel).forEach(i => keyOne(RIG.list[i]));   // a cadeia inteira
+    renderList();
+  }
+  window.__bxRigTick = function () {
+    if (typeof TL === 'undefined') { syncRig(); return; }
+    // interpola cada handle com 2+ keys pela posição da timeline
+    let moved = false;
+    for (const h of RIG.list) {
+      if (h.keys.length < 1) continue;
+      const t = TL.time, ks = h.keys;
+      let pos, rot;
+      if (t <= ks[0].t) { pos = ks[0].pos; rot = ks[0].rot; }
+      else if (t >= ks[ks.length-1].t) { pos = ks[ks.length-1].pos; rot = ks[ks.length-1].rot; }
+      else {
+        for (let i = 0; i < ks.length-1; i++) if (t >= ks[i].t && t <= ks[i+1].t) {
+          const f = (t - ks[i].t) / ((ks[i+1].t - ks[i].t) || 1);
+          pos = ks[i].pos.clone().lerp(ks[i+1].pos, f);
+          rot = new THREE.Euler(
+            ks[i].rot.x + (ks[i+1].rot.x - ks[i].rot.x)*f,
+            ks[i].rot.y + (ks[i+1].rot.y - ks[i].rot.y)*f,
+            ks[i].rot.z + (ks[i+1].rot.z - ks[i].rot.z)*f, 'XYZ');
+          break;
+        }
+      }
+      if (pos && (TL.playing || !GIZ.drag)) {
+        h.pos.copy(pos); h.rot.copy(rot); moved = true;
+      }
+    }
+    syncRig();
+    if (RIG.iconsOn) RIG.list.forEach(h => { if (h.marker) { h.marker.position.copy(h.pos); h.marker.rotation.copy(h.rot); } });
+    // reata markers à cena atual e cria o gizmo assim que o TransformControls carregar
+    if (RIG.list.length) {
+      const mesh = viewer?.splatMesh;
+      if (mesh) RIG.list.forEach(h => { if (h.marker && h.marker.parent !== mesh) mesh.add(h.marker); });
+      if (RIG.sel >= 0) updateGizmo();
+      refreshBones();
+    }
+    updateOverlay();
+  };
+  window.__bxRigEnsure = updateGizmo;
+
+  // ---- overlay HTML: projeta cada handle na tela (visível sobre qualquer render) ----
+  const _wp = new THREE.Vector3();
+  function updateOverlay() { try { _updateOverlay(); } catch(e){ /* nunca derruba o render */ } }
+  function _updateOverlay() {
+    const ov = $('rig-overlay'); if (!ov) return;
+    const show = RIG.showDots && RIG.list.length > 0;
+    ov.classList.toggle('on', show);
+    if (!show) { ov.innerHTML = ''; return; }
+    if (!viewer?.camera || !viewer?.splatMesh) return;
+    const vc = $('viewer-container'); const rect = vc.getBoundingClientRect();
+    // garante uma dot por handle
+    while (ov.children.length < RIG.list.length) {
+      const d = document.createElement('div'); d.className = 'rig-dot';
+      const idx = ov.children.length;
+      d.addEventListener('pointerdown', ev => { ev.stopPropagation(); selectHandle(idx); });
+      ov.appendChild(d);
+    }
+    while (ov.children.length > RIG.list.length) ov.removeChild(ov.lastChild);
+    RIG.list.forEach((h, i) => {
+      const dot = ov.children[i];
+      _wp.copy(h.pos); viewer.splatMesh.localToWorld(_wp); _wp.project(viewer.camera);
+      const behind = _wp.z > 1;                       // atrás da câmera
+      const x = rect.left + (_wp.x * 0.5 + 0.5) * rect.width;
+      const y = rect.top + (-_wp.y * 0.5 + 0.5) * rect.height;
+      dot.style.left = x + 'px'; dot.style.top = y + 'px';
+      dot.style.background = '#' + h.color.toString(16).padStart(6,'0');
+      dot.textContent = String(i + 1);
+      dot.classList.toggle('sel', i === RIG.sel);
+      dot.classList.toggle('behind', behind);
+      dot.style.display = (behind || _wp.x < -1.3 || _wp.x > 1.3 || _wp.y < -1.3 || _wp.y > 1.3) ? 'none' : 'flex';
+    });
+  }
+  window.__bxRigOverlay = updateOverlay;
+
+  // ============================================================
+  //  AUTO-RIG (Fase 3): amostra a nuvem → k-means → handles → esqueleto (MST)
+  // ============================================================
+  function samplePoints(maxN) {
+    // lê os centros dos splats no espaço local (mesmo dos handles)
+    if (typeof currentBuffer === 'undefined' || !currentBuffer || typeof analyzeGeom !== 'function') return null;
+    const g = analyzeGeom(currentBuffer, currentFormat);
+    if (!g) return null;
+    const dv = new DataView(currentBuffer);
+    const N = g.count, step = Math.max(1, Math.floor(N / maxN));
+    const pts = [];
+    for (let i = 0; i < N; i += step) {
+      const b = g.dataStart + i * g.stride;
+      pts.push([dv.getFloat32(b+g.posOff[0], true), dv.getFloat32(b+g.posOff[1], true), dv.getFloat32(b+g.posOff[2], true)]);
+    }
+    return pts;
+  }
+  function kmeans(pts, k, iters) {
+    // inicialização k-means++ simplificada
+    const cent = [pts[Math.floor(Math.random()*pts.length)].slice()];
+    while (cent.length < k) {
+      let best = null, bestD = -1;
+      for (let t = 0; t < 24; t++) {
+        const c = pts[Math.floor(Math.random()*pts.length)];
+        let dmin = Infinity;
+        for (const ce of cent) { const d=(c[0]-ce[0])**2+(c[1]-ce[1])**2+(c[2]-ce[2])**2; if(d<dmin)dmin=d; }
+        if (dmin > bestD) { bestD = dmin; best = c; }
+      }
+      cent.push(best.slice());
+    }
+    const assign = new Array(pts.length).fill(0);
+    for (let it = 0; it < iters; it++) {
+      for (let i = 0; i < pts.length; i++) {
+        let bi = 0, bd = Infinity;
+        for (let c = 0; c < k; c++) { const d=(pts[i][0]-cent[c][0])**2+(pts[i][1]-cent[c][1])**2+(pts[i][2]-cent[c][2])**2; if(d<bd){bd=d;bi=c;} }
+        assign[i] = bi;
+      }
+      const sum = Array.from({length:k}, () => [0,0,0,0]);
+      for (let i = 0; i < pts.length; i++) { const a=assign[i]; sum[a][0]+=pts[i][0]; sum[a][1]+=pts[i][1]; sum[a][2]+=pts[i][2]; sum[a][3]++; }
+      for (let c = 0; c < k; c++) if (sum[c][3] > 0) { cent[c]=[sum[c][0]/sum[c][3], sum[c][1]/sum[c][3], sum[c][2]/sum[c][3]]; }
+    }
+    // raio de cada cluster = distância média ao centro
+    const rad = new Array(k).fill(0), cnt = new Array(k).fill(0);
+    for (let i = 0; i < pts.length; i++) { const a=assign[i], c=cent[a];
+      rad[a] += Math.hypot(pts[i][0]-c[0], pts[i][1]-c[1], pts[i][2]-c[2]); cnt[a]++; }
+    for (let c = 0; c < k; c++) rad[c] = cnt[c] ? rad[c]/cnt[c] : 0;
+    return { cent, rad };
+  }
+  function mstParents(cent) {
+    // árvore geradora mínima; raiz = cluster mais central (menor soma de distâncias)
+    const k = cent.length;
+    let root = 0, bestSum = Infinity;
+    for (let i = 0; i < k; i++) { let sum=0; for (let j=0;j<k;j++) sum+=Math.hypot(cent[i][0]-cent[j][0],cent[i][1]-cent[j][1],cent[i][2]-cent[j][2]); if(sum<bestSum){bestSum=sum;root=i;} }
+    const parent = new Array(k).fill(-1);
+    const inTree = new Array(k).fill(false); inTree[root] = true;
+    for (let added = 1; added < k; added++) {
+      let be=-1, bp=-1, bd=Infinity;
+      for (let a=0;a<k;a++) if (inTree[a]) for (let b=0;b<k;b++) if (!inTree[b]) {
+        const d=Math.hypot(cent[a][0]-cent[b][0],cent[a][1]-cent[b][1],cent[a][2]-cent[b][2]);
+        if (d<bd){bd=d;be=b;bp=a;}
+      }
+      if (be<0) break;
+      inTree[be]=true; parent[be]=bp;
+    }
+    return { parent, root };
+  }
+  function autoRig() {
+    const pts = samplePoints(4000);
+    if (!pts || pts.length < 10) { showError('Não consegui ler a nuvem para o auto-rig (formato .splat/.ply).'); return; }
+    const k = Math.min(12, Math.max(2, parseInt($('rig-auto-n').value, 10)));
+    const { cent, rad } = kmeans(pts, k, 12);
+    const chain = $('rig-auto-chain').classList.contains('on');
+    const { parent } = chain ? mstParents(cent) : { parent: new Array(k).fill(-1) };
+    // limpa handles atuais
+    RIG.list.forEach(h => { try { h.marker?.parent?.remove(h.marker); } catch(e){} try { h.bone?.parent?.remove(h.bone); } catch(e){} });
+    RIG.list = [];
+    const diag = (typeof bxDiag === 'function') ? bxDiag() : 5;
+    for (let i = 0; i < k; i++) {
+      const c = new THREE.Vector3(cent[i][0], cent[i][1], cent[i][2]);
+      RIG.list.push({
+        rest: c.clone(), pos: c.clone(), rot: new THREE.Euler(0,0,0,'XYZ'),
+        parent: chain ? parent[i] : -1,
+        sigma: Math.min(Math.max(rad[i] * 1.5, diag*0.02), diag*1.0),
+        color: COLORS[i % COLORS.length], marker: null, keys: []
+      });
+    }
+    RIG.sel = 0;
+    renderList(); syncRig(); refreshMarkers();
+    setStatus && setStatus('');
+  }
+
+  // ---- ligações de UI ----
+  const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
+  on('rig-auto-n', 'input', () => $('v-rigauton').textContent = $('rig-auto-n').value);
+  on('rig-auto-chain', 'click', () => { $('rig-auto-chain').classList.add('on'); $('rig-auto-free').classList.remove('on'); });
+  on('rig-auto-free', 'click', () => { $('rig-auto-free').classList.add('on'); $('rig-auto-chain').classList.remove('on'); });
+  on('rig-auto', 'click', autoRig);
+  on('rig-add', 'click', () => {
+    RIG.adding = !RIG.adding;
+    $('rig-add').classList.toggle('on', RIG.adding);
+    $('rig-add').textContent = RIG.adding ? '✋ Toque no modelo para criar' : '➕ Criar handle (clicar no splat)';
+    if (viewer?.controls) viewer.controls.enabled = !RIG.adding;
+    $('viewer-container').style.cursor = RIG.adding ? 'crosshair' : '';
+  });
+  on('rig-newr', 'input', () => $('v-rignewr').textContent = (v => (v*100 < 0.1 ? (v*100).toFixed(3) : (v*100 < 1 ? (v*100).toFixed(2) : (v*100).toFixed(1))) + '%')(parseFloat($('rig-newr').value)));
+  on('rig-mode-t', 'click', () => { RIG.mode='translate'; $('rig-mode-t').classList.add('on'); $('rig-mode-r').classList.remove('on'); updateGizmo(); });
+  on('rig-mode-r', 'click', () => { RIG.mode='rotate'; $('rig-mode-r').classList.add('on'); $('rig-mode-t').classList.remove('on'); updateGizmo(); });
+  on('rig-r', 'input', () => {
+    const h = RIG.list[RIG.sel]; if (!h) return;
+    const diag = (typeof bxDiag === 'function') ? bxDiag() : 5;
+    const rv = parseFloat($('rig-r').value);
+    h.sigma = diag * rv;
+    $('v-rigr').textContent = (v => (v*100 < 0.1 ? (v*100).toFixed(3) : (v*100 < 1 ? (v*100).toFixed(2) : (v*100).toFixed(1))) + '%')(rv);
+    syncRig();
+  });
+  on('rig-parent', 'change', () => {
+    const h = RIG.list[RIG.sel]; if (!h) return;
+    const pv = parseInt($('rig-parent').value, 10);
+    if (pv >= 0 && wouldCycle(RIG.sel, pv)) { showError('Isso criaria um ciclo de ossos.'); renderList(); return; }
+    h.parent = pv; renderList();
+  });
+  on('rig-orient', 'click', () => {
+    RIG.orient = !RIG.orient;
+    $('rig-orient').classList.toggle('on', RIG.orient);
+    syncRig();
+  });
+  on('rig-reset-one', 'click', () => {
+    const h = RIG.list[RIG.sel]; if (!h) return;
+    h.pos.copy(h.rest); h.rot.set(0,0,0); syncRig(); refreshMarkers();
+    rigRecordKey();
+  });
+  on('rig-del', 'click', () => { if (RIG.sel >= 0) delHandle(RIG.sel); });
+  on('rig-clear', 'click', () => {
+    if (!RIG.list.length) return;
+    if (!confirm('Apagar todos os handles?')) return;
+    RIG.list.forEach(h => { try { h.marker?.parent?.remove(h.marker); } catch(e){} try { h.bone?.parent?.remove(h.bone); } catch(e){} });
+    RIG.list = []; RIG.sel = -1; renderList(); syncRig(); updateGizmo();
+  });
+  on('rig-icons', 'click', () => {
+    RIG.iconsOn = !RIG.iconsOn;
+    $('rig-icons').classList.toggle('on', RIG.iconsOn);
+    $('rig-icons').textContent = RIG.iconsOn ? 'Mostrar' : 'Ocultar';
+    refreshMarkers();
+  });
+  on('rig-show', 'click', () => {
+    RIG.showDots = !RIG.showDots;
+    $('rig-show').classList.toggle('on', RIG.showDots);
+    $('rig-show').textContent = RIG.showDots ? '👁 Mostrar pontos na tela' : '🙈 Pontos ocultos';
+    updateOverlay();
+  });
+
+  // clique no viewer cria o handle quando em modo de adição
+  $('viewer-container').addEventListener('pointerdown', e => {
+    if (!RIG.adding) return;
+    const pt = screenToLocal(e);
+    if (pt) addHandle(pt);
+  });
+
+  // reaproveita markers quando uma cena nova é carregada
+  window.__bxRigRefresh = () => { refreshMarkers(); renderList(); syncRig(); };
+})();
 </script>
 <script>
 /* ============================================================
@@ -5308,7 +6218,7 @@ if (params.has('url')) {
    slider/cor/select e devolve com um clique.
    ============================================================ */
 (function () {
-  const SEL = 'input[type=range], input[type=color], input[type=number], select';
+  const SEL = 'input[type=range]:not([data-norst]), input[type=color], input[type=number]:not([data-norst]), select';
   const orig = new WeakMap();
 
   const valOf = el => (el.tagName === 'SELECT' ? el.value : el.value);
@@ -5403,7 +6313,7 @@ if (params.has('url')) {
 
   const scan = () => {
     document.querySelectorAll(SEL).forEach(attach);
-    document.querySelectorAll('input[type=range]').forEach(makeEditable);
+    document.querySelectorAll('input[type=range]:not([data-norst])').forEach(makeEditable);
   };
   scan();
   // painéis criados depois (cinema, vfx, interativo…) também ganham o botão
@@ -5537,6 +6447,7 @@ if (params.has('url')) {
   #hint { display: none; }
 }
 </style>
+
 
 <script>
 /* ============================================================

@@ -605,9 +605,10 @@
     <div class="row"><label>Rot Z</label><input type="range" id="cb-rz" min="-180" max="180" step="1" value="0"><span class="val" id="v-cbrz">0°</span></div>
     <div class="btn-pair">
       <button class="panel-btn" id="c-apply">Aplicar (permanente)</button>
+      <button class="panel-btn" id="c-save">💾 Salvar recortado</button>
       <button class="panel-btn" id="c-reset">Resetar</button>
     </div>
-    <p class="note" id="crop-note">O box verde mostra a área mantida. O crop ao vivo (GPU) funciona em qualquer formato; o permanente só em <b>.splat</b> e <b>.ply</b> binário de cena única.</p>
+    <p class="note" id="crop-note">O box verde mostra a área mantida. “Salvar recortado” baixa um novo Gaussian só com os splats dentro do box. Disponível em <b>.splat</b> e <b>.ply</b> binário de cena única.</p>
   </div>
 
   <!-- ========== EFEITOS DE DISTORÇÃO ========== -->
@@ -3218,6 +3219,16 @@ function cropGeomBox(buf, g, w, invRot) {
     $('cb-toggle').classList.toggle('on', CB.on);
     $('cb-toggle').textContent = CB.on ? '⏸ Crop box (ligado)' : '▶ Crop box (ao vivo)';
     syncFxUniforms();
+  });
+  $('c-save').addEventListener('click', () => {
+    const g=currentBuffer ? analyzeGeom(currentBuffer,currentFormat) : null;
+    if(!g || !bbox || seq) { showError('Salvar recortado está disponível para uma cena única .splat ou .ply binário.'); return; }
+    const w=boxToWorld(CB), invRot=new THREE.Matrix3().setFromMatrix4(new THREE.Matrix4().makeRotationFromEuler(w.eul)).transpose();
+    const result=cropGeomBox(currentBuffer,g,w,invRot);
+    if(!result) { showError('O Crop Box não contém splats para salvar.'); return; }
+    const ext=g.type==='ply'?'ply':'splat', base=(currentName||'gaussian').replace(/\.[^.]+$/,'');
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([result.buffer],{type:'application/octet-stream'})); a.download=`${base}_crop_${result.kept}splats.${ext}`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+    showError(`Gaussian recortado salvo: ${result.kept.toLocaleString()} splats.`);
   });
   $('c-apply').addEventListener('click', async () => {
     const g = currentBuffer ? analyzeGeom(currentBuffer, currentFormat) : null;

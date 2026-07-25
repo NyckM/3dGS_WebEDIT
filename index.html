@@ -347,9 +347,16 @@
   .tl-btn:hover { border-color: var(--verde); }
   .tl-btn.on { background: var(--roxo); border-color: var(--roxo-claro); }
   .tl-btn.rec.on { background: #b33; border-color: #f66; }
-  .tl-duration-input { display:flex; align-items:center; gap:4px; min-width:62px; padding:3px 7px; border:1px solid rgba(255,255,255,.15); border-radius:7px; background:rgba(255,255,255,.06); }
-  .tl-duration-input input { width:34px; padding:0; border:0; outline:0; background:transparent; color:var(--verde); font:700 .8rem system-ui; text-align:right; }
-  .tl-duration-input b { color:#aaa; font-size:.72rem; font-weight:600; }
+  .tl-duration-wrap { position:relative; }
+  .tl-duration-btn { min-width:70px; display:flex; align-items:center; gap:6px; padding:6px 9px; border:1px solid rgba(150,201,61,.34); border-radius:9px; background:linear-gradient(135deg,rgba(150,201,61,.13),rgba(176,100,196,.12)); color:#e9e4ef; cursor:pointer; font:700 .76rem system-ui; }
+  .tl-duration-btn .clock { color:var(--verde); font-size:1rem; line-height:1; }.tl-duration-btn .dur-value { color:var(--verde); min-width:25px; text-align:right; }.tl-duration-btn .chev { color:#b9aec1; font-size:.65rem; transition:transform .16s ease; }
+  .tl-duration-wrap.open .tl-duration-btn { border-color:var(--verde); box-shadow:0 0 0 2px rgba(150,201,61,.12); }.tl-duration-wrap.open .chev { transform:rotate(180deg); }
+  .tl-duration-pop { position:absolute; right:0; bottom:calc(100% + 9px); z-index:40; display:none; width:118px; padding:10px 9px 8px; border:1px solid rgba(150,201,61,.34); border-radius:13px; background:linear-gradient(160deg,rgba(40,32,52,.97),rgba(13,10,19,.98)); box-shadow:0 13px 32px rgba(0,0,0,.45); backdrop-filter:blur(18px); }
+  .tl-duration-wrap.open .tl-duration-pop { display:flex; flex-direction:column; align-items:center; }
+  .tl-duration-pop label { color:#b8e36d; font-size:.62rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+  #tl-dur { appearance:slider-vertical; -webkit-appearance:slider-vertical; width:26px; height:142px; margin:8px 0 5px; accent-color:var(--verde); cursor:ns-resize; }
+  .tl-duration-number { display:flex; align-items:center; gap:4px; padding:4px 6px; border-radius:7px; background:rgba(255,255,255,.07); }
+  .tl-duration-number input { width:43px; padding:0; border:0; outline:0; background:transparent; color:var(--verde); font:700 .8rem system-ui; text-align:right; }.tl-duration-number b { color:#aaa; font-size:.7rem; }
   #tl-track { position: relative; flex: 1; height: 26px; background: rgba(255,255,255,.05); border-radius: 6px; cursor: pointer; overflow: hidden; }
   #tl-play-head { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--verde); left: 0; pointer-events: none; }
   .tl-key { position: absolute; top: 8px; width: 10px; height: 10px; background: var(--verde); transform: translateX(-50%) rotate(45deg); border: 1px solid #0d0a12; }
@@ -500,11 +507,20 @@
   <button class="tb-btn" id="btn-lang">◎ ENGLISH</button>
   <button class="tb-btn" id="btn-panel">✦ Editar</button>
   <button class="tb-btn" id="btn-timeline">▤ Timeline</button>
+  <button class="tb-btn" id="btn-mix">▧ Mix</button>
   <button class="tb-btn" id="btn-render">▣ Renderizar</button>
   <button class="tb-btn rec" id="btn-rec">● Gravar MP4</button>
   <button class="tb-btn" id="btn-presets"><span class="tb-glyph folder" aria-hidden="true"></span>Presets</button>
   <button class="tb-btn" id="btn-save-preset"><span class="tb-glyph disk" aria-hidden="true"></span>Save</button>
   <button class="tb-btn" id="btn-new">＋ Importar outro</button>
+</div>
+<div id="mix-popover" aria-hidden="true">
+  <div class="preset-popover-head"><span>▧ Mix · Layers</span><button id="mix-popover-close" aria-label="Fechar">×</button></div>
+  <p class="note mix-note">Importe Gaussianos adicionais. Clique numa layer para deixá-la ativa: os controles de transformação e os efeitos passam a atuar nela.</p>
+  <div id="mix-layer-list" class="mix-layer-list"></div>
+  <button class="panel-btn" id="mix-add">＋ Adicionar Gaussians</button>
+  <p class="note mix-foot">Cada layer visível usa memória e renderização. Para editar com mais leveza, oculte as que não estiver usando.</p>
+  <input id="mix-file-input" type="file" accept=".ply,.splat,.ksplat" multiple style="display:none">
 </div>
 <div id="render-popover" aria-hidden="true">
   <div class="preset-popover-head"><span>▣ Exportar vídeo</span><button id="render-popover-close" aria-label="Fechar">×</button></div>
@@ -1159,8 +1175,14 @@
     <button class="tl-btn rec" id="tl-rec" title="Grava keyframe ao mexer qualquer slider">● REC</button>
     <span id="tl-time" style="color:var(--verde); min-width:70px;">0.0 / 8.0s</span>
     <div id="tl-track"><div id="tl-play-head"></div></div>
-    <label style="color:#aaa; font-size:.78rem;">Duração</label>
-    <span class="tl-duration-input"><input type="number" id="tl-dur" min="1" max="600" step="1" value="8" inputmode="numeric" aria-label="Duração em segundos"><b>s</b></span>
+    <div class="tl-duration-wrap" id="tl-duration-wrap">
+      <button class="tl-duration-btn" id="tl-duration-btn" type="button" aria-expanded="false" title="Ajustar duração"><span class="clock">◷</span><span class="dur-value" id="tl-dur-value">8</span><span>s</span><span class="chev">⌃</span></button>
+      <div class="tl-duration-pop" id="tl-duration-pop">
+        <label for="tl-dur">Duração</label>
+        <input type="range" id="tl-dur" min="1" max="600" step="1" value="8" aria-label="Duração em segundos">
+        <span class="tl-duration-number"><input type="number" id="tl-dur-num" min="1" max="600" step="1" value="8" inputmode="numeric" aria-label="Duração em segundos"><b>s</b></span>
+      </div>
+    </div>
     <button class="tl-btn" id="tl-layers-btn">▤ Layers</button>
     <button class="tl-btn" id="tl-curve-btn">⌁ Curva</button>
     <button class="tl-btn" id="tl-clear">🗑</button>
@@ -1477,6 +1499,12 @@ function decodeSplat4d(fileBuf, maxFrames) {
 // ============================================================
 const BX_UNIFORMS_GLSL = `
 uniform float uBxTime;
+// Mix: transforma cada cena sem tocar na malha global compartilhada pela lib.
+uniform float uBxMixOn;
+uniform vec3 uBxMixPos[8];
+uniform vec3 uBxMixScale[8];
+uniform vec2 uBxMixRot[8];
+uniform float uBxActiveScene;
 uniform vec3 uBxAnchor;
 uniform float uBxCropR;
 // --- distorções (0 wobble, 1 ripple, 2 waves, 3 twist, 4 bend, 5 taper, 6 bulge) ---
@@ -1767,6 +1795,7 @@ vec3 bruxosPos(vec3 p){
 }
 `;
 const BX_COLOR_GLSL = `
+if (uBxActiveScene < 0.0 || int(sceneIndex) == int(uBxActiveScene)) {
 if (uBxLightOn > 0.5) {
   vec3 bxN = normalize(splatCenter - sceneCenter);
   float bxLam1 = pow(max(dot(bxN, -normalize(uBxLightDir)), 0.0), uBxShadowHard);
@@ -1839,13 +1868,14 @@ if (uBxSmoke > 0.001) {
   vColor.rgb = mix(vColor.rgb, vec3(dot(vColor.rgb, vec3(0.3333))), uBxSmoke*0.6);
 }
 vColor.a *= bxFade;
+}
 `;
 const BX_DOF_GLSL = `
 // Desfoque de campo REAL (modelo de lente fina): cada Gaussian fora do plano de
 // foco cresce em um disco de bokeh proporcional ao seu círculo de confusão (CoC),
 // usando a profundidade real do splat. Conserva energia e forma bolas de bokeh
 // nas altas luzes — como uma lente de cinema.
-if (uBxDofOn > 0.5) {
+if ((uBxActiveScene < 0.0 || int(sceneIndex) == int(uBxActiveScene)) && uBxDofOn > 0.5) {
   float bxDepth = -viewCenter.z;
   float bxDF = abs(bxDepth - uBxFocusDist);
   // zona nítida = uBxFocusRange; fora dela o borrão cresce de forma suave
@@ -1862,6 +1892,7 @@ if (uBxDofOn > 0.5) {
 }
 `;
 const BX_REVEAL_GLSL = `
+if (uBxActiveScene < 0.0 || int(sceneIndex) == int(uBxActiveScene)) {
 // Time Slice (4D): cada fatia do espaço mostra um frame diferente da sequência
 if (uBxTimeSliceOn > 0.5 && sceneCount > 1) {
   vec3 bxSpan = max(uBxBBMax - uBxBBMin, vec3(0.0001));
@@ -1901,6 +1932,19 @@ if (uBxReveal < 0.999) {
   if (bxRd > bxEdge) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; }
   bxFade = 1.0 - smoothstep(bxEdge * 0.85, bxEdge, bxRd) * 0.7;
 }
+}
+// Transformação independente por layer (Mix). A cena 0 também entra na lista.
+if (uBxMixOn > 0.5) {
+  for (int mi = 0; mi < 8; mi++) {
+    if (int(sceneIndex) != mi) continue;
+    vec3 mq = (splatCenter - uBxAnchor) * uBxMixScale[mi];
+    float my = uBxMixRot[mi].x;
+    float mz = uBxMixRot[mi].y;
+    mq = vec3(cos(my)*mq.x + sin(my)*mq.z, mq.y, -sin(my)*mq.x + cos(my)*mq.z);
+    mq = vec3(cos(mz)*mq.x - sin(mz)*mq.y, sin(mz)*mq.x + cos(mz)*mq.y, mq.z);
+    splatCenter = uBxAnchor + mq + uBxMixPos[mi];
+  }
+}
             `;
 
 function bxPatchShader(mesh) {
@@ -1926,6 +1970,11 @@ function bxPatchShader(mesh) {
   const v3 = (x=0,y=0,z=0) => new THREE.Vector3(x,y,z);
   Object.assign(mat.uniforms, {
     uBxTime:          { value: 0 },
+    uBxMixOn:         { value: 0 },
+    uBxMixPos:        { value: Array.from({length:8}, () => v3()) },
+    uBxMixScale:      { value: Array.from({length:8}, () => v3(1,1,1)) },
+    uBxMixRot:        { value: Array.from({length:8}, () => new THREE.Vector2()) },
+    uBxActiveScene:   { value: -1 },
     uBxAnchor:        { value: v3() },
     uBxCropR:         { value: 0 },
     // distorções (arrays de 7)
@@ -2070,6 +2119,8 @@ let bxWantXR = null;   // 'vr' | 'ar' | null — recria o viewer em modo XR
 let currentBuffer = null;   // ArrayBuffer original (para crop)
 let currentFormat = null;
 let currentName = '';
+// Mix tem no máximo 8 cenas, limite que também protege os uniforms do shader.
+const MIX = { layers: [], active: 0, enabled: false };
 let bbox = null;            // bounding box do .splat original
 let seq = null;             // sequência 4DGS: {count, current, playing, fps, timer}
 
@@ -2848,6 +2899,7 @@ async function loadFile(file) {
     cornerLogo.classList.add('visible');
     hint.classList.add('visible');
     await loadScene(currentBuffer, format, file.name);
+    mixPrimary(file.name);
     loading.classList.remove('visible');
   } catch (e) {
     console.error(e);
@@ -3003,6 +3055,29 @@ $('btn-open-viewer').addEventListener('click', () => {
   panel.classList.add('visible'); $('btn-panel').classList.add('active');
 });
 $('btn-new').addEventListener('click', () => fileInput.click());
+// ===== Mix: várias cenas no mesmo viewer =====
+const mixPop=$('mix-popover');
+const closeMix=()=>{ mixPop.classList.remove('visible'); mixPop.setAttribute('aria-hidden','true'); $('btn-mix').classList.remove('active'); };
+$('btn-mix').addEventListener('click',()=>{ if(!viewer || !MIX.layers.length){ showError('Abra um Gaussians primeiro para usar o Mix.'); return; } const open=!mixPop.classList.contains('visible'); mixPop.classList.toggle('visible',open); mixPop.setAttribute('aria-hidden',String(!open)); $('btn-mix').classList.toggle('active',open); mixRenderLayers(); });
+$('mix-popover-close').addEventListener('click',closeMix);
+$('mix-add').addEventListener('click',()=>$('mix-file-input').click());
+$('mix-file-input').addEventListener('change',async e=>{
+  const files=[...e.target.files]; e.target.value=''; if(!files.length) return;
+  if(!viewer || !MIX.layers.length){ showError('Abra a primeira cena antes de adicionar uma layer.'); return; }
+  mixStoreActive();
+  for(const file of files){
+    if(MIX.layers.length>=8){ showError('Mix suporta até 8 layers por cena.'); break; }
+    const format=formatFromName(file.name); if(format===null){ showError(`${file.name}: formato não suportado.`); continue; }
+    loading.classList.add('visible'); loadingText.textContent=`Adicionando layer ${MIX.layers.length+1}: ${file.name}…`;
+    const url=URL.createObjectURL(file);
+    try {
+      await viewer.addSplatScene(url,{format,showLoadingUI:false,progressiveLoad:false});
+      MIX.layers.push({name:file.name,visible:true,transform:mixDefaultTransform(),timeline:{}});
+    } catch(err) { console.error(err); showError(`Não foi possível adicionar ${file.name}: ${err.message||err}`); }
+    finally { URL.revokeObjectURL(url); loading.classList.remove('visible'); }
+  }
+  MIX.enabled=MIX.layers.length>1; MIX.active=MIX.layers.length-1; bxPatchShader(viewer.splatMesh); mixLoadActive(); mixSync(); mixRenderLayers();
+});
 function handleFiles(files) {
   const arr = [...files];
   if (IS_MOBILE) {
@@ -3046,9 +3121,29 @@ function getAnchor() {
   return new THREE.Vector3(m(0, 'a-x'), m(1, 'a-y'), m(2, 'a-z'));
 }
 
+// --- Mix: estado das layers e uniforms por cena ---
+function mixDefaultTransform(){ return { pos:{x:0,y:0,z:0}, scale:{x:1,y:1,z:1}, rotY:0, twist:0 }; }
+function mixPrimary(name){ MIX.layers=[{name:name || 'Gaussians 1', visible:true, transform:mixDefaultTransform(), timeline:{}}]; MIX.active=0; MIX.enabled=false; mixSync(); mixRenderLayers(); }
+function mixStoreActive(){ const l=MIX.layers[MIX.active]; if(!l) return; l.transform={pos:{...anim.pos},scale:{...anim.userScale},rotY:anim.rotY,twist:parseFloat($('p-twist')?.value||0)}; if(typeof TL!=='undefined') l.timeline=JSON.parse(JSON.stringify(TL.keys||{})); }
+function mixLoadActive(){ const l=MIX.layers[MIX.active]; if(!l) return; const t=l.transform || mixDefaultTransform(); anim.pos={...t.pos}; anim.userScale={...t.scale}; anim.rotY=t.rotY;
+  const values={ 'p-px':t.pos.x,'p-py':t.pos.y,'p-pz':t.pos.z,'p-sx':t.scale.x,'p-sy':t.scale.y,'p-sz':t.scale.z,'p-ry':t.rotY,'p-twist':t.twist };
+  for(const id in values){ const el=$(id); if(el){ el.value=values[id]; el.dispatchEvent(new Event('input')); } }
+  if(typeof TL!=='undefined'){ TL.keys=JSON.parse(JSON.stringify(l.timeline||{})); TL.curve=null; tlRenderTrack(); if(TL.layersOpen) tlRenderLayers(); tlRenderCurve(); }
+}
+function mixSync(){ const u=viewer?.splatMesh?.material?.uniforms; if(!u?.uBxMixOn) return; const ex=bbox?[(bbox.max[0]-bbox.min[0])/2||1,(bbox.max[1]-bbox.min[1])/2||1,(bbox.max[2]-bbox.min[2])/2||1]:[2,2,2];
+  u.uBxMixOn.value=MIX.enabled?1:0; u.uBxActiveScene.value=MIX.enabled?MIX.active:-1;
+  MIX.layers.forEach((l,i)=>{ const t=l.transform||mixDefaultTransform(); u.uBxMixPos.value[i].set(t.pos.x*ex[0],t.pos.y*ex[1],t.pos.z*ex[2]); u.uBxMixScale.value[i].set(t.scale.x,t.scale.y,t.scale.z); u.uBxMixRot.value[i].set(t.rotY*Math.PI/180,t.twist*Math.PI/180); const sc=viewer?.getSplatScene?.(i); if(sc){ sc.visible=!!(l.visible&&!l.deleted); sc.opacity=sc.visible?1:0; } });
+}
+function mixRemove(i){ const l=MIX.layers[i]; if(!l || l.deleted) return; l.deleted=true; l.visible=false; const remaining=MIX.layers.map((v,n)=>({v,n})).filter(x=>!x.v.deleted); if(i===MIX.active && remaining.length) { MIX.active=remaining[0].n; mixLoadActive(); } MIX.enabled=remaining.length>1; mixSync(); mixRenderLayers(); }
+function mixRenderLayers(){ const box=$('mix-layer-list'); if(!box) return; box.innerHTML=''; const live=MIX.layers.map((l,i)=>({l,i})).filter(x=>!x.l.deleted); if(!live.length){ box.innerHTML='<div class="mix-empty">Nenhuma layer visível. Adicione um Gaussians para recomeçar.</div>'; return; } live.forEach(({l,i},order)=>{ const row=document.createElement('div'); row.className='mix-layer'+(i===MIX.active?' active':''); const eye=l.visible?'◉':'○'; row.innerHTML=`<button class="mix-eye" title="Mostrar/ocultar">${eye}</button><button class="mix-select">${order+1}. ${l.name.replace(/</g,'&lt;')}</button><button class="mix-remove" title="Remover layer">×</button>`;
+  row.querySelector('.mix-eye').addEventListener('click',()=>{ l.visible=!l.visible; mixSync(); mixRenderLayers(); });
+  row.querySelector('.mix-select').addEventListener('click',()=>{ mixStoreActive(); MIX.active=i; MIX.enabled=live.length>1; mixLoadActive(); mixSync(); mixRenderLayers(); });
+  row.querySelector('.mix-remove').addEventListener('click',()=>mixRemove(i)); box.appendChild(row); }); }
+
 // --- posição / escala / rotação (em torno do pivô) ---
 function applyTransforms() {
   if (!viewer?.splatMesh) return;
+  if (MIX.enabled) { viewer.splatMesh.scale.set(1,1,1); viewer.splatMesh.rotation.set(0,0,0); viewer.splatMesh.position.set(0,0,0); mixStoreActive(); mixSync(); return; }
   const m = viewer.splatMesh;
   m.scale.set(anim.userScale.x, anim.userScale.y, anim.userScale.z);
   const twist = parseFloat($('p-twist').value) * Math.PI / 180;
@@ -5532,7 +5627,11 @@ $('btn-timeline').addEventListener('click', ()=>{ $('timeline').classList.toggle
 $('tl-play').addEventListener('click', ()=>{ if(TL.time>=TL.dur) TL.time=0; TL.playing=!TL.playing; $('tl-play').textContent=TL.playing?'⏸':'▶'; });
 $('tl-stop').addEventListener('click', ()=>{ TL.playing=false; TL.time=0; $('tl-play').textContent='▶'; tlApply(0); });
 $('tl-rec').addEventListener('click', ()=>{ TL.rec=!TL.rec; $('tl-rec').classList.toggle('on',TL.rec); });
-$('tl-dur').addEventListener('input', ()=>{ const el=$('tl-dur'); TL.dur=Math.max(1,Math.min(600,parseFloat(el.value)||1)); el.value=TL.dur; if(TL.time>TL.dur) TL.time=TL.dur; tlRenderTrack(); });
+function tlSetDuration(raw){ TL.dur=Math.max(1,Math.min(600,Math.round(parseFloat(raw)||1))); $('tl-dur').value=TL.dur; $('tl-dur-num').value=TL.dur; $('tl-dur-value').textContent=TL.dur; if(TL.time>TL.dur) TL.time=TL.dur; tlRenderTrack(); }
+$('tl-dur').addEventListener('input', e=>tlSetDuration(e.target.value));
+$('tl-dur-num').addEventListener('input', e=>tlSetDuration(e.target.value));
+$('tl-duration-btn').addEventListener('click', e=>{ e.stopPropagation(); const wrap=$('tl-duration-wrap'), open=!wrap.classList.contains('open'); wrap.classList.toggle('open',open); $('tl-duration-btn').setAttribute('aria-expanded',String(open)); });
+document.addEventListener('click', e=>{ const wrap=$('tl-duration-wrap'); if(wrap && !wrap.contains(e.target)){ wrap.classList.remove('open'); $('tl-duration-btn').setAttribute('aria-expanded','false'); } });
 $('tl-layers-btn').addEventListener('click', ()=>{ TL.layersOpen=!TL.layersOpen; $('tl-layers').classList.toggle('visible',TL.layersOpen); $('tl-layers-btn').classList.toggle('on',TL.layersOpen); if(TL.layersOpen) tlRenderLayers(); });
 $('tl-curve-btn').addEventListener('click', ()=>{ const box=$('tl-curve'); if(box.classList.contains('visible')) { box.classList.remove('visible'); return; } if(!TL.layersOpen) $('tl-layers-btn').click(); tlRenderCurve(); });
 $('tl-ease-out').addEventListener('input', e=>tlSetEase('out',e.target.value));
@@ -6620,7 +6719,7 @@ if (params.has('url')) {
     if (data.timeline && typeof TL !== 'undefined') {
       TL.keys=JSON.parse(JSON.stringify(data.timeline.keys || {})); TL.curve=null; TL.time=0;
       TL.dur=Math.max(1,Math.min(600,Number(data.timeline.duration) || 8));
-      const durationInput=$('tl-dur'); if(durationInput) durationInput.value=TL.dur;
+      if(typeof tlSetDuration==='function') tlSetDuration(TL.dur);
       tlRenderTrack(); if(TL.layersOpen) tlRenderLayers(); tlRenderCurve(); tlApply(0);
     }
     if (data.camera && viewer?.camera && viewer?.controls) {
@@ -6892,7 +6991,7 @@ if (params.has('url')) {
   .tl-btn { padding: 8px 11px; font-size: .76rem; flex: 0 0 auto; }
   #tl-track { min-width: 130px; height: 32px; }
   .tl-key { width: 14px; height: 14px; top: 9px; }
-  #tl-time, #tl-dur { flex: 0 0 auto; }
+  #tl-time, .tl-duration-wrap { flex: 0 0 auto; }
 
   /* layers vira tela cheia (arrastar keyframe em 190px no celular é inviável) */
   #tl-layers {
@@ -7096,6 +7195,19 @@ button.sheet-close::after, .sheet-grip .sheet-close::after { font-size:25px!impo
 #topbar .tb-glyph.disk::after { content:''; position:absolute; right:2px; top:1px; width:4px; height:4px; background:currentColor; opacity:.8; }
 #preset-popover { position:fixed; top:54px; right:118px; z-index:35; width:276px; display:none; padding:12px; border:1px solid rgba(255,255,255,.14); border-radius:16px; background:linear-gradient(145deg,rgba(39,31,51,.91),rgba(13,10,19,.94)); backdrop-filter:blur(20px) saturate(140%); -webkit-backdrop-filter:blur(20px) saturate(140%); box-shadow:0 16px 42px rgba(0,0,0,.42); }
 #preset-popover.visible { display:block; }
+#mix-popover { position:fixed; top:54px; right:426px; z-index:36; width:292px; display:none; padding:12px; border:1px solid rgba(150,201,61,.28); border-radius:16px; background:linear-gradient(145deg,rgba(39,31,51,.94),rgba(13,10,19,.96)); backdrop-filter:blur(20px) saturate(140%); -webkit-backdrop-filter:blur(20px) saturate(140%); box-shadow:0 16px 42px rgba(0,0,0,.42); }
+#mix-popover.visible { display:block; }
+#mix-popover-close { width:25px; height:25px; padding:0; display:grid; place-items:center; border:1px solid rgba(214,172,224,.72); border-radius:50%; background:linear-gradient(135deg,#7b2d8e,#b064c4); color:#fff; font-size:20px; font-weight:300; line-height:1; cursor:pointer; }
+.mix-layer-list { display:grid; gap:6px; margin:9px 0; max-height:190px; overflow:auto; padding-right:2px; }
+.mix-layer { display:flex; min-width:0; border:1px solid rgba(255,255,255,.10); border-radius:10px; overflow:hidden; background:rgba(255,255,255,.035); }
+.mix-layer.active { border-color:rgba(150,201,61,.7); background:linear-gradient(90deg,rgba(150,201,61,.14),rgba(176,100,196,.10)); box-shadow:inset 0 0 0 1px rgba(150,201,61,.12); }
+.mix-layer button { border:0; color:#e9e4ef; background:transparent; cursor:pointer; }
+.mix-eye { width:34px; border-right:1px solid rgba(255,255,255,.10)!important; color:#b7e36d!important; font-size:15px; }
+.mix-select { flex:1; min-width:0; padding:9px 9px; overflow:hidden; text-align:left; text-overflow:ellipsis; white-space:nowrap; font-size:.74rem; }
+.mix-remove { width:32px; border-left:1px solid rgba(255,255,255,.10)!important; color:#dca5e9!important; font-size:19px; line-height:1; }.mix-remove:hover { background:rgba(190,70,110,.20)!important; color:#fff!important; }
+.mix-empty { padding:13px 9px; border:1px dashed rgba(255,255,255,.16); border-radius:10px; color:#aaa2b4; text-align:center; font-size:.73rem; }
+.mix-note,.mix-foot { margin:2px 1px 8px; line-height:1.42; }.mix-foot { margin:7px 1px 0; color:#a9a2b1; }
+#mix-popover .panel-btn { margin:3px 0; padding:9px 6px; border-color:rgba(150,201,61,.45); }
 #render-popover { position:fixed; top:54px; right:218px; z-index:36; width:276px; display:none; padding:12px; border:1px solid rgba(255,255,255,.14); border-radius:16px; background:linear-gradient(145deg,rgba(39,31,51,.94),rgba(13,10,19,.96)); backdrop-filter:blur(20px) saturate(140%); -webkit-backdrop-filter:blur(20px) saturate(140%); box-shadow:0 16px 42px rgba(0,0,0,.42); }
 #render-popover.visible { display:block; }
 #render-popover .panel-btn { margin:7px 0 3px; padding:10px 6px; color:#fff; border-color:rgba(150,201,61,.45); background:linear-gradient(135deg,rgba(150,201,61,.20),rgba(176,100,196,.20)); }
@@ -7104,7 +7216,7 @@ button.sheet-close::after, .sheet-grip .sheet-close::after { font-size:25px!impo
 #preset-popover-close:hover, #render-popover-close:hover { background:linear-gradient(135deg,#96c93d,#b064c4); transform:scale(1.06); }
 #preset-popover .preset-file-title { margin:10px 0 3px; padding-top:9px; border-top:1px solid rgba(255,255,255,.09); color:#b7e36d; font-size:.64rem; font-weight:750; letter-spacing:.11em; }
 #preset-popover .panel-btn { margin:4px 0; padding:8px 6px; font-size:.76rem; }
-@media (max-width:720px), (pointer:coarse) and (max-width:900px) { #preset-popover, #render-popover { top:58px; right:10px; left:10px; width:auto; } }
+@media (max-width:720px), (pointer:coarse) and (max-width:900px) { #preset-popover, #render-popover, #mix-popover { top:58px; right:10px; left:10px; width:auto; } }
 </style>
 </body>
 </html>

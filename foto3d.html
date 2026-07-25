@@ -184,20 +184,26 @@ const mkTensor = (dtype, arr, dims) => {
 };
 
 // ============================================================
-// (mantido para uso futuro; o modelo é buscado pelo próprio ORT)
+// Download explícito: o modelo SHARP usa pesos externos em .onnx.data.
+// O ONNX Runtime espera os BYTES desse arquivo, não a URL em texto.
 // ============================================================
-// eslint-disable-next-line no-unused-vars
-async function fetchProgress(url, label) {
-  const r = await fetch(url);
+async function fetchProgress(url, label, start = 0, span = 95) {
+  const r = await fetch(url, { cache: 'force-cache' });
   if (!r.ok) throw new Error(label + ' HTTP ' + r.status);
   const total = +r.headers.get('content-length') || 0;
+  if (!r.body) {
+    const buf = new Uint8Array(await r.arrayBuffer());
+    setStatus(`Baixando ${label}… ${(buf.length/1e6).toFixed(0)} MB`, start + span);
+    return buf;
+  }
   const reader = r.body.getReader();
   const chunks = []; let got = 0;
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
     chunks.push(value); got += value.length;
-    setStatus(`Baixando ${label}… ${(got/1e6).toFixed(0)}MB${total?(' / '+(total/1e6).toFixed(0)+'MB'):''} (só na 1ª vez)`, total ? (got/total*100) : null);
+    const pct = total ? start + (got / total) * span : null;
+    setStatus(`Baixando ${label}… ${(got/1e6).toFixed(0)} MB${total?(' / '+(total/1e6).toFixed(0)+' MB'):''} (só na 1ª vez)`, pct);
   }
   const buf = new Uint8Array(got); let off = 0;
   for (const c of chunks) { buf.set(c, off); off += c.length; }
@@ -209,25 +215,23 @@ async function loadModel() {
   const prec = $('prec').value;
   if (session && sessionKey === prec) return session;
   if (session) { try { await session.release(); } catch(e){} session = null; }
-  const url = MODEL_BASE + MODEL_FILE[prec];
-  // IMPORTANTE: o ORT precisa buscar o sidecar .data sozinho.
-  // Pré-baixar e entregar os bytes quebra a contabilidade interna de arquivos
-  // montados — o modelo carrega com PESOS ZERADOS e devolve saídas constantes.
+  const modelName = MODEL_FILE[prec];
+  const url = MODEL_BASE + modelName;
+  const dataName = modelName + '.data';
+  const dataUrl = MODEL_BASE + dataName;
   $('prec').disabled = true;   // trocar no meio do download bagunça a sessão
-  const t0 = performance.now();
-  const hb = setInterval(() => {
-    const s = Math.floor((performance.now() - t0) / 1000);
-    setStatus(`Baixando o modelo SHARP ${prec} (${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}) — ${prec === 'fp32' ? '~2,5 GB' : '~1,2 GB'}, só na 1ª vez`, null);
-    $('bar').classList.add('on');
-    $('bar').firstElementChild.style.width = Math.min(95, 5 + s * 1.2) + '%';
-  }, 1000);
   try {
-    session = await ort.InferenceSession.create(url, {
+    // O .onnx é pequeno; o .data contém os pesos reais (~2,6 GB em fp32).
+    // Entregar ambos em bytes evita a sessão com pesos zerados.
+    const modelBytes = await fetchProgress(url, `modelo SHARP ${prec}`, 0, 2);
+    const dataBytes = await fetchProgress(dataUrl, `pesos SHARP ${prec}`, 2, 91);
+    setStatus('Preparando o modelo na GPU…', 94);
+    session = await ort.InferenceSession.create(modelBytes, {
       executionProviders: hasWebGPU ? ['webgpu', 'wasm'] : ['wasm'],
       graphOptimizationLevel: 'all',
-      externalData: [{ path: MODEL_FILE[prec] + '.data', data: url + '.data' }]
+      externalData: [{ path: dataName, data: dataBytes }]
     });
-  } finally { clearInterval(hb); $('prec').disabled = false; }
+  } finally { $('prec').disabled = false; }
   sessionKey = prec;
   $('cfg-model').textContent = `SHARP ${prec} · entradas: ${session.inputNames.join(', ')} · saídas: ${session.outputNames.join(', ')}`;
   return session;

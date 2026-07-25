@@ -519,7 +519,9 @@
   <div class="preset-popover-head"><span>▰ Presets</span><button id="preset-popover-close" aria-label="Fechar">×</button></div>
   <div class="row"><label>Preset</label><select class="au-sel" id="scene-preset-list" style="flex:1"><option value="">— escolha um preset —</option></select></div>
   <div class="btn-pair"><button class="panel-btn" id="scene-preset-load">↗ Abrir</button><button class="panel-btn" id="scene-preset-delete">🗑 Apagar</button></div>
-  <div class="btn-pair"><button class="panel-btn" id="scene-preset-export">⇩ Baixar .json</button><button class="panel-btn" id="scene-preset-import-btn">⇧ Abrir .json</button></div>
+  <div class="preset-file-title">ARQUIVO EXTERNO</div>
+  <div class="btn-pair"><button class="panel-btn" id="scene-preset-export">⇩ Salvar no computador</button><button class="panel-btn" id="scene-preset-import-btn">⇧ Importar do computador</button></div>
+  <p class="note" style="margin:6px 1px 0">Use o arquivo .json para manter o preset mesmo fechando ou limpando o navegador.</p>
   <input id="scene-preset-name" type="hidden"><input id="scene-preset-import" type="file" accept="application/json,.json" style="display:none"><button id="scene-preset-save" type="button" style="display:none"></button>
 </div>
 
@@ -6623,7 +6625,7 @@ if (params.has('url')) {
   $('scene-preset-import-btn').addEventListener('click', () => $('scene-preset-import').click());
   $('scene-preset-import').addEventListener('change', async e => {
     const file=e.target.files?.[0]; if (!file) return;
-    try { const p=JSON.parse(await file.text()); if (p.version !== 1) throw new Error('versão inválida'); const n=clean(file.name.replace(/\.json$/i,'')) || 'Preset importado'; const all=readAll(); all[n]=p; writeAll(all); refresh(n); name.value=n; showError('Preset importado. Clique em Abrir preset para aplicar.'); }
+    try { const p=JSON.parse(await file.text()); if (p.version !== 1) throw new Error('versão inválida'); const n=clean(file.name.replace(/\.json$/i,'')) || 'Preset importado'; const all=readAll(); all[n]=p; writeAll(all); refresh(n); name.value=n; apply(p); showError('Preset importado e aplicado.'); }
     catch (_) { showError('Não foi possível ler este preset.'); } finally { e.target.value=''; }
   });
   const pop = $('preset-popover');
@@ -7082,6 +7084,7 @@ button.sheet-close::after, .sheet-grip .sheet-close::after { font-size:25px!impo
 .preset-popover-head { display:flex; align-items:center; justify-content:space-between; padding:1px 2px 10px; color:#c6ec83; font-size:.78rem; font-weight:750; letter-spacing:.08em; text-transform:uppercase; }
 #preset-popover-close, #render-popover-close { width:25px; height:25px; padding:0; display:grid; place-items:center; border:1px solid rgba(214,172,224,.72); border-radius:50%; background:linear-gradient(135deg,#7b2d8e,#b064c4); color:#fff; font-size:20px; font-weight:300; line-height:1; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.2); }
 #preset-popover-close:hover, #render-popover-close:hover { background:linear-gradient(135deg,#96c93d,#b064c4); transform:scale(1.06); }
+#preset-popover .preset-file-title { margin:10px 0 3px; padding-top:9px; border-top:1px solid rgba(255,255,255,.09); color:#b7e36d; font-size:.64rem; font-weight:750; letter-spacing:.11em; }
 #preset-popover .panel-btn { margin:4px 0; padding:8px 6px; font-size:.76rem; }
 @media (max-width:720px), (pointer:coarse) and (max-width:900px) { #preset-popover, #render-popover { top:58px; right:10px; left:10px; width:auto; } }
 </style>

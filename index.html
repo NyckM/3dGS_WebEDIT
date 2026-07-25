@@ -6577,7 +6577,8 @@ if (params.has('url')) {
   }
   function snapshot() {
     return { version:1, savedAt:new Date().toISOString(), scene:currentName || '', controls:controlSnapshot(), rig:rigSnapshot(),
-      camera:viewer?.camera && viewer?.controls ? {pos:vec(viewer.camera.position), target:vec(viewer.controls.target)} : null };
+      camera:viewer?.camera && viewer?.controls ? {pos:vec(viewer.camera.position), target:vec(viewer.controls.target)} : null,
+      timeline: typeof TL !== 'undefined' ? { duration:TL.dur, keys:JSON.parse(JSON.stringify(TL.keys || {})) } : null };
   }
   function refresh(selected = '') {
     const all = readAll(); list.innerHTML = '<option value="">— escolha um preset —</option>';
@@ -6605,6 +6606,12 @@ if (params.has('url')) {
       el.dispatchEvent(new Event('input', {bubbles:true})); el.dispatchEvent(new Event('change', {bubbles:true}));
     });
     restoreRig(data.rig);
+    if (data.timeline && typeof TL !== 'undefined') {
+      TL.keys=JSON.parse(JSON.stringify(data.timeline.keys || {})); TL.curve=null; TL.time=0;
+      TL.dur=Math.max(1,Math.min(600,Number(data.timeline.duration) || 8));
+      const durationInput=$('tl-dur'); if(durationInput) durationInput.value=TL.dur;
+      tlRenderTrack(); if(TL.layersOpen) tlRenderLayers(); tlRenderCurve(); tlApply(0);
+    }
     if (data.camera && viewer?.camera && viewer?.controls) {
       viewer.camera.position.fromArray(data.camera.pos); viewer.controls.target.fromArray(data.camera.target);
       viewer.camera.updateProjectionMatrix(); viewer.controls.update?.();

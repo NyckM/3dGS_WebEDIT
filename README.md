@@ -1,18 +1,3 @@
-<p align="center"><img src="Bruxos.png" width="160" alt="Bruxos do VFX"></p>
-
-<h1 align="center">Bruxos do VFX · 3DGS</h1>
-
-<p align="center">Um ateliê mágico para visualizar, animar e renderizar <b>3D Gaussian Splats</b> direto no navegador.</p>
-
-## ✨ O grimório
-
-| Arquivo | Função |
-|---|---|
-| `outputs/index.html` | Viewer e editor 3DGS independente — basta abrir no navegador. |
-| `outputs/ffmpeg_render_server.py` | Ponte local opcional para renderizar vídeo CFR com FFmpeg. |
-| `Bruxos_VFX_3DGS.ipynb` | Colab: vídeo → Gaussian Splatting. |
-| `Bruxos_VFX_SHARP.ipynb` | Colab: uma foto → splat com Apple SHARP. |
-| `Bruxos_VFX_4DGS.ipynb` | Colab: vídeo → sequência 4DGS. |
 
 <p align="center"><img src="Bruxos.png" width="160" alt="Bruxos do VFX"></p>
 
@@ -29,6 +14,8 @@
 | `Bruxos_VFX_3DGS.ipynb` | Colab: vídeo → Gaussian Splatting. |
 | `Bruxos_VFX_SHARP.ipynb` | Colab: uma foto → splat com Apple SHARP. |
 | `Bruxos_VFX_4DGS.ipynb` | Colab: vídeo → sequência 4DGS. |
+
+
 
 ## 🔮 Recursos do viewer
 

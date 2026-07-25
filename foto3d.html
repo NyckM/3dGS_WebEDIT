@@ -96,13 +96,12 @@
     <div class="ctl" style="margin-top:14px;">
       <label for="prec">Precisão</label>
       <select id="prec" style="flex:1; background:#1a1622; color:#fff; border:1px solid rgba(255,255,255,.2); border-radius:8px; padding:6px 10px;">
-        <option value="fp32" selected>fp32 — 2,5 GB, resultado de referência</option>
-        <option value="fp16">fp16 — 1,2 GB, mais leve (experimental)</option>
+        <option value="fp32" selected>fp32 — modelo oficial do demo funcional (~2,4 GB)</option>
       </select>
     </div>
   </details>
 
-  <div style="font-size:.7rem;color:#666;margin-top:10px;">build <b style="color:var(--verde)">v11</b> — se aqui não estiver v11, o navegador está com cache antigo (Ctrl+Shift+R)</div>
+  <div style="font-size:.7rem;color:#666;margin-top:10px;">build <b style="color:var(--verde)">v12</b> — se aqui não estiver v11, o navegador está com cache antigo (Ctrl+Shift+R)</div>
   <div id="status"></div>
   <div id="bar"><div></div></div>
   <div class="warn" id="warn"></div>
@@ -124,7 +123,7 @@
     </div>
   </div>
 
-  <p class="cfg">Modelo: <span id="cfg-model">SHARP (Apple) — pesos de pristinaai/sentiantai</span> · Backend: <span id="cfg-backend">detectando…</span>.
+  <p class="cfg">Modelo: <span id="cfg-model">SHARP (Apple) — conversão ONNX usada pelo ml-sharp-browser</span> · Backend: <span id="cfg-backend">detectando…</span>.
   Pipeline portado da implementação de referência <code>ml-sharp-web</code>: inferência em NDC + reprojeção para espaço métrico no navegador.</p>
 </div>
 
@@ -132,7 +131,7 @@
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
   "@mkkellogg/gaussian-splats-3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.js",
-  "onnxruntime-web": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.webgpu.mjs"
+  "onnxruntime-web": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.24.3/dist/ort.webgpu.mjs"
 } }
 </script>
 
@@ -144,8 +143,10 @@ import * as ort from 'onnxruntime-web';
 // ============================================================
 // CONSTANTES — iguais às da implementação de referência (ml-sharp-web)
 // ============================================================
-const MODEL_BASE = 'https://huggingface.co/sentiantai/sharp-onnx-webgpu-weights/resolve/main/';
-const MODEL_FILE = { fp32: 'sharp_web_predictor.onnx', fp16: 'sharp_web_predictor_fp16.onnx' };
+// Mesmo modelo e os mesmos nomes de arquivos usados pelo ml-sharp-browser funcional.
+const MODEL_BASE = 'https://huggingface.co/mxtx0123/ml-sharp-onnx/resolve/main/';
+const MODEL_FILE = { fp32: 'sharp.onnx' };
+const MODEL_DATA_FILE = { fp32: 'sharp.onnx.data' };
 const RES = 1536;                       // SHARP_INTERNAL_RESOLUTION
 const FILM_35MM_DIAG = Math.hypot(36, 24);
 
@@ -155,7 +156,8 @@ const warn = t => { const w = $('warn'); w.textContent = t; w.classList.add('on'
 
 const hasWebGPU = !!navigator.gpu;
 $('cfg-backend').textContent = hasWebGPU ? 'WebGPU (GPU local)' : 'WASM (CPU — mais lento)';
-ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
+ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.24.3/dist/';
+ort.env.wasm.numThreads = 1;
 
 // sliders
 const bind = (id, out, fmt) => { const f = () => $(out).textContent = fmt(parseFloat($(id).value)); $(id).addEventListener('input', f); f(); };
@@ -184,8 +186,8 @@ const mkTensor = (dtype, arr, dims) => {
 };
 
 // ============================================================
-// Download explícito: o modelo SHARP usa pesos externos em .onnx.data.
-// O ONNX Runtime espera os BYTES desse arquivo, não a URL em texto.
+// Progresso para arquivos pequenos. Os pesos SHARP são carregados em streaming
+// pelo ONNX Runtime abaixo: montá-los em um Uint8Array duplicaria 2,6 GB na RAM.
 // ============================================================
 async function fetchProgress(url, label, start = 0, span = 95) {
   const r = await fetch(url, { cache: 'force-cache' });
@@ -216,20 +218,25 @@ async function loadModel() {
   if (session && sessionKey === prec) return session;
   if (session) { try { await session.release(); } catch(e){} session = null; }
   const modelName = MODEL_FILE[prec];
+  const dataName = MODEL_DATA_FILE[prec];
+  if (!modelName || !dataName) throw new Error('precisão ainda não disponível: ' + prec);
   const url = MODEL_BASE + modelName;
-  const dataName = modelName + '.data';
   const dataUrl = MODEL_BASE + dataName;
   $('prec').disabled = true;   // trocar no meio do download bagunça a sessão
   try {
     // O .onnx é pequeno; o .data contém os pesos reais (~2,6 GB em fp32).
-    // Entregar ambos em bytes evita a sessão com pesos zerados.
-    const modelBytes = await fetchProgress(url, `modelo SHARP ${prec}`, 0, 2);
-    const dataBytes = await fetchProgress(dataUrl, `pesos SHARP ${prec}`, 2, 91);
-    setStatus('Preparando o modelo na GPU…', 94);
-    session = await ort.InferenceSession.create(modelBytes, {
+    // Passe somente a URL completa em `path`: o runtime busca e mapeia o
+    // sidecar sem criar uma segunda cópia gigante na memória do navegador.
+    setStatus(`Carregando pesos SHARP ${prec} em streaming… (só na 1ª vez)`, 8);
+    session = await ort.InferenceSession.create(url, {
       executionProviders: hasWebGPU ? ['webgpu', 'wasm'] : ['wasm'],
       graphOptimizationLevel: 'all',
-      externalData: [{ path: dataName, data: dataBytes }]
+      externalData: [{
+        // `path` precisa coincidir com o nome gravado dentro do ONNX.
+        // `data` recebe a URL real do sidecar, como no ml-sharp-browser.
+        path: dataName,
+        data: dataUrl
+      }]
     });
   } finally { $('prec').disabled = false; }
   sessionKey = prec;
@@ -438,7 +445,7 @@ async function run(file) {
     const dt = $('prec').value === 'fp16' ? 'float16' : 'float32';
     const feeds = {
       [session.inputNames[0]]: mkTensor(dt, imgArr, [1, 3, RES, RES]),
-      [session.inputNames[1]]: mkTensor(dt, new Float32Array([disp]), [1])
+      [session.inputNames[1]]: mkTensor(dt, new Float32Array([(focalPx / srcW) * disp]), [1])
     };
     // export "wrapper" antigo tem 5 entradas: + focal, largura, altura
     if (session.inputNames.length >= 5) {
@@ -456,7 +463,8 @@ async function run(file) {
     const oQuat = get('quaternions_ndc', 'quaternions');
     const oCol  = get('colors');
     const oOpa  = get('opacities');
-    const isNdc = oMean.name.endsWith('_ndc') || oSing.name.endsWith('_ndc') || oQuat.name.endsWith('_ndc');
+    // O sharp.onnx do demo funcional devolve NDC com nomes sem o sufixo "_ndc".
+    const isNdc = true;
 
     let means = asF32(oMean.t.data), sing = asF32(oSing.t.data);
     let quats = asF32(oQuat.t.data), cols = asF32(oCol.t.data), opac = asF32(oOpa.t.data);
@@ -513,7 +521,7 @@ async function run(file) {
     setTimeout(() => $('bar').classList.remove('on'), 800);
   } catch (e) {
     console.error(e);
-    warn('[v11] Erro ao gerar: ' + (e.message || e));
+    warn('[v12] Erro ao gerar: ' + (e.message || e));
     $('bar').classList.remove('on');
     setStatus('');
   }

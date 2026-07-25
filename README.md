@@ -1,52 +1,64 @@
 <p align="center"><img src="Bruxos.png" width="160" alt="Bruxos do VFX"></p>
 
-# Bruxos do VFX · 3DGS
+<h1 align="center">Bruxos do VFX · 3DGS</h1>
 
-Viewer e editor de **3D Gaussian Splatting** no navegador + pipeline gratuito para transformar vídeos em splats.
+<p align="center">Um ateliê mágico para visualizar, animar e renderizar <b>3D Gaussian Splats</b> direto no navegador.</p>
 
-## 🔮 O que tem aqui
+## ✨ O grimório
 
-| Arquivo | O que é |
+| Arquivo | Função |
 |---|---|
-| `index.html` | Viewer/editor 3DGS completo (roda no GitHub Pages) |
-| `Bruxos_VFX_3DGS.ipynb` | Notebook Colab: vídeo → Gaussian Splatting grátis |
-| `Bruxos_VFX_SHARP.ipynb` | Notebook Colab: **uma foto** → Gaussian Splatting em <1s ([Apple SHARP](https://github.com/apple/ml-sharp)) |
-| `Bruxos_VFX_4DGS.ipynb` | Notebook Colab: **vídeo → sequência 4DGS** (um .ply por frame, play no viewer) |
-| `Bruxos.png` | Logo |
+| `outputs/index.html` | Viewer e editor 3DGS independente — basta abrir no navegador. |
+| `outputs/ffmpeg_render_server.py` | Ponte local opcional para renderizar vídeo CFR com FFmpeg. |
+| `Bruxos_VFX_3DGS.ipynb` | Colab: vídeo → Gaussian Splatting. |
+| `Bruxos_VFX_SHARP.ipynb` | Colab: uma foto → splat com Apple SHARP. |
+| `Bruxos_VFX_4DGS.ipynb` | Colab: vídeo → sequência 4DGS. |
 
-## ✨ Recursos do viewer
+## 🔮 Recursos do viewer
 
-- Importar `.ply`, `.splat` e `.ksplat` (botão ou arrastar e soltar)
-- Distorcer/esticar (escala X/Y/Z, rotação, twist)
-- Crop por caixa (`.splat` e `.ply` binário)
-- Animação de câmera (órbita/turntable com velocidade ajustável)
-- Efeitos na GPU: **Waves** (distorção ondulante), **Fumaça** (difusão do centro para fora), **Relight** (luz direcional aproximada com cor), **Dissolve** e **Wobble**
-- Gravação de vídeo do canvas (MP4 no Chrome/Edge, WebM nos demais)
-- Carregar cena por URL: `index.html?url=https://.../cena.splat`
+- Importa `.ply`, `.splat`, `.ksplat` e sequências 4D; aceita arrastar e soltar.
+- Controles de câmera, FOV, fundo, cor, escala, pivô, posição e rotação.
+- **Rig de ponto e Box**: selecione regiões, mova, gire e escale Gaussianos com precisão.
+- Crop ao vivo por caixa e salvamento do Gaussian recortado.
+- Distorções e efeitos GPU: waves, ripple, twist, bend, taper, wobble, dissolve, fumaça, luzes, relight, profundidade, névoa, chroma, AOV e mais.
+- Aba **Experimental/Cinema**: grading, tone mapping, bloom, aberração, vinheta, grão, tilt-shift, desfoque de lente e presets visuais.
+- Texto em Gaussians com aparência, cor, profundidade e animações criativas.
+- **Timeline** com REC de câmera, keyframes, editor de curvas, presets de easing e duração em segundos.
+- **Mix**: importa até 8 Gaussianos na mesma cena, com layers, visibilidade, transformação e keyframes por layer.
+- Presets locais ou em arquivo `.json`, incluindo controles, rig, câmera e timeline.
+- Interface PT/EN, painel glass e controles pensados para desktop e celular.
 
-## 🎥 Como criar um splat a partir de vídeo
+## 🎬 Render e gravação
 
-1. Grave 30s-2min orbitando o objeto/cena devagar (boa luz, sem borrão)
-2. Abra o notebook no Colab (botão do viewer ou badge abaixo)
-3. Ative a GPU (`Ambiente de execução → Alterar tipo → GPU T4`)
-4. Rode as células na ordem, envie o vídeo e baixe o `.ply`
+- Gravação rápida pelo navegador em **24 fps**.
+- Render da timeline em **24 ou 25 fps**, 720p, 1080p ou UHD.
+- Exporta sequência PNG em ZIP — segura para ComfyUI — ou vídeo CFR por FFmpeg: **H.264, HEVC/H.265 e ProRes 422**.
+- O render quadro a quadro prioriza frames estáveis, mesmo que leve mais tempo.
+
+## 🪄 Começo rápido
+
+1. Abra `outputs/index.html`.
+2. Importe um `.ply`, `.splat` ou `.ksplat`.
+3. Use **Editar** para transformar a cena, **Rig** para deformar regiões e **Timeline** para animar.
+4. Em **Mix**, adicione outras cenas como layers quando precisar compor.
+5. Salve um preset ou renderize a timeline.
+
+Para vídeo CFR, mantenha o serviço local aberto:
+
+```bash
+py -3 outputs/ffmpeg_render_server.py
+```
+
+## 🎥 Criar um splat a partir de vídeo
+
+Grave uma órbita lenta do objeto ou ambiente, com boa luz e foco. No Colab, ative uma GPU e rode o notebook de criação na ordem. O resultado pode ser importado diretamente no viewer.
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nyckm/3dGS_WebEDIT/blob/main/Bruxos_VFX_3DGS.ipynb)
 
-## ▶ Player 4D em tempo real (.splat4d)
-
-Para sequências 4D longas e fluidas, o notebook `Bruxos_VFX_4DGS.ipynb` gera um arquivo único **`cena.splat4d`** (~20-40× menor que os frames crus, com streaming HTTP). Suba o arquivo neste repositório e assista no player WebGPU:
-
-```
-https://adamraudonis.github.io/splats4D/?file=https://nyckm.github.io/3dGS_WebEDIT/cena.splat4d
-```
-
-Sem limite de frames, playback a 60fps, busca no tempo em ~150ms. Formato: [splats4D](https://github.com/adamraudonis/splats4D) (MIT).
-
 ## ⚙️ Créditos
 
-Renderização: [GaussianSplats3D](https://github.com/mkkellogg/GaussianSplats3D) (mkkellogg) · [Three.js](https://threejs.org) · Treino: [Nerfstudio / splatfacto](https://docs.nerf.studio)
+[GaussianSplats3D](https://github.com/mkkellogg/GaussianSplats3D) · [Three.js](https://threejs.org) · [Nerfstudio / splatfacto](https://docs.nerf.studio) · [Apple SHARP](https://github.com/apple/ml-sharp)
 
 ---
 
-<p align="center">Feito com 💜 por <b>Bruxos do VFX</b></p>
+<p align="center">Feito com 💜, pixels e um pouco de magia por <b>Bruxos do VFX</b>.</p>

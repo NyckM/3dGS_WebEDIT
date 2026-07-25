@@ -504,6 +504,7 @@
     <button class="fx-tab" data-tab="tab-cine">🎬 Cinema</button>
     <button class="fx-tab" data-tab="tab-vfx">🔮 VFX</button>
     <button class="fx-tab" data-tab="tab-rig">🦴 Rig</button>
+    <button class="fx-tab" data-tab="tab-exp">🧪 Experimental</button>
   </div>
 
   <!-- ========== EDITAR GAUSSIANS ========== -->
@@ -854,11 +855,22 @@
     <div class="row"><label>Estilo</label><select class="au-sel" id="t3-style">
       <option value="solid">Sólido</option>
       <option value="outline">Contorno (oco)</option>
+      <option value="round">Arredondado / soft</option>
+      <option value="shadow">Sombra extrudada</option>
     </select></div>
     <div class="row"><label>Profundidade</label><input type="range" id="t3-depth" min="0.02" max="0.8" step="0.01" value="0.22"><span class="val" id="v-t3depth">0.22</span></div>
     <div class="row"><label>Densidade</label><input type="range" id="t3-dens" min="0.3" max="1" step="0.05" value="0.6"><span class="val" id="v-t3dens">0.60</span></div>
+    <div class="row"><label>Tamanho</label><input type="range" id="t3-size" min="0.25" max="2" step="0.05" value="1"><span class="val" id="v-t3size">1.00x</span></div>
+    <div class="row"><label>Condensar</label><input type="range" id="t3-condense" min="0.4" max="1.4" step="0.02" value="1"><span class="val" id="v-t3condense">1.00x</span></div>
+    <div class="row"><label>Cores</label><select class="au-sel" id="t3-colormode"><option value="gradient">Gradiente vertical</option><option value="letters">Cada letra uma cor</option><option value="depth">Frente / profundidade</option></select></div>
     <div class="row"><label>Cor A (topo)</label><input type="color" id="t3-c1" value="#96c93d" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
     <div class="row"><label>Cor B (base)</label><input type="color" id="t3-c2" value="#7b2d8e" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
+    <div class="row"><label>Cor C (profundidade)</label><input type="color" id="t3-c3" value="#12091c" style="flex:1; height:26px; background:none; border:none; cursor:pointer;"></div>
+    <h3>✨ Material orgânico</h3>
+    <div class="row"><label>Preset</label><select class="au-sel" id="t3-preset"><option value="clean">Limpo</option><option value="metal">Metal orgânico</option><option value="gel">Gel / derretido</option><option value="stone">Pedra luminosa</option><option value="magic">Magia / partículas</option></select></div>
+    <div class="row"><label>Textura</label><input type="range" id="t3-texture" min="0" max="1" step="0.02" value="0.15"><span class="val" id="v-t3texture">0.15</span></div>
+    <div class="row"><label>Brilho</label><input type="range" id="t3-glow" min="0" max="1" step="0.02" value="0.2"><span class="val" id="v-t3glow">0.20</span></div>
+    <div class="row"><label>Sombra</label><input type="range" id="t3-shadow" min="0" max="1" step="0.02" value="0.2"><span class="val" id="v-t3shadow">0.20</span></div>
     <div class="btn-pair">
       <button class="panel-btn" id="t3-make">✨ Gerar texto 3D</button>
       <button class="panel-btn" id="t3-save">💾 Baixar .splat</button>
@@ -866,12 +878,15 @@
     <p class="note">Gera o texto como splats de verdade (fontes ★ baixam do Google Fonts). Abre como cena nova — todos os efeitos, áudio e gravação funcionam nele. O .splat baixado pode ser reaberto ou combinado depois.</p>
   </div>
 
-  <!-- ========== RIG (Fase 1) ========== -->
+  <!-- ========== RIG (pontos + boxes de deformação) ========== -->
   <div class="tab-page" id="tab-rig">
-    <h3>🦴 Handles (pontos de deformação)</h3>
-    <button class="panel-btn" id="rig-add">➕ Criar handle (clicar no splat)</button>
+    <h3>🦴 Controles de deformação</h3>
+    <div class="btn-pair">
+      <button class="panel-btn" id="rig-add">➕ Criar ponto</button>
+      <button class="panel-btn" id="rig-add-box">▣ Criar Box</button>
+    </div>
     <div class="row"><label>Raio do novo</label><input type="range" id="rig-newr" min="0.0005" max="1" step="0.0005" value="0.05" data-norst><span class="val" id="v-rignewr">5.0%</span></div>
-    <p class="note">Ligue e toque no modelo: nasce um ponto ali. Ele puxa e gira os gaussians num raio suave à volta. Vários handles se somam (skinning). Longe de todos, os gaussians ficam parados.</p>
+    <p class="note">Escolha Ponto ou Box e toque no modelo. O ponto deforma por raio; o Box delimita os gaussians que serão movidos, girados e escalonados.</p>
 
     <h3>✨ Auto-rig</h3>
     <div class="row"><label>Nº de ossos</label><input type="range" id="rig-auto-n" min="2" max="12" step="1" value="6" data-norst><span class="val" id="v-rigauton">6</span></div>
@@ -884,13 +899,38 @@
 
     <div id="rig-list" class="rig-list"></div>
 
-    <h3 id="rig-sel-h" style="display:none;">✎ Handle selecionado</h3>
+    <h3 id="rig-sel-h" style="display:none;">✎ Controle selecionado</h3>
     <div id="rig-sel" style="display:none;">
       <div class="axis-row"><span class="lbl">Gizmo</span>
         <button class="ax-btn on" id="rig-mode-t">Mover</button>
         <button class="ax-btn" id="rig-mode-r">Girar</button>
       </div>
       <div class="row"><label>Raio</label><input type="range" id="rig-r" min="0.0005" max="1.5" step="0.0005" value="0.05" data-norst><span class="val" id="v-rigr">5.0%</span></div>
+      <div id="rig-box-controls" style="display:none;">
+        <h3>▣ Área do Box</h3>
+        <div class="row"><label>Posição X</label><input type="range" id="rig-box-px" min="-0.02" max="0.02" step="0.0001" value="0"><span class="val" id="v-rigboxpx">0.00%</span></div>
+        <div class="row"><label>Posição Y</label><input type="range" id="rig-box-py" min="-0.02" max="0.02" step="0.0001" value="0"><span class="val" id="v-rigboxpy">0.00%</span></div>
+        <div class="row"><label>Posição Z</label><input type="range" id="rig-box-pz" min="-0.02" max="0.02" step="0.0001" value="0"><span class="val" id="v-rigboxpz">0.00%</span></div>
+        <div class="row"><label>Tamanho X</label><input type="range" id="rig-box-x" min="0.0001" max="0.02" step="0.0001" value="0.0008"><span class="val" id="v-rigboxx">0.08%</span></div>
+        <div class="row"><label>Tamanho Y</label><input type="range" id="rig-box-y" min="0.0001" max="0.02" step="0.0001" value="0.0008"><span class="val" id="v-rigboxy">0.08%</span></div>
+        <div class="row"><label>Tamanho Z</label><input type="range" id="rig-box-z" min="0.0001" max="0.02" step="0.0001" value="0.0008"><span class="val" id="v-rigboxz">0.08%</span></div>
+        <div class="row"><label>Rotação X</label><input type="range" id="rig-box-rx" min="-180" max="180" step="0.1" value="0"><span class="val" id="v-rigboxrx">0°</span></div>
+        <div class="row"><label>Rotação Y</label><input type="range" id="rig-box-ry" min="-180" max="180" step="0.1" value="0"><span class="val" id="v-rigboxry">0°</span></div>
+        <div class="row"><label>Rotação Z</label><input type="range" id="rig-box-rz" min="-180" max="180" step="0.1" value="0"><span class="val" id="v-rigboxrz">0°</span></div>
+        <hr style="border:0;border-top:1px solid rgba(255,255,255,.16);margin:16px 0;">
+        <h3>🦴 Rig do Box</h3>
+        <div class="row"><label>Tamanho X</label><input type="range" id="rig-scale-x" min="0.98" max="1.02" step="0.0001" value="1"><span class="val" id="v-rigscalex">1.00</span></div>
+        <div class="row"><label>Tamanho Y</label><input type="range" id="rig-scale-y" min="0.98" max="1.02" step="0.0001" value="1"><span class="val" id="v-rigscaley">1.00</span></div>
+        <div class="row"><label>Tamanho Z</label><input type="range" id="rig-scale-z" min="0.98" max="1.02" step="0.0001" value="1"><span class="val" id="v-rigscalez">1.00</span></div>
+        <div class="row"><label>Posição X</label><input type="range" id="rig-rig-px" min="-0.02" max="0.02" step="0.0001" value="0"><span class="val" id="v-rigrigpx">0.00%</span></div>
+        <div class="row"><label>Posição Y</label><input type="range" id="rig-rig-py" min="-0.02" max="0.02" step="0.0001" value="0"><span class="val" id="v-rigrigpy">0.00%</span></div>
+        <div class="row"><label>Posição Z</label><input type="range" id="rig-rig-pz" min="-0.02" max="0.02" step="0.0001" value="0"><span class="val" id="v-rigrigpz">0.00%</span></div>
+        <div class="row"><label>Rotação X</label><input type="range" id="rig-rig-rx" min="-10" max="10" step="0.01" value="0"><span class="val" id="v-rigrigrx">0°</span></div>
+        <div class="row"><label>Rotação Y</label><input type="range" id="rig-rig-ry" min="-10" max="10" step="0.01" value="0"><span class="val" id="v-rigrigry">0°</span></div>
+        <div class="row"><label>Rotação Z</label><input type="range" id="rig-rig-rz" min="-10" max="10" step="0.01" value="0"><span class="val" id="v-rigrigrz">0°</span></div>
+        <button class="panel-btn" id="rig-link-fx">🔗 Vincular Box aos efeitos ativos</button>
+        <p class="note">Primeiro posicione e diminua o Box nos controles acima. Ele define quais gaussians serão deformados; o vínculo também usa a mesma área como máscara dos efeitos ativos.</p>
+      </div>
       <div class="row"><label>🦴 Osso pai</label>
         <select id="rig-parent" style="flex:1;"><option value="-1">nenhum (raiz)</option></select>
       </div>
@@ -909,6 +949,25 @@
     </div>
     <button class="panel-btn" id="rig-clear">🧹 Apagar todos os handles</button>
     <p class="note">Fase 1: os pontos movem e giram a nuvem por regiões. Ideal para dobrar um braço, virar uma cabeça, esticar. Deformações muito grandes revelam que cada splat é rígido.</p>
+  </div>
+
+  <!-- ========== EXPERIMENTAL ========== -->
+  <div class="tab-page" id="tab-exp">
+    <button class="panel-btn on" id="exp-toggle">▶ Pipeline Experimental</button>
+    <p class="note">Pós-processamento em tempo real. Os controles abaixo já atuam sobre a imagem renderizada.</p>
+    <h3>🎞️ Tone Mapping</h3>
+    <div class="row"><label>Tone Map</label><select class="au-sel" id="exp-tonemap"><option value="none">Nenhum</option><option value="aces" selected>ACES Filmic</option><option value="reinhard">Reinhard</option><option value="uncharted">Uncharted 2</option></select></div>
+    <div class="row"><label>Exposição</label><input type="range" id="exp-exposure" min="0.1" max="3" step="0.05" value="1"><span class="val" id="v-expexposure">1.00</span></div>
+    <h3>✨ Bloom anamórfico</h3><button class="panel-btn" id="exp-bloom">▶ Bloom Pro</button>
+    <div class="row"><label>Intensidade</label><input type="range" id="exp-bloom-i" min="0" max="2" step="0.01" value="0.35"><span class="val" id="v-expbloomi">0.35</span></div>
+    <div class="row"><label>Direção</label><input type="range" id="exp-bloom-d" min="0" max="1" step="0.01" value="0.5"><span class="val" id="v-expbloomd">0.50</span></div>
+    <h3>🎞️ Chroma Pro</h3><button class="panel-btn" id="exp-ca">▶ Chroma Pro</button>
+    <div class="row"><label>Radial</label><input type="range" id="exp-ca-r" min="0" max="2" step="0.01" value="0.20"><span class="val" id="v-expcar">0.20</span></div>
+    <h3>👾 Pixel Art / Retro</h3><button class="panel-btn" id="exp-pixel">▶ Pixel Art</button>
+    <div class="row"><label>Resolução</label><input type="range" id="exp-pixel-r" min="64" max="512" step="16" value="256"><span class="val" id="v-exppixelr">256</span></div>
+    <h3>🎞️ Grão temporal</h3><button class="panel-btn" id="exp-grain">▶ Grain Temporal</button>
+    <div class="row"><label>Intensidade</label><input type="range" id="exp-grain-i" min="0" max="1" step="0.01" value="0.15"><span class="val" id="v-expgraini">0.15</span></div>
+    <p class="note">SSAO, Motion Blur, Bokeh físico, God Rays e Contact Shadows precisam de buffer de profundidade/vetores de movimento do renderer e entram na próxima etapa.</p>
   </div>
 
   <!-- ========== INTERATIVO ========== -->
@@ -1480,6 +1539,10 @@ uniform mat3  uBxRigRot[12];    // rotação da região em torno do handle
 uniform float uBxRigSigma[12];  // raio de influência (desvio do gaussiano)
 uniform vec3  uBxRigBoneA[12];  // base do osso (posição de repouso do pai)
 uniform float uBxRigBoneOn[12]; // 1 = influência em cápsula ao longo do osso
+uniform float uBxRigType[12];   // 0 = ponto, 1 = box
+uniform vec3  uBxRigBoxInvHalf[12]; // limites do box no repouso
+uniform mat3  uBxRigBoxRestRot[12]; // rotação do volume de seleção
+uniform vec3  uBxRigScale[12];  // escala aplicada aos gaussians dentro do box
 float bxFade = 1.0;
 float bxHash(vec3 p){ return fract(sin(dot(p, vec3(127.1,311.7,74.7)))*43758.5453); }
 float bxVN(vec3 p){
@@ -1515,7 +1578,13 @@ vec3 bruxosPos(vec3 p){
       if (float(i) >= uBxRigN) break;
       vec3 rel0 = p - uBxRigRest[i];
       float d;
-      if (uBxRigBoneOn[i] > 0.5) {
+      float w;
+      if (uBxRigType[i] > 0.5) {
+        // Box: apenas os gaussians delimitados acompanham a transformação.
+        // A borda é suavizada para não formar um corte duro na nuvem.
+        vec3 q = abs(uBxRigBoxRestRot[i] * rel0) * uBxRigBoxInvHalf[i];
+        w = max(q.x, max(q.y, q.z)) <= 1.0 ? 1.0 : 0.0; // Box rígido: não dispersa ao girar
+      } else if (uBxRigBoneOn[i] > 0.5) {
         // distância ao segmento pai→filho (cápsula) = osso de verdade
         vec3 a = uBxRigBoneA[i], b = uBxRigRest[i];
         vec3 ab = b - a;
@@ -1524,9 +1593,14 @@ vec3 bruxosPos(vec3 p){
       } else {
         d = length(rel0);
       }
-      float s = max(uBxRigSigma[i], 0.0001);
-      float w = exp(-(d * d) / (2.0 * s * s));
-      acc += w * (uBxRigPos[i] + uBxRigRot[i] * rel0);
+      if (uBxRigType[i] < 0.5) {
+        float s = max(uBxRigSigma[i], 0.0001);
+        w = exp(-(d * d) / (2.0 * s * s));
+      }
+      vec3 localRel = uBxRigBoxRestRot[i] * rel0;
+      vec3 scaledRel = transpose(uBxRigBoxRestRot[i]) * (localRel * uBxRigScale[i]);
+      vec3 transformed = uBxRigPos[i] + uBxRigRot[i] * (uBxRigType[i] > 0.5 ? scaledRel : rel0);
+      acc += w * transformed;
       wsum += w;
     }
     float wr = max(0.0, 1.0 - wsum);      // resto = repouso
@@ -1914,6 +1988,10 @@ function bxPatchShader(mesh) {
     uBxRigSigma:  { value: new Array(12).fill(1) },
     uBxRigBoneA:  { value: Array.from({length:12}, () => v3()) },
     uBxRigBoneOn:  { value: new Array(12).fill(0) },
+    uBxRigType:     { value: new Array(12).fill(0) },
+    uBxRigBoxInvHalf:{ value: Array.from({length:12}, () => v3(1,1,1)) },
+    uBxRigBoxRestRot:{ value: Array.from({length:12}, () => new THREE.Matrix3()) },
+    uBxRigScale:    { value: Array.from({length:12}, () => v3(1,1,1)) },
     uBxRigOrient: { value: 0 }
   });
   mat.needsUpdate = true;
@@ -2129,6 +2207,7 @@ async function loadScene(buffer, format, name) {
   if (window.__bxRigRefresh) window.__bxRigRefresh();
   centerControls();
   applyBackground();
+  window.__bxExpApply?.(); // o renderer é recriado a cada cena; reaplica o pós experimental
 }
 
 // ===== helpers de geometria (bbox, boxes, wireframes) =====
@@ -3589,6 +3668,13 @@ const I18N = {
   'Dicas rápidas':'Quick tips','🎁 Exemplo — Coffee ☕':'🎁 Example — Coffee ☕',
   '🪄 BruxoSplat Windows x64':'🪄 BruxoSplat Windows x64','🍎 BruxoSplat macOS':'🍎 BruxoSplat macOS'
 };
+Object.assign(I18N, {
+  'Importe um arquivo .ply ou .splat para visualizar e editar.':'Import a .ply or .splat file to view and edit.','Arraste e solte seu arquivo aqui':'Drag and drop your file here','Selecionar arquivo':'Select file','Dicas rápidas':'Quick tips','Use boas fotos com boa iluminação e foco.':'Use good photos with good lighting and focus.','Evite objetos muito reflexivos ou superfícies transparentes.':'Avoid highly reflective objects or transparent surfaces.','Quanto mais ângulos, melhor o resultado 3D.':'The more angles, the better the 3D result.',
+  '🎨 Fundo':'🎨 Background','▶ Fundo colorido':'▶ Color background','Cor':'Color','Gradiente':'Gradient','Branco':'White','Cinza':'Gray','Chroma':'Chroma','👁 Visualização (AOV) — mesclável':'👁 Visualization (AOV) — blendable','Normal':'Normal','Depth PB':'Depth B&W','Depth Cor':'Depth Color','Zerar tudo (só cor)':'Reset all (color only)',
+  '🧪 Experimental':'🧪 Experimental','▶ Pipeline Experimental':'▶ Experimental Pipeline','Tone Map':'Tone Map','Nenhum':'None','Exposição':'Exposure','Bloom anamórfico':'Anamorphic Bloom','▶ Bloom Pro':'▶ Bloom Pro','Direção':'Direction','Chroma Pro':'Chroma Pro','Radial':'Radial','Pixel Art / Retro':'Pixel Art / Retro','▶ Pixel Art':'▶ Pixel Art','Grão temporal':'Temporal Grain','▶ Grain Temporal':'▶ Temporal Grain',
+  '🔤 Texto 3D (splats)':'🔤 3D Text (splats)','Texto':'Text','Fonte':'Font','Estilo':'Style','Profundidade':'Depth','Densidade':'Density','Tamanho':'Size','Condensar':'Condense','Cores':'Colors','Gradiente vertical':'Vertical gradient','Cada letra uma cor':'Each letter a color','Frente / profundidade':'Front / depth','Cor A (topo)':'Color A (top)','Cor B (base)':'Color B (bottom)','Cor C (profundidade)':'Color C (depth)','Arredondado / soft':'Rounded / soft','Sombra extrudada':'Extruded shadow','✨ Material orgânico':'✨ Organic material','Preset':'Preset','Limpo':'Clean','Metal orgânico':'Organic metal','Gel / derretido':'Gel / melted','Pedra luminosa':'Glowing stone','Magia / partículas':'Magic / particles','Textura':'Texture','Brilho':'Glow','Sombra':'Shadow',
+  '🦴 Controles de deformação':'🦴 Deformation controls','➕ Criar ponto':'➕ Create point','▣ Criar Box':'▣ Create Box','Área do Box':'Box area','Posição X':'Position X','Posição Y':'Position Y','Posição Z':'Position Z','Tamanho X':'Size X','Tamanho Y':'Size Y','Tamanho Z':'Size Z','Rotação X':'Rotation X','Rotação Y':'Rotation Y','Rotação Z':'Rotation Z','🦴 Rig do Box':'🦴 Box rig','🔗 Vincular Box aos efeitos ativos':'🔗 Link Box to active effects'
+});
 const I18N_REV = Object.fromEntries(Object.entries(I18N).map(([k,v]) => [v,k]));
 let bxLang = 'pt'; window.bxLang = 'pt';
 function bxTranslateNode(root, dict) {
@@ -4669,7 +4755,10 @@ async function t3EnsureFont(fontSel) {
 async function t3Generate() {
   const text = ($('t3-text').value || 'BRUXOS').slice(0, 40);
   const font = $('t3-font').value;
-  const outline = $('t3-style').value === 'outline';
+  const style = $('t3-style').value;
+  const outline = style === 'outline', round = style === 'round';
+  const size = parseFloat($('t3-size').value), condense = parseFloat($('t3-condense').value), colorMode = $('t3-colormode').value;
+  const texture=parseFloat($('t3-texture').value), glow=parseFloat($('t3-glow').value), shadow=parseFloat($('t3-shadow').value);
   const depth = parseFloat($('t3-depth').value);
   const dens = parseFloat($('t3-dens').value);
   await t3EnsureFont(font);
@@ -4687,16 +4776,17 @@ async function t3Generate() {
   ctx.fillStyle = '#fff';
   ctx.strokeStyle = '#fff';
   if (outline) { ctx.lineWidth = Math.max(6, FS * 0.05); ctx.strokeText(text, 40, cv.height / 2); }
+  else if (round) { ctx.lineJoin='round'; ctx.lineCap='round'; ctx.lineWidth=FS*.09; ctx.strokeText(text,40,cv.height/2); ctx.fillText(text,40,cv.height/2); }
   else ctx.fillText(text, 40, cv.height / 2);
   const img = ctx.getImageData(0, 0, cv.width, cv.height).data;
   const W = cv.width, H = cv.height;
   const at = (x, y) => (x >= 0 && y >= 0 && x < W && y < H) ? img[(y * W + x) * 4 + 3] : 0;
   // amostragem: passo menor = mais denso
   const step = Math.max(2, Math.round(7 - dens * 5));
-  const wpp = 2.0 / H;                       // altura do texto ≈ 2 unidades de mundo
+  const wpp = 2.0 / H * size;                // escala final do texto
   const depthW = depth * 2.0;                // profundidade em unidades de mundo
   const layers = Math.max(2, Math.round(depthW / (wpp * step)));
-  const c1 = new THREE.Color($('t3-c1').value), c2 = new THREE.Color($('t3-c2').value);
+  const c1 = new THREE.Color($('t3-c1').value), c2 = new THREE.Color($('t3-c2').value), c3 = new THREE.Color($('t3-c3').value);
   const pts = [];
   for (let y = 0; y < H; y += step) {
     for (let x = 0; x < W; x += step) {
@@ -4704,19 +4794,20 @@ async function t3Generate() {
       // borda? (vizinho vazio) → coluna inteira; interior → só frente e trás (casca: bem mais leve)
       const edge = at(x - step, y) < 128 || at(x + step, y) < 128 || at(x, y - step) < 128 || at(x, y + step) < 128;
       const t = y / H;
-      const r = Math.round((c1.r + (c2.r - c1.r) * t) * 255);
-      const g = Math.round((c1.g + (c2.g - c1.g) * t) * 255);
-      const b = Math.round((c1.b + (c2.b - c1.b) * t) * 255);
+      const ci = Math.min(text.length-1, Math.floor(x / Math.max(1,W/text.length)));
+      const cc = colorMode==='letters' ? [c1,c2,c3][ci%3] : new THREE.Color().lerpColors(c1,c2,t);
+      const r = Math.round(cc.r * 255), g = Math.round(cc.g * 255), b = Math.round(cc.b * 255);
       for (let L = 0; L < layers; L++) {
         if (!edge && L > 0 && L < layers - 1) continue;
         const z = (L / Math.max(layers - 1, 1) - 0.5) * depthW;
         const shade = 1 - Math.abs(z) / Math.max(depthW, 0.001) * 0.25; // leve sombreado na lateral
         pts.push([
-          (x - W / 2) * wpp + (Math.random() - 0.5) * wpp * step * 0.3,
+          (x - W / 2) * wpp * condense + (Math.random() - 0.5) * wpp * step * 0.3,
           (y - H / 2) * wpp + (Math.random() - 0.5) * wpp * step * 0.3,
-          z + (Math.random() - 0.5) * wpp * step * 0.3,
-          Math.min(255, r * shade), Math.min(255, g * shade), Math.min(255, b * shade)
+          z + (Math.random() - 0.5) * wpp * step * 0.3 + (Math.random()-.5)*texture*wpp*step,
+          Math.min(255, r * shade * (1+glow*(.4+Math.random()*.9)) * (1+(Math.random()-.5)*texture)), Math.min(255, g * shade * (1+glow*(.4+Math.random()*.9)) * (1+(Math.random()-.5)*texture)), Math.min(255, b * shade * (1+glow*(.4+Math.random()*.9)) * (1+(Math.random()-.5)*texture))
         ]);
+        if (shadow>.01 && L===0) pts.push([(x-W/2)*wpp*condense+wpp*step*shadow,(y-H/2)*wpp+wpp*step*shadow,z-depthW*.1,10,6,16]);
         if (pts.length > 900000) break;
       }
     }
@@ -4759,6 +4850,16 @@ $('t3-save').addEventListener('click', () => {
 });
 bindSlider('t3-depth', 'v-t3depth', v => v.toFixed(2), () => {});
 bindSlider('t3-dens', 'v-t3dens', v => v.toFixed(2), () => {});
+bindSlider('t3-size', 'v-t3size', v => v.toFixed(2)+'x', () => {});
+bindSlider('t3-condense', 'v-t3condense', v => v.toFixed(2)+'x', () => {});
+bindSlider('t3-texture', 'v-t3texture', v => v.toFixed(2), () => {});
+bindSlider('t3-glow', 'v-t3glow', v => v.toFixed(2), () => {});
+bindSlider('t3-shadow', 'v-t3shadow', v => v.toFixed(2), () => {});
+$('t3-preset').addEventListener('change', () => {
+  const p=$('t3-preset').value, set=(id,v)=>{ $(id).value=v; $(id).dispatchEvent(new Event('input',{bubbles:true})); };
+  const pal={ clean:['#96c93d','#7b2d8e','#12091c',.08,.12,.08], metal:['#e8f6ff','#596b86','#07121e',.42,.75,.38], gel:['#ff4bbd','#6827ff','#12001d',.58,.9,.48], stone:['#d7b780','#574839','#17120e',.72,.35,.55], magic:['#8dfffb','#b342ff','#090022',.85,1,.7] }[p];
+  if(!pal) return; $('t3-c1').value=pal[0]; $('t3-c2').value=pal[1]; $('t3-c3').value=pal[2]; set('t3-texture',pal[3]); set('t3-glow',pal[4]); set('t3-shadow',pal[5]); $('t3-colormode').value=p==='magic'?'letters':p==='stone'?'depth':'gradient';
+});
 
 // ============================================================
 // EFEITOS DE TRANSIÇÃO (todos partem do Anchor Point)
@@ -5598,7 +5699,7 @@ if (params.has('url')) {
    ============================================================ */
 (function () {
   const MAX = 12;
-  const RIG = { list: [], sel: -1, adding: false, mode: 'translate', iconsOn: true, showDots: true, orient: false, gizmo: null };
+  const RIG = { list: [], sel: -1, adding: false, addKind: 'point', mode: 'translate', iconsOn: true, showDots: true, orient: false, gizmo: null, fxLinked: false };
   window.__bxRig = RIG;
   const COLORS = [0x96c93d,0xb064c4,0xffa53d,0x3dc9c0,0xf05a7e,0xf0d23d,0x6a8cff,0x9df03d,0xff7ad6,0x7affc0,0xc0a0ff,0xffb0a0];
 
@@ -5616,7 +5717,7 @@ if (params.has('url')) {
     return pt;
   }
 
-  function addHandle(localPt) {
+  function addHandle(localPt, kind = RIG.addKind) {
     if (RIG.list.length >= MAX) { showError('Limite de ' + MAX + ' handles.'); return; }
     const diag = (typeof bxDiag === 'function') ? bxDiag() : 5;
     const r = diag * parseFloat($('rig-newr').value);
@@ -5624,6 +5725,12 @@ if (params.has('url')) {
       rest: localPt.clone(),
       pos: localPt.clone(),
       rot: new THREE.Euler(0,0,0,'XYZ'),
+      type: kind,
+      half: new THREE.Vector3(diag * .0008, diag * .0008, diag * .0008),
+      boxBase: localPt.clone(),
+      rigBase: localPt.clone(),
+      boxRot: new THREE.Euler(0,0,0,'XYZ'),
+      scale: new THREE.Vector3(1,1,1),
       parent: -1,
       sigma: r,
       color: COLORS[RIG.list.length % COLORS.length],
@@ -5639,6 +5746,20 @@ if (params.has('url')) {
   function refreshMarkers() {
     const mesh = viewer?.splatMesh; if (!mesh) return;
     RIG.list.forEach((h, i) => {
+      if (h.type === 'box') {
+        if (!h.boxMarker) {
+          h.boxMarker = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1,1,1)),
+            new THREE.LineBasicMaterial({ color: h.color, transparent:true, opacity:.95, depthTest:false, depthWrite:false, toneMapped:false }));
+          h.boxMarker.renderOrder = 99990;
+        }
+        if (h.boxMarker.parent !== mesh) { try { h.boxMarker.parent?.remove(h.boxMarker); } catch(e){} mesh.add(h.boxMarker); }
+        h.boxMarker.position.copy(h.rest); h.boxMarker.rotation.copy(h.boxRot || new THREE.Euler());
+        h.boxMarker.scale.copy(h.half).multiplyScalar(2);
+        h.boxMarker.material.color.set(i === RIG.sel ? 0xffffff : h.color);
+        h.boxMarker.visible = RIG.iconsOn;
+        if (h.marker) h.marker.visible = false;
+        return;
+      }
       if (!h.marker) {
         h.marker = new THREE.Mesh(
           new THREE.SphereGeometry(1, 20, 14),
@@ -5657,6 +5778,7 @@ if (params.has('url')) {
       h.marker.position.copy(h.pos);
       h.marker.material.color.set(i === RIG.sel ? 0xffffff : h.color);
       h.marker.visible = RIG.iconsOn;
+      if (h.boxMarker) h.boxMarker.visible = false;
     });
     refreshBones();
     updateGizmo();
@@ -5888,6 +6010,7 @@ if (params.has('url')) {
     const uN = bxU('uBxRigN'); if (!uN) return;
     const uRest = bxU('uBxRigRest'), uPos = bxU('uBxRigPos'), uRot = bxU('uBxRigRot'), uSig = bxU('uBxRigSigma');
     const uBoneA = bxU('uBxRigBoneA'), uBoneOn = bxU('uBxRigBoneOn');
+    const uType = bxU('uBxRigType'), uBoxInv = bxU('uBxRigBoxInvHalf'), uBoxRestRot = bxU('uBxRigBoxRestRot'), uScale = bxU('uBxRigScale');
     const n = RIG.list.length;
     uN.value = n;
     const diagS = (typeof bxDiag === 'function') ? bxDiag() : 5;
@@ -5902,6 +6025,22 @@ if (params.has('url')) {
       const hasBone = h.parent >= 0 && RIG.list[h.parent];
       if (uBoneOn) uBoneOn.value[i] = hasBone ? 1 : 0;
       if (uBoneA)  uBoneA.value[i].copy(hasBone ? RIG.list[h.parent].rest : h.rest);
+      if (uType) uType.value[i] = h.type === 'box' ? 1 : 0;
+      if (uBoxInv) uBoxInv.value[i].set(1/Math.max(h.half.x,1e-4), 1/Math.max(h.half.y,1e-4), 1/Math.max(h.half.z,1e-4));
+      if (uBoxRestRot) uBoxRestRot.value[i].setFromMatrix4(new THREE.Matrix4().makeRotationFromEuler(h.boxRot || new THREE.Euler())).transpose();
+      if (uScale) uScale.value[i].copy(h.scale || new THREE.Vector3(1,1,1));
+    }
+    // Um Box pode também delimitar todos os efeitos de distorção ligados.
+    const fx = RIG.fxLinked ? RIG.list[RIG.sel] : null;
+    if (fx?.type === 'box') {
+      const on = bxU('uBxDBoxOn'), pos = bxU('uBxDBoxPos'), inv = bxU('uBxDBoxInvHalf'), rot = bxU('uBxDBoxRot');
+      if (on && pos && inv && rot) for (let i=0;i<8;i++) {
+        if (bxU('uBxDOn').value[i] > .5) {
+          on.value[i] = 1; pos.value[i].copy(fx.rest);
+          inv.value[i].set(1/Math.max(fx.half.x,1e-4),1/Math.max(fx.half.y,1e-4),1/Math.max(fx.half.z,1e-4));
+          rot.value[i].setFromMatrix4(new THREE.Matrix4().makeRotationFromEuler(fx.boxRot || new THREE.Euler())).transpose();
+        }
+      }
     }
   }
 
@@ -5913,13 +6052,14 @@ if (params.has('url')) {
       const el = document.createElement('div');
       el.className = 'rig-item' + (i === RIG.sel ? ' sel' : '');
       el.innerHTML = `<span class="dot" style="background:#${h.color.toString(16).padStart(6,'0')}"></span>`
-        + `<span class="nm">Handle ${i+1}${h.keys.length ? ' · '+h.keys.length+' ◆' : ''}</span><span class="x">✕</span>`;
+        + `<span class="nm">${h.type === 'box' ? 'Box' : 'Ponto'} ${i+1}${h.keys.length ? ' · '+h.keys.length+' ◆' : ''}</span><span class="x">✕</span>`;
       el.addEventListener('click', ev => { if (ev.target.classList.contains('x')) { delHandle(i); ev.stopPropagation(); return; } selectHandle(i); });
       box.appendChild(el);
     });
     const has = RIG.sel >= 0 && RIG.list[RIG.sel];
     $('rig-sel').style.display = has ? 'block' : 'none';
     $('rig-sel-h').style.display = has ? 'block' : 'none';
+    $('rig-box-controls').style.display = has && RIG.list[RIG.sel].type === 'box' ? 'block' : 'none';
     if (has) {
       const h = RIG.list[RIG.sel];
       const diag = (typeof bxDiag === 'function') ? bxDiag() : 5;
@@ -5932,12 +6072,29 @@ if (params.has('url')) {
         RIG.list.map((hh, i) => (i === RIG.sel || desc.has(i)) ? '' :
           `<option value="${i}">Handle ${i+1}</option>`).join('');
       sel.value = String(h.parent);
+      if (h.type === 'box') {
+        const diag = (typeof bxDiag === 'function') ? bxDiag() : 5;
+        const pct = v => (v*100 < 1 ? (v*100).toFixed(2) : Math.round(v*100)) + '%';
+        [['x',0,'rig-box-px','v-rigboxpx'],['y',1,'rig-box-py','v-rigboxpy'],['z',2,'rig-box-pz','v-rigboxpz']].forEach(([a,k,id,out]) => {
+          if (!h.boxBase) h.boxBase = h.rest.clone();
+          const v = (h.rest[a] - h.boxBase[a]) / diag;
+          $(id).value=Math.min(.02,Math.max(-.02,v)); $(out).textContent=(v*100).toFixed(2)+'%';
+        });
+        [['x','rig-box-x','v-rigboxx'],['y','rig-box-y','v-rigboxy'],['z','rig-box-z','v-rigboxz']].forEach(([a,id,out]) => { $(id).value=h.half[a]/diag; $(out).textContent=pct(h.half[a]/diag); });
+        [['x','rig-box-rx','v-rigboxrx'],['y','rig-box-ry','v-rigboxry'],['z','rig-box-rz','v-rigboxrz']].forEach(([a,id,out]) => { $(id).value=(h.boxRot?.[a] || 0)*180/Math.PI; $(out).textContent=parseFloat($(id).value).toFixed(1)+'°'; });
+        [['x','rig-scale-x','v-rigscalex'],['y','rig-scale-y','v-rigscaley'],['z','rig-scale-z','v-rigscalez']].forEach(([a,id,out]) => { $(id).value=h.scale[a]; $(out).textContent=h.scale[a].toFixed(4); });
+        [['x',0,'rig-rig-px','v-rigrigpx'],['y',1,'rig-rig-py','v-rigrigpy'],['z',2,'rig-rig-pz','v-rigrigpz']].forEach(([a,k,id,out]) => { if(!h.rigBase) h.rigBase=h.rest.clone(); const v=(h.pos[a]-h.rigBase[a])/diag; $(id).value=Math.min(.02,Math.max(-.02,v)); $(out).textContent=(v*100).toFixed(2)+'%'; });
+        [['x','rig-rig-rx','v-rigrigrx'],['y','rig-rig-ry','v-rigrigry'],['z','rig-rig-rz','v-rigrigrz']].forEach(([a,id,out]) => { $(id).value=h.rot[a]*180/Math.PI; $(out).textContent=parseFloat($(id).value).toFixed(2)+'°'; });
+        $('rig-link-fx').classList.toggle('on', RIG.fxLinked);
+        $('rig-link-fx').textContent = RIG.fxLinked ? '🔗 Box vinculado aos efeitos' : '🔗 Vincular Box aos efeitos ativos';
+      }
     }
   }
   function selectHandle(i) { RIG.sel = i; renderList(); refreshMarkers(); }
   function delHandle(i) {
     const h = RIG.list[i];
     try { h.marker?.parent?.remove(h.marker); } catch(e){}
+    try { h.boxMarker?.parent?.remove(h.boxMarker); } catch(e){}
     try { h.bone?.parent?.remove(h.bone); } catch(e){}
     RIG.list.splice(i, 1);
     if (RIG.sel >= RIG.list.length) RIG.sel = RIG.list.length - 1;
@@ -5989,7 +6146,7 @@ if (params.has('url')) {
     // reata markers à cena atual e cria o gizmo assim que o TransformControls carregar
     if (RIG.list.length) {
       const mesh = viewer?.splatMesh;
-      if (mesh) RIG.list.forEach(h => { if (h.marker && h.marker.parent !== mesh) mesh.add(h.marker); });
+      if (mesh) RIG.list.forEach(h => { if (h.marker && h.marker.parent !== mesh) mesh.add(h.marker); if (h.boxMarker && h.boxMarker.parent !== mesh) mesh.add(h.boxMarker); });
       if (RIG.sel >= 0) updateGizmo();
       refreshBones();
     }
@@ -6112,6 +6269,7 @@ if (params.has('url')) {
       const c = new THREE.Vector3(cent[i][0], cent[i][1], cent[i][2]);
       RIG.list.push({
         rest: c.clone(), pos: c.clone(), rot: new THREE.Euler(0,0,0,'XYZ'),
+        type: 'point', half: new THREE.Vector3(diag*.15,diag*.15,diag*.15), scale: new THREE.Vector3(1,1,1),
         parent: chain ? parent[i] : -1,
         sigma: Math.min(Math.max(rad[i] * 1.5, diag*0.02), diag*1.0),
         color: COLORS[i % COLORS.length], marker: null, keys: []
@@ -6129,9 +6287,18 @@ if (params.has('url')) {
   on('rig-auto-free', 'click', () => { $('rig-auto-free').classList.add('on'); $('rig-auto-chain').classList.remove('on'); });
   on('rig-auto', 'click', autoRig);
   on('rig-add', 'click', () => {
+    RIG.addKind = 'point';
     RIG.adding = !RIG.adding;
     $('rig-add').classList.toggle('on', RIG.adding);
-    $('rig-add').textContent = RIG.adding ? '✋ Toque no modelo para criar' : '➕ Criar handle (clicar no splat)';
+    $('rig-add-box').classList.remove('on');
+    $('rig-add').textContent = RIG.adding ? '✋ Toque no modelo para criar ponto' : '➕ Criar ponto';
+    if (viewer?.controls) viewer.controls.enabled = !RIG.adding;
+    $('viewer-container').style.cursor = RIG.adding ? 'crosshair' : '';
+  });
+  on('rig-add-box', 'click', () => {
+    RIG.addKind = 'box'; RIG.adding = !RIG.adding;
+    $('rig-add-box').classList.toggle('on', RIG.adding); $('rig-add').classList.remove('on');
+    $('rig-add-box').textContent = RIG.adding ? '✋ Toque no modelo para criar Box' : '▣ Criar Box';
     if (viewer?.controls) viewer.controls.enabled = !RIG.adding;
     $('viewer-container').style.cursor = RIG.adding ? 'crosshair' : '';
   });
@@ -6146,6 +6313,29 @@ if (params.has('url')) {
     $('v-rigr').textContent = (v => (v*100 < 0.1 ? (v*100).toFixed(3) : (v*100 < 1 ? (v*100).toFixed(2) : (v*100).toFixed(1))) + '%')(rv);
     syncRig();
   });
+  [['x','rig-box-x','v-rigboxx'],['y','rig-box-y','v-rigboxy'],['z','rig-box-z','v-rigboxz']].forEach(([a,id,out]) => on(id,'input', () => {
+    const h=RIG.list[RIG.sel]; if (!h || h.type !== 'box') return; const v=parseFloat($(id).value); h.half[a]=(typeof bxDiag==='function'?bxDiag():5)*v; $(out).textContent=(v*100<1?(v*100).toFixed(2):Math.round(v*100))+'%'; syncRig(); refreshMarkers(); rigRecordKey();
+  }));
+  [['x',0,'rig-box-px','v-rigboxpx'],['y',1,'rig-box-py','v-rigboxpy'],['z',2,'rig-box-pz','v-rigboxpz']].forEach(([a,k,id,out]) => on(id,'input', () => {
+    const h=RIG.list[RIG.sel]; if (!h || h.type !== 'box') return; const v=parseFloat($(id).value);
+    if (!h.boxBase) h.boxBase = h.rest.clone();
+    const next = h.boxBase[a] + v * (typeof bxDiag==='function'?bxDiag():5);
+    const delta=next-h.rest[a]; h.pos[a] += delta; h.rest[a] = next; if(h.rigBase) h.rigBase[a]+=delta;
+    $(out).textContent=(v*100).toFixed(2)+'%'; syncRig(); refreshMarkers(); updateGizmo(); rigRecordKey();
+  }));
+  [['x','rig-box-rx','v-rigboxrx'],['y','rig-box-ry','v-rigboxry'],['z','rig-box-rz','v-rigboxrz']].forEach(([a,id,out]) => on(id,'input', () => {
+    const h=RIG.list[RIG.sel]; if (!h || h.type !== 'box') return; if(!h.boxRot) h.boxRot=new THREE.Euler(0,0,0,'XYZ'); h.boxRot[a]=parseFloat($(id).value)*Math.PI/180; $(out).textContent=parseFloat($(id).value).toFixed(1)+'°'; syncRig(); refreshMarkers();
+  }));
+  [['x','rig-scale-x','v-rigscalex'],['y','rig-scale-y','v-rigscaley'],['z','rig-scale-z','v-rigscalez']].forEach(([a,id,out]) => on(id,'input', () => {
+    const h=RIG.list[RIG.sel]; if (!h || h.type !== 'box') return; h.scale[a]=parseFloat($(id).value); $(out).textContent=h.scale[a].toFixed(4); syncRig(); refreshMarkers(); rigRecordKey();
+  }));
+  [['x',0,'rig-rig-px','v-rigrigpx'],['y',1,'rig-rig-py','v-rigrigpy'],['z',2,'rig-rig-pz','v-rigrigpz']].forEach(([a,k,id,out]) => on(id,'input', () => {
+    const h=RIG.list[RIG.sel]; if (!h || h.type !== 'box') return; const v=parseFloat($(id).value); if(!h.rigBase) h.rigBase=h.rest.clone(); h.pos[a]=h.rigBase[a]+v*(typeof bxDiag==='function'?bxDiag():5); $(out).textContent=(v*100).toFixed(2)+'%'; syncRig(); refreshMarkers(); updateGizmo(); rigRecordKey();
+  }));
+  [['x','rig-rig-rx','v-rigrigrx'],['y','rig-rig-ry','v-rigrigry'],['z','rig-rig-rz','v-rigrigrz']].forEach(([a,id,out]) => on(id,'input', () => {
+    const h=RIG.list[RIG.sel]; if (!h || h.type !== 'box') return; h.rot[a]=parseFloat($(id).value)*Math.PI/180; $(out).textContent=parseFloat($(id).value).toFixed(2)+'°'; syncRig(); refreshMarkers(); updateGizmo(); rigRecordKey();
+  }));
+  on('rig-link-fx','click', () => { const h=RIG.list[RIG.sel]; if (!h || h.type !== 'box') return; RIG.fxLinked=!RIG.fxLinked; renderList(); syncRig(); });
   on('rig-parent', 'change', () => {
     const h = RIG.list[RIG.sel]; if (!h) return;
     const pv = parseInt($('rig-parent').value, 10);
@@ -6159,14 +6349,14 @@ if (params.has('url')) {
   });
   on('rig-reset-one', 'click', () => {
     const h = RIG.list[RIG.sel]; if (!h) return;
-    h.pos.copy(h.rest); h.rot.set(0,0,0); syncRig(); refreshMarkers();
+    h.pos.copy(h.rest); h.rot.set(0,0,0); if (h.scale) h.scale.set(1,1,1); syncRig(); refreshMarkers();
     rigRecordKey();
   });
   on('rig-del', 'click', () => { if (RIG.sel >= 0) delHandle(RIG.sel); });
   on('rig-clear', 'click', () => {
     if (!RIG.list.length) return;
     if (!confirm('Apagar todos os handles?')) return;
-    RIG.list.forEach(h => { try { h.marker?.parent?.remove(h.marker); } catch(e){} try { h.bone?.parent?.remove(h.bone); } catch(e){} });
+    RIG.list.forEach(h => { try { h.marker?.parent?.remove(h.marker); } catch(e){} try { h.boxMarker?.parent?.remove(h.boxMarker); } catch(e){} try { h.bone?.parent?.remove(h.bone); } catch(e){} });
     RIG.list = []; RIG.sel = -1; renderList(); syncRig(); updateGizmo();
   });
   on('rig-icons', 'click', () => {
@@ -6186,11 +6376,24 @@ if (params.has('url')) {
   $('viewer-container').addEventListener('pointerdown', e => {
     if (!RIG.adding) return;
     const pt = screenToLocal(e);
-    if (pt) addHandle(pt);
+    if (pt) { addHandle(pt); RIG.adding=false; $('rig-add').classList.remove('on'); $('rig-add-box').classList.remove('on'); $('rig-add').textContent='➕ Criar ponto'; $('rig-add-box').textContent='▣ Criar Box'; if(viewer?.controls) viewer.controls.enabled=true; $('viewer-container').style.cursor=''; }
   });
 
   // reaproveita markers quando uma cena nova é carregada
   window.__bxRigRefresh = () => { refreshMarkers(); renderList(); syncRig(); };
+})();
+/* ===== Pipeline Experimental (pós de tela) ===== */
+(() => {
+  const $e = id => document.getElementById(id); const state={on:true,bloom:false,ca:false,pixel:false,grain:false};
+  const overlay=document.createElement('canvas'); overlay.id='exp-grain-overlay'; overlay.style.cssText='position:fixed;inset:0;z-index:19;pointer-events:none;mix-blend-mode:screen;display:none'; document.body.appendChild(overlay);
+  const draw=()=>{ if(!state.grain){overlay.style.display='none';return;} overlay.style.display='block'; overlay.width=innerWidth;overlay.height=innerHeight; const x=overlay.getContext('2d'), a=parseFloat($e('exp-grain-i').value); const im=x.createImageData(overlay.width,overlay.height); for(let i=0;i<im.data.length;i+=4){const n=Math.random()*255;im.data[i]=im.data[i+1]=im.data[i+2]=n;im.data[i+3]=a*42;} x.putImageData(im,0,0); requestAnimationFrame(draw); };
+  const apply=()=>{ if(!viewer?.renderer) return; const r=viewer.renderer, exp=parseFloat($e('exp-exposure').value), t=$e('exp-tonemap').value; r.toneMapping=state.on?(t==='aces'?THREE.ACESFilmicToneMapping:t==='reinhard'?THREE.ReinhardToneMapping:t==='uncharted'?THREE.CineonToneMapping:THREE.NoToneMapping):THREE.NoToneMapping; r.toneMappingExposure=state.on?exp:1; const c=r.domElement; const tone=t==='aces'?'contrast(1.14) saturate(1.10)':t==='reinhard'?'contrast(.90) saturate(.88)':t==='uncharted'?'contrast(1.24) saturate(1.16)':'contrast(1)'; const bloom=state.bloom?`brightness(${(1+parseFloat($e('exp-bloom-i').value)*.32).toFixed(2)}) saturate(1.25)`:''; const ca=state.ca?`hue-rotate(${Math.round(parseFloat($e('exp-ca-r').value)*70)}deg) saturate(1.25)`:''; c.style.filter=state.on?[`brightness(${exp.toFixed(2)})`,tone,bloom,ca].filter(Boolean).join(' '):'none'; const px=state.pixel?parseInt($e('exp-pixel-r').value,10):0; r.setPixelRatio(px?Math.min(devicePixelRatio,px/Math.max(innerWidth,innerHeight)):devicePixelRatio); r.setSize(innerWidth,innerHeight); };
+  const tog=(id,key)=>$e(id).addEventListener('click',()=>{state[key]=!state[key];$e(id).classList.toggle('on',state[key]);$e(id).textContent=(state[key]?'⏸ ':'▶ ')+$e(id).textContent.replace(/^[▶⏸]\s*/,'');if(key==='grain'&&state.grain)draw();apply();});
+  $e('exp-toggle').addEventListener('click',()=>{state.on=!state.on;$e('exp-toggle').classList.toggle('on',state.on);apply();}); tog('exp-bloom','bloom');tog('exp-ca','ca');tog('exp-pixel','pixel');tog('exp-grain','grain');
+  [['exp-exposure','v-expexposure',v=>v.toFixed(2)],['exp-bloom-i','v-expbloomi',v=>v.toFixed(2)],['exp-bloom-d','v-expbloomd',v=>v.toFixed(2)],['exp-ca-r','v-expcar',v=>v.toFixed(3)],['exp-pixel-r','v-exppixelr',v=>String(Math.round(v))],['exp-grain-i','v-expgraini',v=>v.toFixed(2)]].forEach(([id,out,f])=>$e(id).addEventListener('input',e=>{$e(out).textContent=f(+e.target.value);apply();})); $e('exp-tonemap').addEventListener('change',apply);
+  const syncBloom=()=>{ const p=$e('post-bloom'); if(!p) return; p.value=state.bloom ? $e('exp-bloom-i').value : 0; p.dispatchEvent(new Event('input',{bubbles:true})); };
+  $e('exp-bloom').addEventListener('click',()=>setTimeout(syncBloom,0)); $e('exp-bloom-i').addEventListener('input',syncBloom);
+  window.__bxExpApply=apply;
 })();
 </script>
 <script>

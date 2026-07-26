@@ -6,6 +6,10 @@
 <title>Bruxos do VFX — 3DGS Viewer</title>
 <!-- habilita SharedArrayBuffer no GitHub Pages (sort mais rápido); inofensivo se o arquivo faltar -->
 <script src="coi-serviceworker.js"></script>
+<!-- Style Transfer Neural real (aba Experimental): Magenta.js "Arbitrary Image Stylization" (Apache-2.0, Google),
+     roda 100% no navegador via TensorFlow.js, aceita qualquer imagem de estilo. Carrega em paralelo; inofensivo se faltar internet
+     (o botão de Style Transfer Neural simplesmente avisa que não carregou e o resto do viewer continua normal). -->
+<script src="https://cdn.jsdelivr.net/npm/@magenta/image@^0.2.1"></script>
 <style>
   :root {
     --roxo: #7b2d8e;
@@ -482,7 +486,7 @@
             <a class="btn verde" id="btn-criar" href="criar.html">Começar agora →</a>
             <a class="btn ghost" href="criar.html">📖 Ver guia passo a passo</a>
             <button class="btn ghost" id="btn-ex0">🎁 Exemplo — Coffee ☕</button>
-            <a class="btn ghost" id="btn-bruxosplat" href="https://github.com/NyckM/BruxosSplat/releases/download/V1.1/BruxoSplat-Setup-1.1.0.exe.zip" download>🪄 BruxoSplat Windows x64</a>
+            <a class="btn ghost" id="btn-bruxosplat" href="https://github.com/NyckM/BruxosSplat/releases/download/V1/BruxoSplat_1.0.0.zip" download>🪄 BruxoSplat Windows x64</a>
             <a class="btn ghost" id="btn-bruxosplat-mac" href="https://github.com/NyckM/BruxosSplat/releases/download/V1_mac/BruxoSplat-mac.zip" download>🍎 BruxoSplat macOS</a>
           </div>
         </div>
@@ -555,6 +559,9 @@
     <button class="fx-tab" data-tab="tab-cine">🎬 Cinema</button>
     <button class="fx-tab" data-tab="tab-vfx">🔮 VFX</button>
     <button class="fx-tab" data-tab="tab-rig">🦴 Rig</button>
+    <button class="fx-tab" data-tab="tab-4d">🎞 4D</button>
+    <button class="fx-tab" data-tab="tab-semantic">🧬 Semântica</button>
+    <button class="fx-tab" data-tab="tab-physics">🩹 Física</button>
     <button class="fx-tab" data-tab="tab-exp">🧪 Experimental</button>
   </div>
 
@@ -754,6 +761,8 @@
     <button class="panel-btn" id="light-icon-off">👁 Esconder ícones de luz</button>
     <div class="row"><label>Sombra</label><input type="range" id="l-shadow" min="0.3" max="5" step="0.1" value="1"><span class="val" id="v-lshadow">1.0</span></div>
     <div class="row"><label>Ambiente</label><input type="range" id="l-amb" min="0" max="1" step="0.05" value="0.35"><span class="val" id="v-lamb">0.35</span></div>
+    <div class="row"><label>Translucência</label><input type="range" id="l-trans" min="0" max="1.5" step="0.02" value="0"><span class="val" id="v-ltrans">0.00</span></div>
+    <p class="note">Translucência aproxima subsurface scattering (pele, cera, folha fina) deixando a luz "vazar" pelo lado de trás do splat contra a fonte de luz. 0 = desligado.</p>
     <p class="note"><b>Luz 1</b></p>
     <div class="row"><label>Azimute</label><input type="range" id="l-az" min="-180" max="180" step="1" value="45"><span class="val" id="v-laz">45°</span></div>
     <div class="row"><label>Altura</label><input type="range" id="l-el" min="-90" max="90" step="1" value="30"><span class="val" id="v-lel">30°</span></div>
@@ -854,12 +863,6 @@
     <div class="row"><label>Agudos</label><div class="au-meter" style="flex:1; margin:0;"><div class="au-fill" id="au-m2"></div></div></div>
     <p class="note">O áudio toca em loop entre o trim de início e fim. Cada efeito tem a linha <b>🎧 Áudio</b> para reagir a uma banda (G = graves, M = médios, A = agudos) com o ganho "Reação" — nas distorções, no tamanho do splat (aba Editar) e na luz pontual (aba Luz/Cor).</p>
 
-    <h3>Time Slice (4D)</h3>
-    <button class="panel-btn" id="ts-toggle">▶ Time Slice</button>
-    <div class="row"><label>Eixo</label><input type="range" id="ts-axis" min="0" max="2" step="1" value="0"><span class="val" id="v-tsaxis">X</span></div>
-    <div class="row"><label>Deslocar</label><input type="range" id="ts-shift" min="0" max="1" step="0.01" value="0"><span class="val" id="v-tsshift">0%</span></div>
-    <button class="panel-btn" id="ts-invert">Inverter direção</button>
-    <p class="note">Só em sequências 4D: cada fatia do espaço mostra um frame do tempo (slit-scan).</p>
   </div>
 
   <!-- ========== VFX ========== -->
@@ -1003,6 +1006,53 @@
     <p class="note">Fase 1: os pontos movem e giram a nuvem por regiões. Ideal para dobrar um braço, virar uma cabeça, esticar. Deformações muito grandes revelam que cada splat é rígido.</p>
   </div>
 
+  <!-- ========== 4D (sequência) ========== -->
+  <div class="tab-page" id="tab-4d">
+    <p class="note">Ferramentas específicas de sequência 4DGS (várias cenas no tempo). Para tocar/gravar a sequência, use o botão <b>▤ Timeline</b> na barra de cima; aqui ficam os efeitos que só existem em 4D.</p>
+
+    <h3>Time Slice (4D)</h3>
+    <button class="panel-btn" id="ts-toggle">▶ Time Slice</button>
+    <div class="row"><label>Eixo</label><input type="range" id="ts-axis" min="0" max="2" step="1" value="0"><span class="val" id="v-tsaxis">X</span></div>
+    <div class="row"><label>Deslocar</label><input type="range" id="ts-shift" min="0" max="1" step="0.01" value="0"><span class="val" id="v-tsshift">0%</span></div>
+    <button class="panel-btn" id="ts-invert">Inverter direção</button>
+    <p class="note">Só em sequências 4D: cada fatia do espaço mostra um frame do tempo (slit-scan).</p>
+
+    <h3>Rig com keyframes</h3>
+    <p class="note">Os handles da aba <b>🦴 Rig</b> também gravam keyframes: ligue ⏺ REC na Timeline e mova/gire um handle — ele anima junto com a sequência.</p>
+
+    <h3>Próximos passos (pesquisa)</h3>
+    <p class="note">Transferência de movimento de um vídeo de referência pra um asset gerado (Sync4D) e um 4DGS "de verdade" (gaussians livres no espaço-tempo, tipo FreeTimeGS) são ideias em avaliação — dependem de mudanças no treinador, não só no viewer.</p>
+  </div>
+
+  <!-- ========== SEMÂNTICA (seleção/isolamento) ========== -->
+  <div class="tab-page" id="tab-semantic">
+    <p class="note">Isolar um objeto sem precisar arrastar sliders: clique nele na cena e a ferramenta posiciona o pivô ali, com um raio automático. <b>Importante:</b> isso é uma aproximação geométrica (posição + raio) — não é seleção por texto/significado de verdade (isso exigiria retreinar o Gaussian com embeddings tipo LangSplat, algo do lado do BruxoSplat, não do viewer).</p>
+
+    <h3>Selecionar por clique</h3>
+    <button class="panel-btn" id="sem-pick">🎯 Clique na cena pra isolar</button>
+    <div class="row"><label>Raio</label><input type="range" id="sem-radius" min="0.03" max="1" step="0.01" value="0.22"><span class="val" id="v-semradius">22%</span></div>
+    <button class="panel-btn" id="sem-invert">🔁 Inverter (isolar o resto)</button>
+    <div class="btn-pair">
+      <button class="panel-btn" id="sem-save">💾 Salvar isolado</button>
+      <button class="panel-btn" id="sem-reset">Resetar</button>
+    </div>
+    <p class="note">"Clique pra isolar" usa o mesmo pivô da aba Editar (Anchor Point) — os sliders de lá também valem aqui. "Salvar isolado" baixa um novo arquivo só com os splats dentro do raio (ou fora, se "Inverter" estiver ativo).</p>
+  </div>
+
+  <!-- ========== FÍSICA (mola leve nos handles do Rig) ========== -->
+  <div class="tab-page" id="tab-physics">
+    <p class="note">Simulação leve tipo massa-mola sobre os handles do Rig — aproximação de física (não é MPM/PhysGaussian de verdade, mas dá um efeito de gelatina/mola em tempo real, de graça). Clique em "▶ Física" sem ter criado nenhum handle e ele cria um sozinho cobrindo o modelo inteiro; se você já criou handles na aba <b>🦴 Rig</b> (num braço, cabeça, etc.), a física usa esses e balança só aquela região.</p>
+
+    <button class="panel-btn" id="phys-toggle">▶ Física (mola)</button>
+    <div class="row"><label>Rigidez</label><input type="range" id="phys-stiff" min="0.5" max="25" step="0.5" value="7"><span class="val" id="v-physstiff">7.0</span></div>
+    <div class="row"><label>Amortecimento</label><input type="range" id="phys-damp" min="0" max="0.3" step="0.005" value="0.04"><span class="val" id="v-physdamp">0.040</span></div>
+    <div class="row"><label>Gravidade</label><input type="range" id="phys-grav" min="0" max="2" step="0.02" value="0.25"><span class="val" id="v-physgrav">0.25</span></div>
+    <button class="panel-btn" id="phys-wind">🌬 Vento contínuo (desligado)</button>
+    <div class="row"><label>Força do vento</label><input type="range" id="phys-windstr" min="0" max="1" step="0.02" value="0.15"><span class="val" id="v-physwindstr">0.15</span></div>
+    <button class="panel-btn" id="phys-kick">💥 Dar um impulso</button>
+    <p class="note">"Dar um impulso" empurra todos os handles numa direção aleatória — solta e eles voltam balançando pro lugar, tipo gelatina. "Vento contínuo" mantém um balanço fraco o tempo todo.</p>
+  </div>
+
   <!-- ========== EXPERIMENTAL ========== -->
   <div class="tab-page" id="tab-exp">
     <button class="panel-btn on" id="exp-toggle">▶ Pipeline Experimental</button>
@@ -1019,6 +1069,23 @@
     <div class="row"><label>Resolução</label><input type="range" id="exp-pixel-r" min="64" max="512" step="16" value="256"><span class="val" id="v-exppixelr">256</span></div>
     <h3>🎞️ Grão temporal</h3><button class="panel-btn" id="exp-grain">▶ Grain Temporal</button>
     <div class="row"><label>Intensidade</label><input type="range" id="exp-grain-i" min="0" max="1" step="0.01" value="0.15"><span class="val" id="v-expgraini">0.15</span></div>
+    <h3>🎨 Stylize (StyleSplat-lite)</h3>
+    <button class="panel-btn" id="exp-stylize">▶ Stylize</button>
+    <div class="row"><label>Estilo</label><select class="au-sel" id="exp-style-kind">
+      <option value="toon">Toon / Cartoon</option>
+      <option value="vintage">Vintage / Sépia</option>
+      <option value="neon">Cyberpunk / Neon</option>
+    </select></div>
+    <div class="row"><label>Intensidade</label><input type="range" id="exp-style-i" min="0" max="1" step="0.02" value="0.6"><span class="val" id="v-expstylei">0.60</span></div>
+    <p class="note">Filtro de estilização em tempo real (paleta/contraste por cima da imagem) — aproximação rápida, não usa rede neural.</p>
+
+    <h3>🧠 Style Transfer Neural (real)</h3>
+    <button class="panel-btn" id="exp-style-neural">▶ Style Transfer Neural</button>
+    <div class="row"><label>Imagem de estilo</label><input type="file" id="exp-style-img-upload" accept="image/*"><img id="exp-style-preview" style="max-width:48px;max-height:48px;vertical-align:middle;display:none;border-radius:4px;margin-left:8px"></div>
+    <img id="exp-style-img-el" style="display:none" alt="">
+    <div class="row"><label>Atualização (ms)</label><input type="range" id="exp-style-neural-rate" min="200" max="2000" step="50" value="600"><span class="val" id="v-expstyleneuralrate">600</span></div>
+    <div class="row"><label>Mistura</label><input type="range" id="exp-style-neural-blend" min="0" max="1" step="0.02" value="0.85"><span class="val" id="v-expstyleneuralblend">0.85</span></div>
+    <p class="note" id="exp-style-neural-status">Envie uma imagem de estilo (qualquer pintura/textura/foto) e ligue o botão acima. É uma rede neural de verdade (Arbitrary Image Stylization, roda 100% no seu navegador via TensorFlow.js/Magenta.js, ~12MB na primeira vez) — diferente do filtro CSS acima, funciona com qualquer imagem de estilo que você mandar, não só 3 opções fixas. Só atualiza a cada intervalo escolhido (não é 60fps: a rede é pesada demais pra rodar em todo frame); a câmera continua fluida por baixo do overlay estilizado.</p>
     <p class="note">SSAO, Motion Blur, Bokeh físico, God Rays e Contact Shadows precisam de buffer de profundidade/vetores de movimento do renderer e entram na próxima etapa.</p>
   </div>
 
@@ -1507,6 +1574,7 @@ uniform vec2 uBxMixRot[8];
 uniform float uBxActiveScene;
 uniform vec3 uBxAnchor;
 uniform float uBxCropR;
+uniform float uBxCropInvert;
 // --- distorções (0 wobble, 1 ripple, 2 waves, 3 twist, 4 bend, 5 taper, 6 bulge) ---
 uniform float uBxDOn[8];
 uniform vec3  uBxDAxis[8];
@@ -1551,6 +1619,7 @@ uniform vec3 uBxLight2Dir;
 uniform float uBxLight2Strength;
 uniform vec3 uBxLight2Color;
 uniform float uBxShadowHard;
+uniform float uBxTranslucency;
 // --- luz pontual ---
 uniform float uBxPLOn;
 uniform vec3 uBxPLPos;
@@ -1804,6 +1873,18 @@ if (uBxLightOn > 0.5) {
     float bxLam2 = pow(max(dot(bxN, -normalize(uBxLight2Dir)), 0.0), uBxShadowHard);
     bxLight += bxLam2 * uBxLight2Strength * uBxLight2Color;
   }
+  // Translucência (aproximação de subsurface scattering): sem normais reais,
+  // não dá pra fazer SSS de verdade — mas um termo de "wrap light" (a luz que
+  // bateria do outro lado "vazando" através do material) já dá o look de
+  // pele/cera/folha fina contra a luz. Cresce com uBxTranslucency (0 = off).
+  if (uBxTranslucency > 0.001) {
+    float bxWrap1 = max(dot(-bxN, -normalize(uBxLightDir)), 0.0);
+    bxLight += bxWrap1 * uBxTranslucency * uBxLightStrength * uBxLightColor * 0.6;
+    if (uBxLight2On > 0.5) {
+      float bxWrap2 = max(dot(-bxN, -normalize(uBxLight2Dir)), 0.0);
+      bxLight += bxWrap2 * uBxTranslucency * uBxLight2Strength * uBxLight2Color * 0.6;
+    }
+  }
   vColor.rgb *= bxLight;
 }
 // Luz pontual: posição no volume da cena, com atenuação por distância
@@ -1921,9 +2002,12 @@ if (uBxCropBoxOn > 0.5) {
   vec3 bxQc = abs(uBxCropBoxRot * (splatCenter - uBxCropBoxPos)) * uBxCropBoxInvHalf;
   if (max(bxQc.x, max(bxQc.y, bxQc.z)) > 1.0) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; }
 }
-// Crop radial (esfera no pivô)
-if (uBxCropR > 0.0 && length(splatCenter - uBxAnchor) > uBxCropR) {
-  gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return;
+// Crop radial (esfera no pivô) — uBxCropInvert>0.5 inverte: mantém o que está FORA do raio
+// (usado pela aba Semântica pra "isolar o resto" em vez do objeto clicado).
+if (uBxCropR > 0.0) {
+  float bxCropD = length(splatCenter - uBxAnchor);
+  bool bxCropDiscard = uBxCropInvert > 0.5 ? (bxCropD <= uBxCropR) : (bxCropD > uBxCropR);
+  if (bxCropDiscard) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; }
 }
 splatCenter = bruxosPos(splatCenter);
 if (uBxReveal < 0.999) {
@@ -1977,6 +2061,7 @@ function bxPatchShader(mesh) {
     uBxActiveScene:   { value: -1 },
     uBxAnchor:        { value: v3() },
     uBxCropR:         { value: 0 },
+    uBxCropInvert:    { value: 0 },
     // distorções (arrays de 7)
     uBxDOn:        { value: new Array(8).fill(0) },
     uBxDAxis:      { value: Array.from({length:8}, () => v3(0,1,0)) },
@@ -2021,6 +2106,7 @@ function bxPatchShader(mesh) {
     uBxLight2Strength:{ value: 0.8 },
     uBxLight2Color:   { value: new THREE.Color(1, 1, 1) },
     uBxShadowHard:    { value: 1.0 },
+    uBxTranslucency:  { value: 0 },
     // luz pontual
     uBxPLOn:          { value: 0 },
     uBxPLPos:         { value: v3() },
@@ -2128,7 +2214,7 @@ let seq = null;             // sequência 4DGS: {count, current, playing, fps, t
 const anim = {
   dissolve: null, splatScale: 1, userScale: {x:1,y:1,z:1}, rotY: 0, pos: {x:0,y:0,z:0},
   relight: false, light2: false, plight: false, smoke: null, smokeVal: 0, fxTime: 0,
-  dof: false, ca: false, reveal: null, revealVal: 1, pb: false, depthCol: false, anchorCrop: false,
+  dof: false, ca: false, reveal: null, revealVal: 1, pb: false, depthCol: false, anchorCrop: false, semInvert: false,
   timeSlice: false, sliceInvert: false, sliceAnim: 0,
   grade: false, fog: false, weather: null, paintMode: false, plGizmo: false, vNormal: false, vDepthPB: false, vDepthCor: false, canny: false,
   disVal: 0, disAnim: null, recOrbit: false, mouseFx: 0,
@@ -2775,6 +2861,7 @@ function syncFxUniforms() {
   setDir('uBxLightDir', 'l-az', 'l-el');
   setDir('uBxLight2Dir', 'l2-az', 'l2-el');
   set('uBxShadowHard', parseFloat($('l-shadow').value));
+  set('uBxTranslucency', parseFloat($('l-trans').value));
   set('uBxLight2On', anim.light2 ? 1 : 0);
   set('uBxLight2Strength', parseFloat($('l2-str').value));
   const l2c = bxU('uBxLight2Color'); if (l2c) l2c.value.set($('l2-color').value);
@@ -2801,6 +2888,7 @@ function syncFxUniforms() {
   const ua = bxU('uBxAnchor');
   if (ua) ua.value.copy(getAnchor());
   set('uBxCropR', (anim.anchorCrop && bbox) ? diag * 0.6 * parseFloat($('a-r').value) : 0);
+  set('uBxCropInvert', anim.semInvert ? 1 : 0);
   // --- bbox ---
   if (bbox) {
     const bmin = bxU('uBxBBMin'), bmax = bxU('uBxBBMax');
@@ -3297,6 +3385,105 @@ function cropGeomBox(buf, g, w, invRot) {
   });
   return { buffer: out.buffer, kept: keep.length };
 }
+
+// Recorte esférico no pivô (aba Semântica) — mesma ideia do cropGeomBox, mas por
+// distância ao centro em vez de caixa orientada. invert=true mantém o que está FORA.
+function cropGeomSphere(buf, g, center, radius, invert) {
+  const dv = new DataView(buf);
+  const u8 = new Uint8Array(buf);
+  const keep = [];
+  const r2 = radius * radius;
+  for (let i = 0; i < g.count; i++) {
+    const base = g.dataStart + i * g.stride;
+    const x = dv.getFloat32(base + g.posOff[0], true) - center.x;
+    const y = dv.getFloat32(base + g.posOff[1], true) - center.y;
+    const z = dv.getFloat32(base + g.posOff[2], true) - center.z;
+    const inside = (x*x + y*y + z*z) <= r2;
+    if (invert ? !inside : inside) keep.push(i);
+  }
+  if (keep.length === 0) return null;
+  let headerBytes = new Uint8Array(0);
+  if (g.type === 'ply') {
+    const newHeader = g.header.replace(/element\s+vertex\s+\d+/, 'element vertex ' + keep.length);
+    headerBytes = new TextEncoder().encode(newHeader);
+  }
+  const out = new Uint8Array(headerBytes.length + keep.length * g.stride);
+  out.set(headerBytes, 0);
+  keep.forEach((idx, j) => {
+    const src = g.dataStart + idx * g.stride;
+    out.set(u8.subarray(src, src + g.stride), headerBytes.length + j * g.stride);
+  });
+  return { buffer: out.buffer, kept: keep.length };
+}
+
+// ---- 🧬 Semântica: clique isola (aproximação geométrica) ----
+(function () {
+  const on2 = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
+  const SEM = { picking: false };
+  function updatePickBtn() {
+    const b = $('sem-pick'); if (!b) return;
+    b.classList.toggle('on', SEM.picking);
+    b.textContent = SEM.picking ? '🎯 Clique na cena… (cancelar)' : '🎯 Clique na cena pra isolar';
+  }
+  on2('sem-pick', 'click', () => {
+    SEM.picking = !SEM.picking;
+    updatePickBtn();
+    if (viewer?.controls) viewer.controls.enabled = !SEM.picking;
+  });
+  function onViewerPick(e) {
+    if (!SEM.picking) return;
+    const pt = window.__bxScreenToLocal ? window.__bxScreenToLocal(e) : null;
+    SEM.picking = false; updatePickBtn();
+    if (viewer?.controls) viewer.controls.enabled = true;
+    if (!pt || !bbox) { showError('Não consegui achar um ponto na cena — tente clicar sobre os splats.'); return; }
+    const t = (k, id) => {
+      const span = bbox.max[k] - bbox.min[k];
+      const v = span > 1e-9 ? (pt.getComponent(k) - bbox.min[k]) / span : 0.5;
+      return Math.min(1, Math.max(0, v));
+    };
+    $('a-x').value = t(0); $('a-y').value = t(1); $('a-z').value = t(2);
+    ['v-ax','v-ay','v-az2'].forEach((id, i) => $(id).textContent = Math.round(parseFloat($(['a-x','a-y','a-z'][i]).value)*100)+'%');
+    const r = parseFloat($('sem-radius').value);
+    $('a-r').value = r; $('v-ar').textContent = Math.round(r*100)+'%';
+    anim.anchorCrop = true;
+    $('ac-toggle').classList.add('on'); $('ac-toggle').textContent = '⏸ Crop radial (ligado)';
+    if (typeof applyTransforms === 'function') applyTransforms();
+    syncFxUniforms();
+  }
+  const vc = $('viewer-container');
+  if (vc) vc.addEventListener('pointerdown', onViewerPick);
+  on2('sem-invert', 'click', () => {
+    anim.semInvert = !anim.semInvert;
+    $('sem-invert').classList.toggle('on', anim.semInvert);
+    $('sem-invert').textContent = anim.semInvert ? '🔁 Invertido (isolando o resto)' : '🔁 Inverter (isolar o resto)';
+    syncFxUniforms();
+  });
+  bindSlider('sem-radius', 'v-semradius', v => Math.round(v*100)+'%', v => {
+    if (anim.anchorCrop) { $('a-r').value = v; $('v-ar').textContent = Math.round(v*100)+'%'; syncFxUniforms(); }
+  });
+  on2('sem-save', 'click', () => {
+    const g = currentBuffer ? analyzeGeom(currentBuffer, currentFormat) : null;
+    if (!g || !bbox || seq) { showError('Salvar isolado está disponível para uma cena única .splat ou .ply binário.'); return; }
+    const center = getAnchor();
+    const radius = bxDiag() * 0.6 * parseFloat($('a-r').value);
+    const result = cropGeomSphere(currentBuffer, g, center, radius, anim.semInvert);
+    if (!result) { showError('Isolamento não contém splats pra salvar — tente outro ponto/raio.'); return; }
+    const ext = g.type === 'ply' ? 'ply' : 'splat', base = (currentName || 'gaussian').replace(/\.[^.]+$/, '');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([result.buffer], { type: 'application/octet-stream' }));
+    a.download = `${base}_isolado_${result.kept}splats.${ext}`; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    showError(`Gaussian isolado salvo: ${result.kept.toLocaleString()} splats.`);
+  });
+  on2('sem-reset', 'click', () => {
+    SEM.picking = false; updatePickBtn();
+    anim.anchorCrop = false; anim.semInvert = false;
+    $('ac-toggle').classList.remove('on'); $('ac-toggle').textContent = '▶ Crop radial no pivô';
+    $('sem-invert').classList.remove('on'); $('sem-invert').textContent = '🔁 Inverter (isolar o resto)';
+    syncFxUniforms();
+  });
+})();
+
 {
   const CB = anim.cropBox;
   const cbFmtPct = v => (v*100).toFixed(1) + '%';
@@ -4643,6 +4830,7 @@ $('l-toggle').addEventListener('click', () => {
   syncFxUniforms();
 });
 bindSlider('l-shadow', 'v-lshadow', v => v.toFixed(1), () => syncFxUniforms());
+bindSlider('l-trans', 'v-ltrans', v => v.toFixed(2), () => syncFxUniforms());
 // --- luz 2 ---
 ['l2-az','l2-el','l2-str'].forEach((id, i) => {
   const vids = ['v-l2az','v-l2el','v-l2str'];
@@ -6652,6 +6840,92 @@ if (params.has('url')) {
 
   // reaproveita markers quando uma cena nova é carregada
   window.__bxRigRefresh = () => { refreshMarkers(); renderList(); syncRig(); };
+  // outras abas (Semântica) reaproveitam esse raycast pra clique-na-cena → ponto 3D
+  window.__bxScreenToLocal = screenToLocal;
+
+  // ---- 🩹 Física leve (massa-mola) sobre os handles do Rig ----
+  // Aproximação de física: cada handle é tratado como uma massa presa por uma
+  // mola ao seu ponto de repouso (h.rest). Não é MPM/PhysGaussian de verdade
+  // (não simula o volume dos Gaussians), mas dá um efeito real de gelatina/mola
+  // em cima do mesmo sistema de rig que já existe — sem custo de shader extra,
+  // porque só mexe em h.pos/h.rot, que o syncRig() já sobe pra GPU.
+  const PHYS = { on: false, wind: false, last: 0 };
+  window.__bxPhys = PHYS;
+  // Se o usuário nunca criou um handle na aba Rig, cria um sozinho cobrindo a cena
+  // inteira (sigma bem grande) — assim "▶ Física" já balança o modelo todo de cara,
+  // sem precisar ir na aba Rig configurar nada antes.
+  function ensureDefaultHandle() {
+    if (RIG.list.length > 0 || !bbox) return;
+    const center = new THREE.Vector3(
+      (bbox.min[0] + bbox.max[0]) / 2, (bbox.min[1] + bbox.max[1]) / 2, (bbox.min[2] + bbox.max[2]) / 2);
+    addHandle(center);
+    const h = RIG.list[RIG.list.length - 1];
+    if (h) { h.sigma = ((typeof bxDiag === 'function') ? bxDiag() : 5) * 2; syncRig(); refreshMarkers(); }
+  }
+  function physKick() {
+    const diag = (typeof bxDiag === 'function') ? bxDiag() : 5;
+    RIG.list.forEach(h => {
+      if (!h.vel) h.vel = new THREE.Vector3();
+      h.vel.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(diag * 0.5);
+    });
+  }
+  function physTick(t) {
+    requestAnimationFrame(physTick);
+    if (!PHYS.on || RIG.list.length === 0) { PHYS.last = t; return; }
+    const dt = Math.min(0.05, PHYS.last ? (t - PHYS.last) / 1000 : 0.016);
+    PHYS.last = t;
+    const stiff = parseFloat($('phys-stiff')?.value ?? 7);
+    const dampSlider = parseFloat($('phys-damp')?.value ?? 0.85);
+    // damp é "retenção perdida por frame a 60fps"; convertido pra uma taxa contínua
+    // assim o amortecimento não muda de sensação em telas com fps diferente.
+    const decayPerSec = -Math.log(Math.max(1e-4, 1 - dampSlider)) * 60;
+    const grav = parseFloat($('phys-grav')?.value ?? 0.25);
+    const windOn = PHYS.wind;
+    const windStr = parseFloat($('phys-windstr')?.value ?? 0.15);
+    const diag = (typeof bxDiag === 'function') ? bxDiag() : 5;
+    let moved = false;
+    RIG.list.forEach((h, i) => {
+      if (!h.vel) h.vel = new THREE.Vector3();
+      const accel = h.rest.clone().sub(h.pos).multiplyScalar(stiff);
+      accel.y -= grav * diag * 0.2;
+      if (windOn) {
+        const tt = t * 0.001;
+        accel.x += Math.sin(tt * 1.7 + i * 2.1) * windStr * diag * 0.4;
+        accel.z += Math.cos(tt * 1.3 + i * 1.7) * windStr * diag * 0.4;
+      }
+      h.vel.addScaledVector(accel, dt);
+      h.vel.multiplyScalar(Math.exp(-decayPerSec * dt));
+      if (h.vel.lengthSq() > 1e-9 || h.pos.distanceToSquared(h.rest) > 1e-9) {
+        h.pos.addScaledVector(h.vel, dt);
+        moved = true;
+      }
+    });
+    if (moved) { syncRig(); refreshMarkers(); }
+  }
+  requestAnimationFrame(physTick);
+  on('phys-toggle', 'click', () => {
+    if (!PHYS.on) ensureDefaultHandle();
+    PHYS.on = !PHYS.on;
+    PHYS.last = 0;
+    $('phys-toggle').classList.toggle('on', PHYS.on);
+    $('phys-toggle').textContent = PHYS.on ? '⏸ Física (ligada)' : '▶ Física (mola)';
+    if (PHYS.on && !RIG.list.length) showError('Carregue uma cena primeiro (a física precisa saber o tamanho do modelo).');
+  });
+  on('phys-wind', 'click', () => {
+    PHYS.wind = !PHYS.wind;
+    $('phys-wind').classList.toggle('on', PHYS.wind);
+    $('phys-wind').textContent = PHYS.wind ? '🌬 Vento contínuo (ligado)' : '🌬 Vento contínuo (desligado)';
+  });
+  on('phys-kick', 'click', () => {
+    ensureDefaultHandle();
+    if (!RIG.list.length) { showError('Carregue uma cena primeiro (a física precisa saber o tamanho do modelo).'); return; }
+    if (!PHYS.on) { $('phys-toggle').click(); }
+    physKick();
+  });
+  bindSlider('phys-stiff', 'v-physstiff', v => v.toFixed(1), () => {});
+  bindSlider('phys-damp', 'v-physdamp', v => v.toFixed(3), () => {});
+  bindSlider('phys-grav', 'v-physgrav', v => v.toFixed(2), () => {});
+  bindSlider('phys-windstr', 'v-physwindstr', v => v.toFixed(2), () => {});
 })();
 /* ============================================================
    💾 PRESETS DE CENA — controles, câmera e rig persistentes
@@ -6759,16 +7033,94 @@ if (params.has('url')) {
 })();
 /* ===== Pipeline Experimental (pós de tela) ===== */
 (() => {
-  const $e = id => document.getElementById(id); const state={on:true,bloom:false,ca:false,pixel:false,grain:false};
+  const $e = id => document.getElementById(id); const state={on:true,bloom:false,ca:false,pixel:false,grain:false,stylize:false};
   const overlay=document.createElement('canvas'); overlay.id='exp-grain-overlay'; overlay.style.cssText='position:fixed;inset:0;z-index:19;pointer-events:none;mix-blend-mode:screen;display:none'; document.body.appendChild(overlay);
   const draw=()=>{ if(!state.grain){overlay.style.display='none';return;} overlay.style.display='block'; overlay.width=innerWidth;overlay.height=innerHeight; const x=overlay.getContext('2d'), a=parseFloat($e('exp-grain-i').value); const im=x.createImageData(overlay.width,overlay.height); for(let i=0;i<im.data.length;i+=4){const n=Math.random()*255;im.data[i]=im.data[i+1]=im.data[i+2]=n;im.data[i+3]=a*42;} x.putImageData(im,0,0); requestAnimationFrame(draw); };
-  const apply=()=>{ if(!viewer?.renderer) return; const r=viewer.renderer, exp=parseFloat($e('exp-exposure').value), t=$e('exp-tonemap').value; r.toneMapping=state.on?(t==='aces'?THREE.ACESFilmicToneMapping:t==='reinhard'?THREE.ReinhardToneMapping:t==='uncharted'?THREE.CineonToneMapping:THREE.NoToneMapping):THREE.NoToneMapping; r.toneMappingExposure=state.on?exp:1; const c=r.domElement; const tone=t==='aces'?'contrast(1.14) saturate(1.10)':t==='reinhard'?'contrast(.90) saturate(.88)':t==='uncharted'?'contrast(1.24) saturate(1.16)':'contrast(1)'; const bloom=state.bloom?`brightness(${(1+parseFloat($e('exp-bloom-i').value)*.32).toFixed(2)}) saturate(1.25)`:''; const ca=state.ca?`hue-rotate(${Math.round(parseFloat($e('exp-ca-r').value)*70)}deg) saturate(1.25)`:''; c.style.filter=state.on?[`brightness(${exp.toFixed(2)})`,tone,bloom,ca].filter(Boolean).join(' '):'none'; const px=state.pixel?parseInt($e('exp-pixel-r').value,10):0; r.setPixelRatio(px?Math.min(devicePixelRatio,px/Math.max(innerWidth,innerHeight)):devicePixelRatio); r.setSize(innerWidth,innerHeight); };
+  const apply=()=>{ if(!viewer?.renderer) return; const r=viewer.renderer, exp=parseFloat($e('exp-exposure').value), t=$e('exp-tonemap').value; r.toneMapping=state.on?(t==='aces'?THREE.ACESFilmicToneMapping:t==='reinhard'?THREE.ReinhardToneMapping:t==='uncharted'?THREE.CineonToneMapping:THREE.NoToneMapping):THREE.NoToneMapping; r.toneMappingExposure=state.on?exp:1; const c=r.domElement; const tone=t==='aces'?'contrast(1.14) saturate(1.10)':t==='reinhard'?'contrast(.90) saturate(.88)':t==='uncharted'?'contrast(1.24) saturate(1.16)':'contrast(1)'; const bloom=state.bloom?`brightness(${(1+parseFloat($e('exp-bloom-i').value)*.32).toFixed(2)}) saturate(1.25)`:''; const ca=state.ca?`hue-rotate(${Math.round(parseFloat($e('exp-ca-r').value)*70)}deg) saturate(1.25)`:'';
+    // Stylize (StyleSplat-lite): filtro de paleta/contraste em cima da imagem — aproximação
+    // de estilização em tempo real, não é transferência de estilo neural real (essa reotimiza
+    // os Gaussians offline). Cada "estilo" é uma combinação diferente de filtros CSS.
+    const styleKind=$e('exp-style-kind')?.value || 'toon', styleI=parseFloat($e('exp-style-i')?.value || 0);
+    const stylize=state.stylize?(
+      styleKind==='toon'?`contrast(${(1+styleI*0.9).toFixed(2)}) saturate(${(1+styleI*1.4).toFixed(2)})`:
+      styleKind==='vintage'?`sepia(${(styleI*0.6).toFixed(2)}) saturate(${(1-styleI*0.3).toFixed(2)}) contrast(${(1+styleI*0.15).toFixed(2)})`:
+      `saturate(${(1+styleI*1.8).toFixed(2)}) hue-rotate(${Math.round(styleI*40)}deg) contrast(${(1+styleI*0.5).toFixed(2)})`
+    ):'';
+    c.style.filter=state.on?[`brightness(${exp.toFixed(2)})`,tone,bloom,ca,stylize].filter(Boolean).join(' '):'none'; const px=state.pixel?parseInt($e('exp-pixel-r').value,10):0; r.setPixelRatio(px?Math.min(devicePixelRatio,px/Math.max(innerWidth,innerHeight)):devicePixelRatio); r.setSize(innerWidth,innerHeight); };
   const tog=(id,key)=>$e(id).addEventListener('click',()=>{state[key]=!state[key];$e(id).classList.toggle('on',state[key]);$e(id).textContent=(state[key]?'⏸ ':'▶ ')+$e(id).textContent.replace(/^[▶⏸]\s*/,'');if(key==='grain'&&state.grain)draw();apply();});
-  $e('exp-toggle').addEventListener('click',()=>{state.on=!state.on;$e('exp-toggle').classList.toggle('on',state.on);apply();}); tog('exp-bloom','bloom');tog('exp-ca','ca');tog('exp-pixel','pixel');tog('exp-grain','grain');
-  [['exp-exposure','v-expexposure',v=>v.toFixed(2)],['exp-bloom-i','v-expbloomi',v=>v.toFixed(2)],['exp-bloom-d','v-expbloomd',v=>v.toFixed(2)],['exp-ca-r','v-expcar',v=>v.toFixed(3)],['exp-pixel-r','v-exppixelr',v=>String(Math.round(v))],['exp-grain-i','v-expgraini',v=>v.toFixed(2)]].forEach(([id,out,f])=>$e(id).addEventListener('input',e=>{$e(out).textContent=f(+e.target.value);apply();})); $e('exp-tonemap').addEventListener('change',apply);
+  $e('exp-toggle').addEventListener('click',()=>{state.on=!state.on;$e('exp-toggle').classList.toggle('on',state.on);apply();}); tog('exp-bloom','bloom');tog('exp-ca','ca');tog('exp-pixel','pixel');tog('exp-grain','grain');tog('exp-stylize','stylize');
+  [['exp-exposure','v-expexposure',v=>v.toFixed(2)],['exp-bloom-i','v-expbloomi',v=>v.toFixed(2)],['exp-bloom-d','v-expbloomd',v=>v.toFixed(2)],['exp-ca-r','v-expcar',v=>v.toFixed(3)],['exp-pixel-r','v-exppixelr',v=>String(Math.round(v))],['exp-grain-i','v-expgraini',v=>v.toFixed(2)],['exp-style-i','v-expstylei',v=>v.toFixed(2)]].forEach(([id,out,f])=>$e(id).addEventListener('input',e=>{$e(out).textContent=f(+e.target.value);apply();})); $e('exp-tonemap').addEventListener('change',apply); $e('exp-style-kind').addEventListener('change',apply);
   const syncBloom=()=>{ const p=$e('post-bloom'); if(!p) return; p.value=state.bloom ? $e('exp-bloom-i').value : 0; p.dispatchEvent(new Event('input',{bubbles:true})); };
   $e('exp-bloom').addEventListener('click',()=>setTimeout(syncBloom,0)); $e('exp-bloom-i').addEventListener('input',syncBloom);
   window.__bxExpApply=apply;
+})();
+/* ===== Style Transfer Neural real (Magenta.js "Arbitrary Image Stylization", Apache-2.0) =====
+   Diferente do filtro CSS acima: é uma rede neural rodando de verdade no navegador (TensorFlow.js),
+   aceita qualquer imagem de estilo enviada pelo usuário. Roda em intervalo (não todo frame) porque
+   a rede é pesada demais pra 60fps; um overlay semi-transparente sobre o canvas real mostra o resultado. */
+(() => {
+  const $e = id => document.getElementById(id);
+  const btn = $e('exp-style-neural'), upload = $e('exp-style-img-upload'), preview = $e('exp-style-preview'),
+        styleImgEl = $e('exp-style-img-el'), rateSlider = $e('exp-style-neural-rate'), blendSlider = $e('exp-style-neural-blend'),
+        status = $e('exp-style-neural-status');
+  if (!btn) return;
+  const NS = { on: false, model: null, loadingModel: null, busy: false, timer: null, hasStyle: false };
+  const overlay = document.createElement('canvas'); overlay.id = 'exp-style-neural-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:18;pointer-events:none;display:none';
+  document.body.appendChild(overlay);
+  const small = document.createElement('canvas'); const smallCtx = small.getContext('2d');
+
+  function setStatus(msg) { if (status) status.textContent = msg; }
+
+  function ensureModel() {
+    if (NS.model) return Promise.resolve(NS.model);
+    if (NS.loadingModel) return NS.loadingModel;
+    if (typeof mi === 'undefined') { setStatus('A biblioteca de style transfer não carregou (precisa de internet na primeira vez). O resto do viewer continua normal.'); return Promise.resolve(null); }
+    setStatus('Carregando rede neural (~12MB, só na primeira vez)...');
+    const inst = new mi.ArbitraryStyleTransferNetwork();
+    NS.loadingModel = inst.initialize().then(() => { NS.model = inst; setStatus(NS.hasStyle ? 'Pronto.' : 'Envie uma imagem de estilo para começar.'); return inst; });
+    return NS.loadingModel;
+  }
+
+  upload?.addEventListener('change', e => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const url = URL.createObjectURL(file);
+    styleImgEl.onload = () => { NS.hasStyle = true; if (preview) { preview.src = url; preview.style.display = 'inline-block'; } setStatus('Imagem de estilo carregada. Ligue o Style Transfer Neural acima.'); };
+    styleImgEl.src = url;
+  });
+
+  async function tick() {
+    if (!NS.on || NS.busy || !NS.hasStyle || !viewer?.renderer) return;
+    const model = await ensureModel(); if (!model) return;
+    NS.busy = true;
+    try {
+      const src = viewer.renderer.domElement;
+      const w = 320, h = Math.max(1, Math.round(320 * src.height / Math.max(1, src.width)));
+      small.width = w; small.height = h; smallCtx.drawImage(src, 0, 0, w, h);
+      const imageData = await model.stylize(small, styleImgEl);
+      overlay.width = innerWidth; overlay.height = innerHeight;
+      const tmp = document.createElement('canvas'); tmp.width = imageData.width; tmp.height = imageData.height;
+      tmp.getContext('2d').putImageData(imageData, 0, 0);
+      const octx = overlay.getContext('2d'); octx.clearRect(0, 0, overlay.width, overlay.height);
+      octx.drawImage(tmp, 0, 0, overlay.width, overlay.height);
+      overlay.style.opacity = blendSlider.value;
+      setStatus('Estilizando ao vivo (a cada ' + rateSlider.value + 'ms).');
+    } catch (err) { setStatus('Erro ao estilizar: ' + (err?.message || err)); }
+    NS.busy = false;
+  }
+
+  function scheduleLoop() { clearInterval(NS.timer); NS.timer = setInterval(tick, parseInt(rateSlider.value, 10) || 600); }
+
+  btn.addEventListener('click', () => {
+    NS.on = !NS.on;
+    btn.classList.toggle('on', NS.on);
+    btn.textContent = (NS.on ? '⏸ ' : '▶ ') + 'Style Transfer Neural';
+    overlay.style.display = NS.on ? 'block' : 'none';
+    if (NS.on) { if (!NS.hasStyle) setStatus('Envie uma imagem de estilo primeiro.'); ensureModel(); scheduleLoop(); }
+    else { clearInterval(NS.timer); }
+  });
+  rateSlider?.addEventListener('input', e => { $e('v-expstyleneuralrate').textContent = e.target.value; if (NS.on) scheduleLoop(); });
+  blendSlider?.addEventListener('input', e => { $e('v-expstyleneuralblend').textContent = (+e.target.value).toFixed(2); overlay.style.opacity = e.target.value; });
 })();
 </script>
 <script>
